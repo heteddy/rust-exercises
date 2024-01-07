@@ -13,5 +13,15 @@ cargo build -p tcpserver
 cargo build -p tcpclient
 ```
 
+# 问题
+```
+Blocking waiting for file lock on package cache
+```
+> rm -f ~/.cargo/.package-cache
 
 
+# 包依赖
+
+serde = {version = "1.0", features = ["derive"]}
+
+[cargo教程](https://course.rs/cargo/intro.html)

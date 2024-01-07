@@ -10,3 +10,7 @@ fn main() {
     let d:u64 = arg::gcd_arg();
     println!("the max gcd is {}", d)
 }
+
+
+
+

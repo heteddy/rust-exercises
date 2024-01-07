@@ -4,5 +4,6 @@
         "./chapter02/Cargo.toml",
         "./chapter02/Cargo.toml",
         "./chapter02/Cargo.toml"
-    ]
+    ],
+    "rust-analyzer.showUnlinkedFileNotification": false
 }
