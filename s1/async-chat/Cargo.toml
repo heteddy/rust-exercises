@@ -9,7 +9,7 @@ edition = "2021"
 
 
 [lib]
-name = "chat"
+name = "chat"  # 为什么不能是async-chat
 path = "src/lib.rs"
 
 [[bin]]
