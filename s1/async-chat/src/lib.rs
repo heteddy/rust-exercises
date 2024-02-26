@@ -9,7 +9,7 @@
     )
 )]
 
-pub mod cmd;
+
 pub mod core;
 pub mod utils;
 pub mod pb;

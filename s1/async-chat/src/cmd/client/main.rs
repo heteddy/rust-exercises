@@ -9,12 +9,25 @@
     )
 )]
 
+use async_std::prelude::*;
+use async_std::net;
 use async_std::task;
+use chat::core::command; // main中引用的方式,使用lib中的名称
+use chat::utils::err;
+use std::env;
 
-fn main() -> (){
+fn main() -> err::ChatResult<()> {
+    // 首先获取地址
     let address = std::env::args().nth(1).expect("Usage: client address:port");
     println!("address = {} ", &address);
-    
-    
-    return;
+
+    task::block_on(async {
+        let socket = net::TcpStream::connect(address).await?;
+        // 客户端拿到socket，连接到服务器
+        socket.set_nodelay(true)?;
+        let to_server = command::send_commands(socket.clone());
+        let from_server = command::handle_replies(socket);
+        from_server.race(to_server).await?;
+        Ok(())
+    })
 }
