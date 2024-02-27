@@ -1,5 +1,5 @@
-use std::ffi::CString;
 use serde::{Deserialize, Serialize};
+use std::ffi::CString;
 
 use std::sync::Arc;
 
@@ -8,9 +8,7 @@ use crate::utils; //直接引用lib.rs就行了，不需要外部
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub enum FromClient {
     #[serde(rename = "json")]
-    Join {
-        group_name: Arc<String>,
-    },
+    Join { group_name: Arc<String> },
     #[serde(rename = "post")]
     Post {
         group_name: Arc<String>,
@@ -32,17 +30,16 @@ impl FromClient {
     }
 }
 
-
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub enum FromServer {
     Message {
         group_name: Arc<String>,
-        message: String,
+        message: Arc<String>,
     },
     Error(String),
 }
 
-#[cfg(test)]   // 只在运行cargo test时候才编译和测试，cargo build并不编译这部分代码
+#[cfg(test)] // 只在运行cargo test时候才编译和测试，cargo build并不编译这部分代码
 pub mod pbtests {
     use super::*;
 

@@ -23,7 +23,7 @@ where
 pub fn receive_as_json<S, P>(inbound: S) -> impl Stream<Item = ChatResult<P>>
 //impl 只能定义一个值
 where
-    S: async_std::io::BufRead + Unpin,
+    S: io::BufRead + Unpin,
     P: DeserializeOwned,
 {
     inbound.lines().map(|line_result| -> ChatResult<P> {
