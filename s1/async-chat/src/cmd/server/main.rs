@@ -11,14 +11,14 @@ fn main() -> err::ChatResult<()> {
     println!("server address = {:?}", address);
     let group_table = Arc::new(group::GroupTable::new());
     async_std::task::block_on(async {
-        let listener = net::TcpListener::bind(address).await?;
+        let listener = net::TcpListener::bind(address).await.unwrap();
         let mut connection_iters = listener.incoming();
         while let Some(conn) = connection_iters.next().await {
-            let conn = conn?; //连接套接字
+            let conn = conn.unwrap(); //连接套接字
             //拿到tcp stream
             let groups = group_table.clone();
             task::spawn(async {
-                log_error(connection::serve(conn, groups));
+                log_error(connection::serve(conn, groups).await);
             });
         }
     });
