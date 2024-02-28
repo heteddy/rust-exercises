@@ -1,7 +1,9 @@
 use crate::pb::msg::FromServer;
 use crate::{core::connection, utils};
+use async_std::future::IntoFuture;
 use async_std::task;
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use tokio::sync::broadcast::{self, error::RecvError};
 
 // use async_std::
@@ -55,4 +57,29 @@ async fn handle_subscribe(
     }
 
     Ok(())
+}
+
+pub struct GroupTable(Mutex<HashMap<Arc<String>, Arc<Group>>>);
+
+impl GroupTable {
+    pub fn new() -> Self {
+        GroupTable(Mutex::new(HashMap::new()))
+    }
+    pub fn get(&self, name: &String) -> Option<Arc<Group>> {
+        let result = self.0.lock();
+        let result = result.unwrap();
+        // note hashmap的get返回的是option<&T>
+        let result = result.get(name);
+        // note Option><&T> 调用.cloned() 返回一个新数据
+        let result = result.cloned();
+        result
+    }
+    pub fn get_or_create(&self, name: Arc<String>) -> Arc<Group> {
+        self.0
+            .lock()
+            .unwrap()
+            .entry(name.clone())
+            .or_insert_with(|| Arc::new(Group::new(name.clone())))
+            .clone()
+    }
 }

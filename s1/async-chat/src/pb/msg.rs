@@ -7,7 +7,7 @@ use crate::utils; //直接引用lib.rs就行了，不需要外部
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub enum FromClient {
-    #[serde(rename = "json")]
+    #[serde(rename = "join")]
     Join { group_name: Arc<String> },
     #[serde(rename = "post")]
     Post {

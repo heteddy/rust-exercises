@@ -1,6 +1,6 @@
 use crate::utils::err::ChatResult;
 
-use async_std::io;
+use async_std::io::{self, BufRead};
 use async_std::prelude::*;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -23,7 +23,7 @@ where
 pub fn receive_as_json<S, P>(inbound: S) -> impl Stream<Item = ChatResult<P>>
 //impl 只能定义一个值
 where
-    S: io::BufRead + Unpin,
+    S: BufRead + Unpin,
     P: DeserializeOwned,
 {
     inbound.lines().map(|line_result| -> ChatResult<P> {
