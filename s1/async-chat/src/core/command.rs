@@ -36,10 +36,13 @@ pub fn parse_commands(input: &str) -> Option<FromClient> {
             // 构造post 命令
             let (group, message) = get_next_token(s2)?;
             let message = message.to_string();
+            // 打印是作为引用传递的，因此不会move
+            println!("input post command group={:?},message={:?}", group, message); // 这里为什么没有move
             Some(FromClient::newPost(group.to_string(), message))
         }
         "join" => {
             let (group, _) = get_next_token(s2)?;
+            println!("input join command group={:?}", group); // 这里为什么没有move
             Some(FromClient::newJoin(group.to_string()))
         }
         _ => {
@@ -51,9 +54,9 @@ pub fn parse_commands(input: &str) -> Option<FromClient> {
 
 /// get_next_token 当前行空格拆分，提取参数
 fn get_next_token(mut input: &str) -> Option<(&str, &str)> {
-    println!("input = {:?}", input);
-
     input = input.trim_start();
+    // 去掉前面的空格，打印
+    println!("input = {:?}", input);
     if input.is_empty() {
         return None;
     }
@@ -72,10 +75,10 @@ pub async fn handle_replies(from_server: net::TcpStream) -> ChatResult<()> {
     while let Some(reply) = reply_stream.next().await {
         match reply? {
             msg @ FromServer::Message { .. } => {
-                println!("message posted to {:?}", msg)
+                println!("client received message {:?}", msg)
             }
             _err @ FromServer::Error(..) => {
-                println!("error received from server {:?}", _err)
+                println!("client received error {:?}", _err)
             }
         }
     }
