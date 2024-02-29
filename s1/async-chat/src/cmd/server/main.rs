@@ -13,6 +13,7 @@ fn main() -> err::ChatResult<()> {
     async_std::task::block_on(async {
         let listener = net::TcpListener::bind(address).await.unwrap();
         let mut connection_iters = listener.incoming();
+        // 收到一个连接
         while let Some(conn) = connection_iters.next().await {
             let conn = conn.unwrap(); //连接套接字
             //拿到tcp stream

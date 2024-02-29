@@ -47,7 +47,7 @@ pub async fn serve(socket: TcpStream, groups: Arc<GroupTable>) -> ChatResult<()>
             FromClient::Post { group_name, message } => {
                 match groups.get(&group_name) { // 拿到group信息，并发送
                     Some(group) => {
-                        group.send(message);
+                        group.broadcast(message);
                         Ok(())
                     }
                     None => {

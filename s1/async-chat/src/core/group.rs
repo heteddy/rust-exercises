@@ -8,6 +8,7 @@ use tokio::sync::broadcast::{self, error::RecvError};
 
 // use async_std::
 
+/// 组定义了一个广播channel，组内每个client都对应一个线程，接收广播消息并发送给对应客户端
 pub struct Group {
     name: Arc<String>,
     sender: broadcast::Sender<Arc<String>>,
@@ -15,24 +16,27 @@ pub struct Group {
 
 impl Group {
     pub fn new(name: Arc<String>) -> Self {
+        // channel 设置背压
         let (sender, _receiver) = broadcast::channel(1000);
         Group {
             name: name.clone(),
-            sender: sender,
+            sender,  //简化的表达式
         }
     }
-    /// 加入一个组，向sender订阅
+    /// 加入一个组，向sender订阅，为当前的client创建一个线程，接收消息并发送给client；
     pub fn join(&self, outbound: Arc<connection::Outbound>) {
+        // 获取tokio
         let receiver = self.sender.subscribe();
         // 启动一个新线程处理，收到广播消息发送给客户端
         task::spawn(handle_subscribe(self.name.clone(), receiver, outbound));
     }
-    pub fn send(&self, msg: Arc<String>) {
+    pub fn broadcast(&self, msg: Arc<String>) {
         // 当没有人订阅时候会报错，
-        let _ret = self.sender.send(msg);
+        let _ret = self.sender.send(msg); // channel会收到消息
     }
 }
 
+/// server端启动新线程处理消息转发，每个group一个线程
 async fn handle_subscribe(
     group: Arc<String>,
     mut receiver: broadcast::Receiver<Arc<String>>,
@@ -55,7 +59,6 @@ async fn handle_subscribe(
             break;
         }
     }
-
     Ok(())
 }
 
