@@ -9,6 +9,7 @@ use tokio::sync::broadcast::{self, error::RecvError};
 // use async_std::
 
 /// 组定义了一个广播channel，组内每个client都对应一个线程，接收广播消息并发送给对应客户端
+/// 通常设计是一个group保存了所有的连接，每个调用发送，但是这个设计是每个连接一个线程，而且不是放在连接中定义这个线程
 pub struct Group {
     name: Arc<String>,
     sender: broadcast::Sender<Arc<String>>,

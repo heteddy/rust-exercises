@@ -52,3 +52,6 @@ serde = {version = "1.0", features = ["derive"]}
 
 [cargo教程](https://course.rs/cargo/intro.html)
 [cargo.toml清单](https://course.rs/cargo/reference/manifest.html)
+
+# 生成文档
+cargo doc --no-deps --open
