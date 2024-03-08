@@ -1,3 +1,6 @@
+/*! 
+* 基于option实现链表，链表的next是Option<Box<Node>>
+*/
 #![cfg_attr(
     debug_assertions,
     allow(
