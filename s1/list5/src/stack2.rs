@@ -105,55 +105,54 @@ impl<T: Debug> List<T> {
         })
     }
 
-    pub fn pop_back(&mut self) -> Option<T> {
-        self.tail.take().map(|old_tail| {
-            match old_tail.borrow_mut().previous.take() {
-                Some(new_tail) => {
-                    new_tail.borrow_mut().next.take();
-                    self.tail = Some(new_tail);
-                }
-                None => {
-                    self.head.take();
-                }
-            }
-            Rc::try_unwrap(old_tail).ok().unwrap().into_inner().element
-        })
-    }
-    // /// 获取链表最后一个元素的值，
     // pub fn pop_back(&mut self) -> Option<T> {
-    //     //1. 取出tail
-    //     let old_tail = self.tail.take();
-
-    //     match old_tail {
-    //         // old_tail已经被move了
-    //         Some(old_tail_node) => {
-    //             // 内部可变
-    //             let new_tail_node_opt = old_tail_node.borrow_mut().previous.take();
-    //             // new_tail_node_opt.map(|new_tail|{
-    //             //     // new_tail_node_link.borrow_mut().next = None;
-    //             //     new_tail.borrow_mut().next = None;
-    //             //     self.tail = Some(new_tail);
-    //             // });
-    //             match new_tail_node_opt {
-    //                 Some(new_tail) =>{
-    //                     new_tail.borrow_mut().next = None;
-    //                     old_tail_node.borrow_mut().previous = None;
-    //                     self.tail = Some(new_tail);
-    //                     Some(Rc::try_unwrap(old_tail_node).unwrap().into_inner().element)
-    //                 },
-    //                 None =>{
-    //                     self.head = None;
-    //                     self.tail = None;
-    //                     None
-    //                 },
+    //     self.tail.take().map(|old_tail| {
+    //         match old_tail.borrow_mut().previous.take() {
+    //             Some(new_tail) => {
+    //                 new_tail.borrow_mut().next.take();
+    //                 self.tail = Some(new_tail);
     //             }
-
+    //             None => {
+    //                 self.head.take();
+    //             }
     //         }
-    //         None => {
-    //             None
-    //         }
-    //     }
+    //         Rc::try_unwrap(old_tail).ok().unwrap().into_inner().element
+    //     })
     // }
+    /// 获取链表最后一个元素的值，
+    pub fn pop_back(&mut self) -> Option<T> {
+        //1. 取出tail
+        let old_tail = self.tail.take();
+
+        match old_tail {
+            // old_tail已经被move了
+            Some(old_tail_node) => {
+                // 内部可变
+                let new_tail_node_opt = old_tail_node.borrow_mut().previous.take();
+                // new_tail_node_opt.map(|new_tail|{
+                //     // new_tail_node_link.borrow_mut().next = None;
+                //     new_tail.borrow_mut().next = None;
+                //     self.tail = Some(new_tail);
+                // });
+                match new_tail_node_opt {
+                    Some(new_tail) =>{
+                        new_tail.borrow_mut().next = None;
+                        old_tail_node.borrow_mut().previous = None;
+                        self.tail = Some(new_tail);
+                        
+                    },
+                    None =>{
+                        self.head = None;
+                        self.tail = None;
+                    },
+                }
+                Some(Rc::try_unwrap(old_tail_node).unwrap().into_inner().element)
+            }
+            None => {
+                None
+            }
+        }
+    }
 
     // 返回第一个节点的引用
     pub fn peek_front(&self) -> Option<Ref<T>> {
@@ -305,7 +304,6 @@ mod tests {
         assert_eq!(list.pop_back(), Some(1));
         assert_eq!(list.pop_back(), None);
     }
-
     #[test]
     fn peek() {
         let mut list = List::new();
@@ -323,7 +321,6 @@ mod tests {
         assert_eq!(&*list.peek_back().unwrap(), &1);
         assert_eq!(&mut *list.peek_back_mut().unwrap(), &mut 1);
     }
-
     #[test]
     fn into_iter() {
         let mut list = List::new();
