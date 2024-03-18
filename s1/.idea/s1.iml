@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="EMPTY_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/async-chat/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/async-chat/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/chapter02/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/tcpclient/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/tcpserver/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/list1/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/list2/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/list3/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/list4/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/list5/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/async-chat/target" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+      <excludeFolder url="file://$MODULE_DIR$/tcpclient/target" />
+      <excludeFolder url="file://$MODULE_DIR$/tcpserver/target" />
+      <excludeFolder url="file://$MODULE_DIR$/list3/target" />
+      <excludeFolder url="file://$MODULE_DIR$/list4/target" />
+      <excludeFolder url="file://$MODULE_DIR$/list5/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
