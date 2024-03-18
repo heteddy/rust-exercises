@@ -48,21 +48,23 @@ pub struct UserRepo {
 }
 
 impl UserRepo {
-    pub fn new() ->Self {
+    pub fn new() -> Self {
         UserRepo {
-            users:RwLock::new(HashMap::new()),
+            users: RwLock::new(HashMap::new()),
         }
-    } 
-    pub fn get_user(&self,username :&str) ->Option<&User> {
+    }
+    pub fn get_user(&self, username: &str) -> Option<&User> {
         None
     }
-
-    pub fn create_user(&self,username :&'a str) -> &'a User {
-
+    
+    pub fn create_user(&self, id: u64, username: &str) {
+        let mut guard = self.users.write().unwrap();
+        guard.insert(
+            id,
+            User {
+                id: id,
+                username: username.to_owned(),
+            },
+        );
     }
 }
-
-
-
-
-
