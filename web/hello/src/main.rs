@@ -10,13 +10,13 @@
     )
 )]
 use axum::{routing::get, Router};
-
 use tokio::net::TcpListener;
 use std::net::SocketAddr;
 
 mod endpoints;
 mod transport;
 mod service;
+mod pb;
 
 #[tokio::main]
 async fn main() {
