@@ -8,7 +8,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::sync::{Arc, RwLock};
-
+use tracing::{event, Level,instrument};
 pub struct UserLastAccess {
     user: Arc<RwLock<HashMap<String, DateTime<Local>>>>,
 }
@@ -48,18 +48,22 @@ impl UserRepo {
             users: Arc::new(RwLock::new(HashMap::new())),
         }
     }
-
-    pub fn create_user(&self, id: u64, username: &str) -> Arc<User> {
+    #[instrument(skip(self))]
+    pub fn create_user(&self, id: u64, username: &str) -> User {
+        event!(Level::INFO, "creating user");
         let mut guard = self.users.write().unwrap();
         let u = Arc::new(User::new(id, username));
-        
-        guard.insert(id, u.clone());
-        u
-    }
 
-    pub fn get_user(&self, id: u64, username: &str) -> Option<Arc<User>> {
+        guard.insert(id, u.clone());
+        event!(Level::INFO, "created user");
+        (*u).clone() // *u是deref，然后调用&t的clone()
+    }
+    #[instrument(skip(self))]
+    pub fn get_user(&self, id: u64) -> Option<Arc<User>> {
+        event!(Level::INFO, "get user id {:?}", id);
         let mut guard = self.users.write().unwrap();
         let ret = guard.get(&id);
+        event!(Level::INFO, "get user ret {:?}", ret);
         ret.cloned()
     }
 }

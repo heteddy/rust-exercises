@@ -23,5 +23,7 @@ pub fn register_hello() -> Router {
     // route是一个move函数
     let hello_router = Router::new().route("/", get(hello));
     let hello_router = hello_router.route("/access/:id", get(access));
-    hello_router
+    // r.nest("/api", hello_router)
+
+    Router::new().nest("/api", hello_router)
 }
