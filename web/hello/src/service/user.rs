@@ -48,7 +48,7 @@ impl UserRepo {
             users: Arc::new(RwLock::new(HashMap::new())),
         }
     }
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     pub fn create_user(&self, id: u64, username: &str) -> User {
         event!(Level::INFO, "creating user");
         let mut guard = self.users.write().unwrap();
@@ -58,7 +58,8 @@ impl UserRepo {
         event!(Level::INFO, "created user");
         (*u).clone() // *u是deref，然后调用&t的clone()
     }
-    #[instrument(skip(self))]
+    // #[instrument(skip(self))]
+    #[instrument(skip_all)]
     pub fn get_user(&self, id: u64) -> Option<Arc<User>> {
         event!(Level::INFO, "get user id {:?}", id);
         let mut guard = self.users.write().unwrap();

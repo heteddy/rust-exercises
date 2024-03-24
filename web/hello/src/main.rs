@@ -23,7 +23,8 @@ mod pb;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt().json().init();
+    // tracing_subscriber::fmt().json().init();
+    tracing_subscriber::fmt().init();
 
     let app = transport::route::init_app();
     let addr = "127.0.0.1:8080".parse::<SocketAddr>().unwrap();

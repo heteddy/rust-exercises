@@ -13,7 +13,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::vec::Vec;
 use tokio::time::sleep;
-use tracing::{event, info, instrument, Level};
+use tracing::{event, info, instrument, span, Level};
 #[derive(Serialize, Deserialize)]
 pub struct UserLoginReq<'a> {
     id: u64,
@@ -52,6 +52,8 @@ async fn create_user(
     State(repo): State<UserRepo>,
     payload: Json<CreateUser>,
 ) -> Json<RespVO<User>> {
+    let s = span!(Level::TRACE, "create_user-{:?}", payload.id);
+    let _enter = s.enter();
     event!(Level::INFO, "endpoint create user {:?}", payload);
     //"create_user".to_owned()
     // println!("received get id={:?}, repo={:?}", payload, repo);
@@ -69,14 +71,15 @@ async fn query_users(
     State(repo): State<UserRepo>,
 ) -> Json<RespVO<User>> {
     // "query_users".to_owned() // 不能返回Vec<String>?
-    println!("query={:?}", params);
+    // println!("query={:?}", params);
     // let u: Option<Arc<User>> = repo.get_user(1 as u64, params.get("username").unwrap());
     let id = params.get("id").unwrap().parse::<u64>().unwrap();
-
+    let s = span!(Level::TRACE, "query_user-{:?}", id);
+    let _enter = s.enter();
     let username = params.get("username").unwrap();
-
+    event!(Level::INFO, "query={:?}", params);
     let u: Option<Arc<User>> = repo.get_user(id);
-    println!("query  u={:?}", u);
+
     // u.map(|_u|{
     //     (*_u).clone()
     // })
