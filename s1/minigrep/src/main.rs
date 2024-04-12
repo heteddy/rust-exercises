@@ -1,3 +1,18 @@
+/*!
+ * 实现grep基础功能
+*/
+#![cfg_attr(
+    debug_assertions,
+    allow(
+        unused,
+        dead_code,
+        unused_imports,
+        unused_variables,
+        unused_assignments,
+        non_snake_case
+    )
+)]
+
 use std::env;
 use std::error::Error;
 use std::fs;
@@ -7,6 +22,8 @@ use std::process;
 
 mod config;
 mod search;
+
+
 
 fn main() {
     println!("Hello, world!");
