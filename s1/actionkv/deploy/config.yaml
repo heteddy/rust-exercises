@@ -1,0 +1,17 @@
+name: "aka-srv"
+
+kafka_config:
+  broker:
+  topics: topic_track_event
+  client_id: gw_track_event_producer
+
+redis:
+  addr: 192.168.64.5:6379
+  database: 3
+
+mongo:
+  hosts: 127.0.0.1:27017
+  user:
+  pass:
+  database: app_search
+  replica: 
