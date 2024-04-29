@@ -1,4 +1,4 @@
-use log::{info, warn};
+use tracing::{event, info, info_span, instrument, span, warn, Level};
 use rdkafka::client::ClientContext;
 use rdkafka::config::{ClientConfig, RDKafkaLogLevel};
 use rdkafka::consumer::{
@@ -156,14 +156,14 @@ impl KakfaSource {
                     ))
                     .await; // 发送消息是异步的
                             // // 拿到payload，然后反序列化到一个结构中
-                    // info!("key: '{:?}', payload: '{}', topic: {}, partition: {}, offset: {}, timestamp: {:?}",
-                    //       m.key(), payload, m.topic(), m.partition(), m.offset(), m.timestamp());
-                    // if let Some(headers) = m.headers() {
-                    //     for header in headers.iter() {
-                    //         // 获取的是应用
-                    //         info!("Header {:#?}: {:?}", header.key, header.value);
-                    //     }
-                    // }
+                            // info!("key: '{:?}', payload: '{}', topic: {}, partition: {}, offset: {}, timestamp: {:?}",
+                            //       m.key(), payload, m.topic(), m.partition(), m.offset(), m.timestamp());
+                            // if let Some(headers) = m.headers() {
+                            //     for header in headers.iter() {
+                            //         // 获取的是应用
+                            //         info!("Header {:#?}: {:?}", header.key, header.value);
+                            //     }
+                            // }
                     consumer.commit_message(&m, CommitMode::Async).unwrap();
                 }
             };
@@ -186,53 +186,53 @@ impl KakfaSource {
     }
 }
 
-pub async fn consume_and_print(brokers: &str, group_id: &str, topics: &[&str]) {
-    info!("consume_and_print started");
-    // let (tx, mut rx) = mpsc::channel<KafkaMsg>(100);
-    let context: CustomContext = CustomContext {};
-    let consumer: LoggingConsumer = ClientConfig::new()
-        .set("group.id", group_id)
-        .set("bootstrap.servers", brokers)
-        .set("enable.partition.eof", "false")
-        .set("session.timeout.ms", "6000")
-        .set("enable.auto.commit", "true")
-        //.set("statistics.interval.ms", "30000")
-        //.set("auto.offset.reset", "smallest")
-        .set_log_level(RDKafkaLogLevel::Debug)
-        .create_with_context(context)
-        .expect("Consumer creation failed");
+// pub async fn consume_and_print(brokers: &str, group_id: &str, topics: &[&str]) {
+//     info!("consume_and_print started");
+//     // let (tx, mut rx) = mpsc::channel<KafkaMsg>(100);
+//     let context: CustomContext = CustomContext {};
+//     let consumer: LoggingConsumer = ClientConfig::new()
+//         .set("group.id", group_id)
+//         .set("bootstrap.servers", brokers)
+//         .set("enable.partition.eof", "false")
+//         .set("session.timeout.ms", "6000")
+//         .set("enable.auto.commit", "true")
+//         //.set("statistics.interval.ms", "30000")
+//         //.set("auto.offset.reset", "smallest")
+//         .set_log_level(RDKafkaLogLevel::Debug)
+//         .create_with_context(context)
+//         .expect("Consumer creation failed");
 
-    consumer
-        .subscribe(&topics.to_vec())
-        .expect("Can't subscribe to specified topics");
+//     consumer
+//         .subscribe(&topics.to_vec())
+//         .expect("Can't subscribe to specified topics");
 
-    loop {
-        match consumer.recv().await {
-            Err(e) => warn!("Kafka error: {}", e),
-            Ok(m) => {
-                let payload = match m.payload_view::<str>() {
-                    None => "",
-                    Some(Ok(s)) => s,
-                    Some(Err(e)) => {
-                        warn!("Error while deserializing message payload: {:?}", e);
-                        ""
-                    }
-                };
-                // todo 这里增加异步处理的逻辑；拿到topic，payload，key等信息然后序列化
-                // 拿到payload，然后反序列化到一个结构中
-                info!("key: '{:?}', payload: '{}', topic: {}, partition: {}, offset: {}, timestamp: {:?}",
-                      m.key(), payload, m.topic(), m.partition(), m.offset(), m.timestamp());
-                if let Some(headers) = m.headers() {
-                    for header in headers.iter() {
-                        // 获取的是应用
-                        info!("Header {:#?}: {:?}", header.key, header.value);
-                    }
-                }
-                consumer.commit_message(&m, CommitMode::Async).unwrap();
-            }
-        };
-    }
-}
+//     loop {
+//         match consumer.recv().await {
+//             Err(e) => warn!("Kafka error: {}", e),
+//             Ok(m) => {
+//                 let payload = match m.payload_view::<str>() {
+//                     None => "",
+//                     Some(Ok(s)) => s,
+//                     Some(Err(e)) => {
+//                         warn!("Error while deserializing message payload: {:?}", e);
+//                         ""
+//                     }
+//                 };
+//                 // todo 这里增加异步处理的逻辑；拿到topic，payload，key等信息然后序列化
+//                 // 拿到payload，然后反序列化到一个结构中
+//                 info!("key: '{:?}', payload: '{}', topic: {}, partition: {}, offset: {}, timestamp: {:?}",
+//                       m.key(), payload, m.topic(), m.partition(), m.offset(), m.timestamp());
+//                 if let Some(headers) = m.headers() {
+//                     for header in headers.iter() {
+//                         // 获取的是应用
+//                         info!("Header {:#?}: {:?}", header.key, header.value);
+//                     }
+//                 }
+//                 consumer.commit_message(&m, CommitMode::Async).unwrap();
+//             }
+//         };
+//     }
+// }
 
 mod tests {
     use super::*;

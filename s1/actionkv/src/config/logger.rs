@@ -5,23 +5,26 @@ use env_logger::fmt::Formatter;
 use env_logger::Builder;
 use log::{LevelFilter, Record};
 
-pub fn setup_logger(log_thread: bool, rust_log: Option<&str>) {
+pub fn inital_logger(log_thread: bool, rust_log: Option<&str>) {
     let output_format = move |formatter: &mut Formatter, record: &Record| {
         let thread_name = if log_thread {
-            format!("(t: {}) ", thread::current().name().unwrap_or("unknown"))
+            format!("Th({})", thread::current().name().unwrap_or("unknown"))
         } else {
             "".to_string()
         };
 
         let local_time: DateTime<Local> = Local::now();
         let time_str = local_time.format("%H:%M:%S%.3f").to_string();
+        
+        let line_number = record.line().unwrap_or_default();
+
         write!(
             formatter,
-            "{}{}{}-{}-{}\n",
+            "[{}]-[{}]-[{}]-[{}:{}] msg: {}\n",record.level(),
             time_str,
             thread_name,
-            record.level(),
             record.target(),
+            line_number,
             record.args()
         )
     };

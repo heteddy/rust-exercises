@@ -2,7 +2,6 @@ use ansi_term::Colour;
 use clap::builder::OsStr;
 use clap::{Parser, Subcommand};
 use lazy_static::lazy_static;
-use log::{info, warn};
 use mongodb::bson::{doc, Document};
 use serde::de::Deserialize; // 调用struct实例的deserialize 方法
 use serde_derive::{Deserialize, Serialize};
@@ -12,6 +11,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{env, fs, thread};
 use tokio::sync::mpsc;
+use tracing::{event, info, info_span, instrument, span, warn, Level};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Server {
@@ -88,26 +88,21 @@ pub struct Cli {
 
 lazy_static! {
     pub static ref CLI_ARGS: Cli = init_cli_args();
-    pub static ref GLOBAL_CONFIG: Mutex<Configure> = Mutex::new(init_configure());
+    pub static ref GLOBAL_CONFIG: Mutex<Configure> = Mutex::new(Configure::build());  // 全局共享不需要arc
 }
 
-// pub fn init_configure() -> Configure {
-//     let mut configure = init_configure_by_yaml();
-//     update_configure_by_env(&mut configure);
-//     configure
-// }
-
+#[instrument]
 pub fn init_configure_by_yaml() -> Configure {
     let p = CLI_ARGS.file.as_ref().unwrap().as_path();
     let yaml_str = fs::read_to_string(p).unwrap();
     let de = serde_yaml::Deserializer::from_str(&yaml_str);
     let value = Configure::deserialize(de).unwrap();
-    println!("configure={:?}", value);
+    info!("configure={:?}", value);
     value
 }
 
 /// 根据环境变量覆盖全局配置
-
+#[instrument]
 pub fn init_cli_args() -> Cli {
     let args = Cli::parse();
     for _ in 0..args.count {

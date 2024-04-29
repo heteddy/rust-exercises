@@ -18,12 +18,18 @@ serde_derive = "1.0"
 ansi_term = "0.12.1"
 lazy_static = "1.4.0"
 mongodb = "2.8.2"
-tokio = "1.37.0"
+tokio = { version = "1.37.0", features = ["full"] }
 rdkafka = { version = "0.36", features = ["cmake-build"] }
-axum = { version = "0.7.5", features = ["ws"] }
+axum = { version = "0.7.5", features = ["ws", "tracing"] }
 log = "0.4.21"
 env_logger = "0.11.3"
 chrono = "0.4.38"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["json", "env-filter"] }
+tower = {version="0.4.13", features = ["full"]}
+tower-http = { version = "0.5.2", features = ["full"] }
+ctor = "0.2.8"
+
 
 [lib]
 name = "libakv"
