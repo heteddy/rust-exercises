@@ -18,9 +18,9 @@ use tower_http::trace::TraceLayer;
 #[derive(Clone)]
 struct State {}
 
-pub fn init_app() -> axum::Router {
+pub fn init_app() -> Router {
     // 会move
-    let mut app = axum::Router::new();
+    let mut app = Router::new();
 
     app = app
         .route("/", get(hello_world))
@@ -52,7 +52,7 @@ async fn handle_timeout_error(method: Method, uri: Uri, err: BoxError) -> (Statu
     if err.is::<tower::timeout::error::Elapsed>() {
         (
             StatusCode::REQUEST_TIMEOUT,
-            format!("Request time too long， Timeout！！！"),
+            "Request time too long，Timeout！！！".to_owned(),
         )
     } else {
         (

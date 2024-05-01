@@ -66,7 +66,7 @@ mod tests {
             //     doc! { "title": "The Great Gatsby", "author": "F. Scott Fitzgerald" },
             // ];
             // db.collection("vector_search").insert_many(docs, None).await; // .unwrap().database("test")
-            let typed_collection = db.collection::<Book>("books");
+            let typed_collection = db.collection::<Book>("books");  // name是collection名
 
             let books = vec![
                 Book {

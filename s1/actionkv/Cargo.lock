@@ -7,8 +7,10 @@ name = "actionkv"
 version = "0.1.0"
 dependencies = [
  "ansi_term",
+ "anyhow",
  "axum",
  "bincode",
+ "bson",
  "byteorder",
  "chrono",
  "clap",
@@ -153,6 +155,12 @@ dependencies = [
  "anstyle",
  "windows-sys 0.52.0",
 ]
+
+[[package]]
+name = "anyhow"
+version = "1.0.82"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f538837af36e6f6a9be0faa67f9a314f8119e4e4b5867c6ab40ed60360142519"
 
 [[package]]
 name = "async-compression"
@@ -344,6 +352,7 @@ dependencies = [
  "ahash",
  "base64 0.13.1",
  "bitvec",
+ "chrono",
  "hex",
  "indexmap 2.2.6",
  "js-sys",

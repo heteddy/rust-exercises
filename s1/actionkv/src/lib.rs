@@ -21,3 +21,4 @@ pub mod transport;
 pub mod endpoint;
 pub mod service;
 pub mod pb;
+pub mod dao;
