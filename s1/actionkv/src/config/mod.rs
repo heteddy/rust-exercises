@@ -5,7 +5,6 @@ pub mod qdrant;
 pub mod redis;
 pub mod logger;
 
-
 use serde_derive::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::mpsc;

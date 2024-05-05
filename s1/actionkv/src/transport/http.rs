@@ -14,6 +14,7 @@ use tower_http::request_id::{MakeRequestUuid, SetRequestIdLayer};
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
+use crate::endpoint::app;
 
 #[derive(Clone)]
 struct State {}
@@ -24,7 +25,7 @@ pub fn init_app() -> Router {
 
     app = app
         .route("/", get(hello_world))
-        // .merge(hello::register_hello())
+        .merge(app::register_app_route())
         // .merge(user::register_user())
         .fallback(fallback);
 
@@ -36,7 +37,7 @@ pub fn init_app() -> Router {
                        .on_response(trace::DefaultOnResponse::new()
                            .level(Level::INFO)), )
             .layer(CompressionLayer::new().gzip(true))
-            .layer(TimeoutLayer::new(Duration::new(0, 200000)))
+            .layer(TimeoutLayer::new(Duration::new(0, 900_000_000))) //900ms
             .layer(SetRequestIdLayer::new(
                 HeaderName::from_static("x-request-id"),
                 MakeRequestUuid,

@@ -21,6 +21,8 @@ use std::hash::Hasher;
 use serde_json::to_string;
 use tracing::info;
 use crate::config::{self, mongo::MONGO_CLIENT};
+use crate::pb;
+use crate::pb::app::AppReq;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppEntity {
@@ -64,6 +66,22 @@ impl Default for AppEntity {
     }
 }
 
+impl From<pb::app::AppReq> for AppEntity {
+    fn from(value: AppReq) -> Self {
+        AppEntity {
+            id: None,
+            app_id: value.app_id,
+            app_secret: value.app_secret,
+            tenant: value.tenant,
+            liaison: value.liaison,
+            system: value.system, // 子系统编号
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            deleted_at: 0,
+        }
+    }
+}
+
 // 需要定义字段判断哪个是唯一id
 impl PartialEq<AppEntity> for AppEntity {
     fn eq(&self, other: &AppEntity) -> bool {
@@ -83,6 +101,7 @@ impl std::hash::Hash for AppEntity {
     }
 }
 
+#[derive(Clone)]
 pub struct AppRepo {
     pub col: Collection<AppEntity>,
 }
@@ -90,7 +109,7 @@ pub struct AppRepo {
 impl AppRepo {
     pub fn init(db: &str, collection: &str) -> Self {
         AppRepo {
-            col: mongo::MONGO_CLIENT
+            col: MONGO_CLIENT
                 .get()
                 .unwrap()
                 .database(db)
@@ -101,13 +120,20 @@ impl AppRepo {
     pub async fn insert_app(&self, app: &AppEntity) -> mongodb::error::Result<InsertOneResult> {
         // let opt = options::InsertOneOptions::build();
         let ret = self.col.insert_one(app, None).await;
-        ret
+        info!("dao insert app {:?}",app);
+        if let Ok(value) = ret {
+            info!("inserted id = {:?}",&value.inserted_id);
+            Ok(value)
+        }else{
+            info!("insert error {:?}",ret);
+            ret
+        }
     }
 
     pub async fn get_app(&self, id: &String) -> Result<AppEntity, mongodb::error::Error> {
         let opt = options::FindOneOptions::builder().show_record_id(true).build();
         let ret = self.col.find_one(doc! {"_id": ObjectId::parse_str(id).unwrap()}, opt).await;
-        println!("{:?}",ret);
+        println!("{:?}", ret);
 
         // ret.ok().expect("");
         if let Ok(Some(_app)) = ret {
@@ -123,6 +149,7 @@ impl AppRepo {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     fn init() {
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()
