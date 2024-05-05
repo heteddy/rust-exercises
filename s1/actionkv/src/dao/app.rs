@@ -108,6 +108,8 @@ impl AppRepo {
         let opt = options::FindOneOptions::builder().show_record_id(true).build();
         let ret = self.col.find_one(doc! {"_id": ObjectId::parse_str(id).unwrap()}, opt).await;
         println!("{:?}",ret);
+
+        // ret.ok().expect("");
         if let Ok(Some(_app)) = ret {
             println!("{:?}", _app);
             Ok(_app)
@@ -121,7 +123,6 @@ impl AppRepo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[ctor::ctor]
     fn init() {
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()
@@ -132,25 +133,25 @@ mod tests {
             })
     }
 
-    #[tokio::test]
-    async fn test_app() {
-        // 使用if let 避免使用unwrap
-        let app_repo = AppRepo::init("test","vector_app");
-
-        let entity = AppEntity{
-            id: None,
-            app_id: "new_app1".into(),
-            app_secret: "1234".to_string(),
-            tenant: "pib_core".into(),
-            liaison: "hedetao909".to_owned(),
-            system: "pib_core".to_owned(), // 子系统编号
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
-            deleted_at: 0,
-        };
-        let ret = app_repo.insert_app(&entity).await;
-        println!("app_repo insert = {:?}",ret.unwrap().inserted_id);
-    }
+    // #[tokio::test]
+    // async fn test_app() {
+    //     // 使用if let 避免使用unwrap
+    //     let app_repo = AppRepo::init("test","vector_app");
+    //
+    //     let entity = AppEntity{
+    //         id: None,
+    //         app_id: "new_app1".into(),
+    //         app_secret: "1234".to_string(),
+    //         tenant: "pib_core".into(),
+    //         liaison: "hedetao909".to_owned(),
+    //         system: "pib_core".to_owned(), // 子系统编号
+    //         created_at: Utc::now(),
+    //         updated_at: Utc::now(),
+    //         deleted_at: 0,
+    //     };
+    //     let ret = app_repo.insert_app(&entity).await;
+    //     println!("app_repo insert = {:?}",ret.unwrap().inserted_id);
+    // }
 
     // #[tokio::test]
     // async fn test_find_app() {

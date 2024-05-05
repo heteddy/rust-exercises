@@ -1,16 +1,26 @@
-// use std::collections::hash_set;
+#![cfg_attr(
+debug_assertions,
+allow(
+unused,
+dead_code,
+unused_imports,
+unused_variables,
+unused_assignments,
+non_snake_case
+)
+)]
 use std::hash::Hasher;
 
 #[derive(Debug, Clone)]
 struct App {
-    app_id: String,
-    app_secret: String,
+    pub app_id: String,
+    pub app_secret: String,
     // 租户名称，
-    tenant: String,
+    pub tenant: String,
     // 联系人
-    liaison: String,
+    pub liaison: String,
     //子系统名称
-    system: String,
+    pub system: String,
 }
 
 impl Default for App {

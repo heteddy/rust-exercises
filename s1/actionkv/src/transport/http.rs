@@ -5,7 +5,6 @@ use axum::{
     BoxError, Router,
     routing::get,
 };
-
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{self, ServiceBuilder};
@@ -13,7 +12,8 @@ use tower_http::compression::CompressionLayer;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::request_id::{MakeRequestUuid, SetRequestIdLayer};
 use tower_http::timeout::TimeoutLayer;
-use tower_http::trace::TraceLayer;
+use tower_http::trace::{self, TraceLayer};
+use tracing::Level;
 
 #[derive(Clone)]
 struct State {}
@@ -30,7 +30,11 @@ pub fn init_app() -> Router {
 
     app = app.layer(
         ServiceBuilder::new()
-            .layer(TraceLayer::new_for_http())
+            .layer(TraceLayer::new_for_http()
+                       .make_span_with(trace::DefaultMakeSpan::new()
+                           .level(Level::INFO))
+                       .on_response(trace::DefaultOnResponse::new()
+                           .level(Level::INFO)), )
             .layer(CompressionLayer::new().gzip(true))
             .layer(TimeoutLayer::new(Duration::new(0, 200000)))
             .layer(SetRequestIdLayer::new(

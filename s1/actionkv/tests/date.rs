@@ -1,4 +1,14 @@
-#[warn(unused_imports)]
+#![cfg_attr(
+debug_assertions,
+allow(
+unused,
+dead_code,
+unused_imports,
+unused_variables,
+unused_assignments,
+non_snake_case
+)
+)]
 use chrono::{DateTime, FixedOffset, Local, Duration, TimeZone, NaiveDate, NaiveDateTime};
 
 
@@ -18,7 +28,7 @@ mod tests {
         println!("formatted= {:?}", f.to_string());
         println!("timestamp seconds={:?}", local.timestamp());
         println!("native time={:?}", local.time());
-        let date = NaiveDate::from_ymd(2022, 1, 1);
+        let date = NaiveDate::from_ymd_opt(2022, 1, 1).unwrap();
         println!("Date: {}", date);
         // 解析时间 format 和 parse
         let datetime = NaiveDateTime::parse_from_str("2022-01-01 12:34:56", "%Y-%m-%d %H:%M:%S").unwrap();
@@ -32,15 +42,15 @@ mod tests {
         println!("7 date ago: {}", new_date.format("%Y-%m-%d %H:%M:%S"));
 
         // 日期比较
-        let date1 = NaiveDate::from_ymd(2022, 1, 1);
-        let date2 = NaiveDate::from_ymd(2022, 1, 10);
+        let date1 = NaiveDate::from_ymd_opt(2022, 1, 1).unwrap();
+        let date2 = NaiveDate::from_ymd_opt(2022, 1, 10).unwrap();
         let ordering = date1.cmp(&date2);
         println!("Date1 is {:?} Date2", ordering);
 
 
 
-        let date1 = NaiveDate::from_ymd(2022, 1, 1);
-        let date2 = NaiveDate::from_ymd(2022, 1, 10);
+        let date1 = NaiveDate::from_ymd_opt(2022, 1, 1).unwrap();
+        let date2 = NaiveDate::from_ymd_opt(2022, 1, 10).unwrap();
         let duration = date2.signed_duration_since(date1);
         let days_diff = duration.num_days();
         println!("Days difference: {}", days_diff);

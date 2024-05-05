@@ -84,8 +84,8 @@ pub struct KafkaMsg {
 impl KafkaMsg {
     pub fn new(key: Option<Vec<u8>>, value: Vec<u8>) -> Self {
         KafkaMsg {
-            key: key,
-            value: value,
+            key,
+            value,
         }
     }
 }
