@@ -2,11 +2,14 @@ use axum::error_handling::HandleErrorLayer;
 use axum::{
     http::{HeaderName, Method, StatusCode, Uri},
     response::Html,
-    BoxError, Router,
+    response::IntoResponse,
     routing::get,
+    BoxError, Router,
 };
+
 use std::time::Duration;
 // use tokio::time::sleep;
+use crate::endpoint::app;
 use tower::{self, ServiceBuilder};
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::{Any, CorsLayer};
@@ -14,7 +17,6 @@ use tower_http::request_id::{MakeRequestUuid, SetRequestIdLayer};
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
-use crate::endpoint::app;
 
 #[derive(Clone)]
 struct State {}
@@ -31,11 +33,11 @@ pub fn init_app() -> Router {
 
     app = app.layer(
         ServiceBuilder::new()
-            .layer(TraceLayer::new_for_http()
-                       .make_span_with(trace::DefaultMakeSpan::new()
-                           .level(Level::INFO))
-                       .on_response(trace::DefaultOnResponse::new()
-                           .level(Level::INFO)), )
+            .layer(
+                TraceLayer::new_for_http()
+                    .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
+                    .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
+            )
             .layer(CompressionLayer::new().gzip(true))
             .layer(TimeoutLayer::new(Duration::new(0, 900_000_000))) //900ms
             .layer(SetRequestIdLayer::new(
@@ -53,7 +55,7 @@ async fn fallback() -> String {
     format!("错误路由")
 }
 
-async fn handle_timeout_error(method: Method, uri: Uri, err: BoxError) -> (StatusCode, String) {
+async fn handle_timeout_error(method: Method, uri: Uri, err: BoxError) -> impl IntoResponse {
     if err.is::<tower::timeout::error::Elapsed>() {
         (
             StatusCode::REQUEST_TIMEOUT,

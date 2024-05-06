@@ -147,8 +147,8 @@ impl AppRepo {
             // v.append(*(doc.clone()));
             v.push(doc);
         }
-// regular Stream uses collect() and collects into a Vec<Result<T>>
-//         let v = cursor.collect().await;
+        // regular Stream uses collect() and collects into a Vec<Result<T>>
+        //         let v = cursor.collect().await;
         v
     }
 
@@ -160,8 +160,6 @@ impl AppRepo {
             .col
             .find_one(doc! {"_id": ObjectId::parse_str(id).unwrap()}, opt)
             .await;
-        println!("{:?}", ret);
-
         // ret.ok().expect("");
         if let Ok(Some(_app)) = ret {
             println!("{:?}", _app);
@@ -231,7 +229,7 @@ fn serialize_object_id_option_as_hex_string<S: Serializer>(
     serializer: S,
 ) -> Result<S::Ok, S::Error> {
     match val {
-        Some(oid) => oid.serialize(serializer),
+        Some(oid) => oid.to_hex().serialize(serializer),
         None => serializer.serialize_none(),
     }
 }
