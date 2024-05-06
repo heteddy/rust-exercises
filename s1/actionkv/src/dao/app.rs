@@ -1,6 +1,7 @@
 // use crate::config::mongo;
 // use anyhow::{Ok, Result};
 // use chrono::prelude::*;
+use futures::stream::{StreamExt, TryStreamExt};
 use chrono::{DateTime, Utc};
 use mongodb::bson;
 use mongodb::options;
@@ -124,7 +125,7 @@ impl AppRepo {
         }
     }
 
-    pub async fn insert_app(&self, app: &AppEntity) -> mongodb::error::Result<InsertOneResult> {
+    pub async fn insert_app(&self, app: & AppEntity) -> mongodb::error::Result<InsertOneResult> {
         // let opt = options::InsertOneOptions::build();
         let ret = self.col.insert_one(app, None).await;
         info!("dao insert app {:?}", app);
@@ -135,6 +136,20 @@ impl AppRepo {
             info!("insert error {:?}", ret);
             ret
         }
+    }
+
+    pub async fn list(&self, skip: u64, limit: i64) -> Vec<mongodb::error::Result<AppEntity,>> {
+        let opt = options::FindOptions::builder().limit(Some(limit)).skip(Some(skip)).build();
+        let mut cursor = self.col.find(None, opt).await;
+        let  mut v = Vec::new();
+        while let Some(doc) = cursor.as_mut().expect("REASON").next().await {
+            // println!("{:?}", doc);
+            // v.append(*(doc.clone()));
+            v.push(doc);
+        }
+// regular Stream uses collect() and collects into a Vec<Result<T>>
+//         let v = cursor.collect().await;
+        v
     }
 
     pub async fn get_app(&self, id: &String) -> Result<AppEntity, mongodb::error::Error> {

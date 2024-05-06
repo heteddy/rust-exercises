@@ -33,7 +33,7 @@ anyhow = "*"
 bson = { version = "2.10.0", features = ["chrono-0_4"] }
 validator = { version = "0.14.0", features = ["derive"] }
 axum-valid = "0.18.0"
-
+futures = { version = "0.3", features = ["thread-pool"] }
 
 [lib]
 name = "libakv"
