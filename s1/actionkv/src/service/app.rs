@@ -4,6 +4,7 @@ use crate::dao;
 use std::sync::{Arc, RwLock};
 use tracing::{event, Level, instrument, info};
 use crate::dao::app::AppEntity;
+use std::convert::AsRef;
 // use mongodb::error::Error as MongoError;
 // use mongodb::{options::ClientOptions, Client};
 
@@ -32,5 +33,11 @@ impl AppService {
         info!("list_all apps");
         let ret = self.repo.list(skip, limit).await;
         ret
+    }
+
+    #[instrument(skip_all)]
+    pub async fn get_app_by_id(&self, _id: impl AsRef<str> + std::fmt::Debug) -> Result<AppEntity, mongodb::error::Error> {
+        info!("get_app_by_id apps :{:?}", _id);
+        self.repo.get_app(_id).await
     }
 }

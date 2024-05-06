@@ -125,7 +125,7 @@ impl AppRepo {
         }
     }
 
-    pub async fn insert_app(&self, app: & AppEntity) -> mongodb::error::Result<InsertOneResult> {
+    pub async fn insert_app(&self, app: &AppEntity) -> mongodb::error::Result<InsertOneResult> {
         // let opt = options::InsertOneOptions::build();
         let ret = self.col.insert_one(app, None).await;
         info!("dao insert app {:?}", app);
@@ -138,10 +138,10 @@ impl AppRepo {
         }
     }
 
-    pub async fn list(&self, skip: u64, limit: i64) -> Vec<mongodb::error::Result<AppEntity,>> {
+    pub async fn list(&self, skip: u64, limit: i64) -> Vec<mongodb::error::Result<AppEntity, >> {
         let opt = options::FindOptions::builder().limit(Some(limit)).skip(Some(skip)).build();
         let mut cursor = self.col.find(None, opt).await;
-        let  mut v = Vec::new();
+        let mut v = Vec::new();
         while let Some(doc) = cursor.as_mut().expect("REASON").next().await {
             // println!("{:?}", doc);
             // v.append(*(doc.clone()));
@@ -152,7 +152,7 @@ impl AppRepo {
         v
     }
 
-    pub async fn get_app(&self, id: &String) -> Result<AppEntity, mongodb::error::Error> {
+    pub async fn get_app(&self, id: impl AsRef<str>) -> Result<AppEntity, mongodb::error::Error> {
         let opt = options::FindOneOptions::builder()
             .show_record_id(true)
             .build();
