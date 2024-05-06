@@ -1,34 +1,41 @@
-use crate::config::mongo;
+// use crate::config::mongo;
 // use anyhow::{Ok, Result};
-use chrono::prelude::*;
-use chrono::{DateTime, Duration, FixedOffset, Local, NaiveDate, NaiveDateTime, TimeZone, Utc};
+// use chrono::prelude::*;
+use chrono::{DateTime, Utc};
 use mongodb::bson;
 use mongodb::options;
 use mongodb::bson::serde_helpers::{
-    chrono_datetime_as_bson_datetime, hex_string_as_object_id, serialize_hex_string_as_object_id,
+    bson_datetime_as_rfc3339_string,
+    chrono_datetime_as_bson_datetime,
+    // hex_string_as_object_id,
+    // serialize_object_id_as_hex_string,
 };
-use std::str::FromStr;
 use mongodb::{
-    bson::{doc, extjson::de::Error, oid::ObjectId},
+    bson::{doc, oid::ObjectId},
     results::{InsertOneResult, UpdateResult}, //modify here
-    Client,
+    // Client,
     Collection,
 };
-
-use serde_derive::{Deserialize, Serialize};
-// use serde::{Serialize, Deserialize};
-use std::hash::Hasher;
-use serde_json::to_string;
-use tracing::info;
+// 需要引入这个trait
+use serde::{Serialize, Deserialize, Serializer};
+// 这个是derive 宏
+use serde_derive::{Serialize as SerializeMacro, Deserialize as DeserializeMacro};
+use std::result::Result;
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::pb;
-use crate::pb::app::AppReq;
+use serde_json::to_string;
+use std::hash::Hasher;
+use tracing::info;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, SerializeMacro, DeserializeMacro)]
 pub struct AppEntity {
     // serialize a hex string as an ObjectId and deserialize a hex string from an ObjectId
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<bson::oid::ObjectId>,
+    #[serde(
+    serialize_with = "serialize_object_id_option_as_hex_string",
+    rename = "_id",
+    skip_serializing_if = "Option::is_none"
+    )]
+    pub id: Option<ObjectId>,
     // pub id: Option<bson::oid::ObjectId>,
     // #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub app_id: String,
@@ -43,7 +50,7 @@ pub struct AppEntity {
     #[serde(with = "chrono_datetime_as_bson_datetime")]
     pub created_at: DateTime<Utc>,
     // 修改时间
-    #[serde(with = "chrono_datetime_as_bson_datetime")] //使用local不行
+    #[serde(with = "chrono_datetime_as_bson_datetime")]
     pub updated_at: DateTime<Utc>,
     // 删除时间
     pub deleted_at: u64,
@@ -67,7 +74,7 @@ impl Default for AppEntity {
 }
 
 impl From<pb::app::AppReq> for AppEntity {
-    fn from(value: AppReq) -> Self {
+    fn from(value: pb::app::AppReq) -> Self {
         AppEntity {
             id: None,
             app_id: value.app_id,
@@ -120,19 +127,24 @@ impl AppRepo {
     pub async fn insert_app(&self, app: &AppEntity) -> mongodb::error::Result<InsertOneResult> {
         // let opt = options::InsertOneOptions::build();
         let ret = self.col.insert_one(app, None).await;
-        info!("dao insert app {:?}",app);
+        info!("dao insert app {:?}", app);
         if let Ok(value) = ret {
-            info!("inserted id = {:?}",&value.inserted_id);
+            info!("inserted id = {:?}", &value.inserted_id);
             Ok(value)
-        }else{
-            info!("insert error {:?}",ret);
+        } else {
+            info!("insert error {:?}", ret);
             ret
         }
     }
 
     pub async fn get_app(&self, id: &String) -> Result<AppEntity, mongodb::error::Error> {
-        let opt = options::FindOneOptions::builder().show_record_id(true).build();
-        let ret = self.col.find_one(doc! {"_id": ObjectId::parse_str(id).unwrap()}, opt).await;
+        let opt = options::FindOneOptions::builder()
+            .show_record_id(true)
+            .build();
+        let ret = self
+            .col
+            .find_one(doc! {"_id": ObjectId::parse_str(id).unwrap()}, opt)
+            .await;
         println!("{:?}", ret);
 
         // ret.ok().expect("");
@@ -144,7 +156,6 @@ impl AppRepo {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -198,4 +209,14 @@ mod tests {
     //     };
     //     let ret = app_repo.insert_app(&entity).await;
     // }
+}
+
+fn serialize_object_id_option_as_hex_string<S: Serializer>(
+    val: &Option<ObjectId>,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    match val {
+        Some(oid) => oid.serialize(serializer),
+        None => serializer.serialize_none(),
+    }
 }

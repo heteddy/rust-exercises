@@ -1,7 +1,7 @@
 #![cfg_attr(
     debug_assertions,
     allow(
-        unused,
+        // unused,
         dead_code,
         unused_imports,
         unused_variables,

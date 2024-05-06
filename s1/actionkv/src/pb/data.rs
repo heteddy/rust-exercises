@@ -1,6 +1,6 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use serde_derive::{Deserialize, Serialize};
-use std::convert::TryInto;
+// use std::convert::TryInto;
 
 pub type ByteStr = [u8];
 pub type ByteString = Vec<u8>;

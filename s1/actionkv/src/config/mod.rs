@@ -14,6 +14,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilte
 pub async fn global_configure() {
     tracing_subscriber::fmt()
         .with_max_level(Level::INFO)
+        .pretty()
         .init();
     // 这里必须await，并且需要在tokio中初始化，否则可以使用lazy static(无法await),需要调用tokio的 runtime
     mongo::init_mongodb(&(cc::GLOBAL_CONFIG.lock().unwrap().mongo)).await;

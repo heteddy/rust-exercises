@@ -1,9 +1,9 @@
 #![cfg_attr(
 debug_assertions,
 allow(
-unused,
+// unused,
 dead_code,
-unused_imports,
+// unused_imports,
 unused_variables,
 unused_assignments,
 non_snake_case
@@ -21,7 +21,7 @@ non_snake_case
 // };
 // use clap::{Parser, Subcommand};
 
-use chrono::Utc;
+// use chrono::Utc;
 use libakv::{
     config,
     transport::http,
@@ -32,7 +32,7 @@ use tokio::net::TcpListener;
 // use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 // use tracing::{event, info, info_span, instrument, span, span::Span, warn, Level};
 use tracing::{info, warn, debug};
-use libakv::dao::app::AppEntity;
+// use libakv::dao::app::AppEntity;
 
 #[tokio::main]
 async fn main() {

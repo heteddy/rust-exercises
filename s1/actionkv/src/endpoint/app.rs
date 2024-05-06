@@ -13,13 +13,13 @@ use crate::dao::app::AppEntity;
 async fn create_app(
     State(repo): State<service::app::AppService>,
     Json(payload): Json<pb::app::AppReq>,
-) -> Json<pb::RespV0<dao::app::AppEntity>> {
+) -> Json<AppEntity> {
     let s = span!(Level::INFO, "create_app");
     let _enter = s.enter();
     event!(Level::INFO, "endpoint create app {:?}", payload);
     let app = AppEntity::from(payload);
     let u = repo.create_app_service(app).await;
-    Json(pb::RespV0::from_result(&u))
+    Json(u)
 }
 
 

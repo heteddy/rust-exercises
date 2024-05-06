@@ -150,7 +150,7 @@ impl KakfaSource {
                     Vec<u8> -> String--| String::from_utf8(s).unwrap()
                     Vec<u8> -> &[u8]---| &s if possible* else s.as_slice()
                     */
-                    tx.send(KafkaMsg::new(
+                    let _ = tx.send(KafkaMsg::new(
                         m.key().map(|s| s.to_vec()),
                         payload.as_bytes().to_vec(),
                     ))
@@ -182,7 +182,7 @@ impl KakfaSource {
                 }
             }
         }
-        Ok(())
+        // Ok(())
     }
 }
 
