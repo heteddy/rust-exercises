@@ -4,6 +4,7 @@ use serde::{de::DeserializeOwned, Serialize, Deserialize}; // 这个serialize是
 
 pub mod app;
 pub mod data;
+pub mod error;
 
 pub const CODE_SUCCESS: StatusCode = StatusCode::OK;
 pub const CODE_FAIL: StatusCode = StatusCode::BAD_REQUEST;
