@@ -1,41 +1,39 @@
-
 // use crate::config::mongo;
 // use chrono::prelude::*;
-use futures::stream::{StreamExt, TryStreamExt};
 use chrono::{DateTime, Utc};
-use mongodb::bson;
-use mongodb::options;
+use futures::stream::{StreamExt, TryStreamExt};
 use mongodb::bson::serde_helpers::{
     bson_datetime_as_rfc3339_string,
     chrono_datetime_as_bson_datetime,
     // hex_string_as_object_id,
     // serialize_object_id_as_hex_string,
 };
+use mongodb::options;
 use mongodb::{
-    bson::{doc, oid::ObjectId,Bson},
+    bson::{self, doc, oid::ObjectId, Bson},
     results::{InsertOneResult, UpdateResult}, //modify here
     // Client,
     Collection,
 };
 // 需要引入这个trait
-use serde::{Serialize, Deserialize, Serializer};
+use serde::{Deserialize, Serialize, Serializer};
 // 这个是derive 宏
-use serde_derive::{Serialize as SerializeMacro, Deserialize as DeserializeMacro};
-use std::result::Result;
-use std::str::FromStr;
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::pb;
+use serde_derive::{Deserialize as DeserializeMacro, Serialize as SerializeMacro};
 use serde_json::to_string;
 use std::hash::Hasher;
+use std::result::Result;
+use std::str::FromStr;
 use tracing::info;
 
 #[derive(Debug, Clone, SerializeMacro, DeserializeMacro)]
 pub struct AppEntity {
     // serialize a hex string as an ObjectId and deserialize a hex string from an ObjectId
     #[serde(
-    serialize_with = "serialize_object_id_option_as_hex_string",
-    rename = "_id",
-    skip_serializing_if = "Option::is_none"
+        serialize_with = "serialize_object_id_option_as_hex_string",
+        rename = "_id",
+        skip_serializing_if = "Option::is_none"
     )]
     pub id: Option<ObjectId>,
     // pub id: Option<bson::oid::ObjectId>,
@@ -49,11 +47,11 @@ pub struct AppEntity {
     //子系统名称
     pub system: String,
     // 创建时间
-    #[serde(with = "chrono_datetime_as_bson_datetime")]
-    pub created_at: DateTime<Utc>,
+    #[serde(with = "bson_datetime_as_rfc3339_string")]
+    pub created_at: bson::DateTime,
     // 修改时间
-    #[serde(with = "chrono_datetime_as_bson_datetime")]
-    pub updated_at: DateTime<Utc>,
+    #[serde(with = "bson_datetime_as_rfc3339_string")]
+    pub updated_at: bson::DateTime,
     // 删除时间
     pub deleted_at: u64,
 }
@@ -68,8 +66,8 @@ impl Default for AppEntity {
             tenant: "".into(),
             liaison: "".to_owned(),
             system: "".to_owned(), // 子系统编号
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
+            created_at: bson::DateTime::now(),
+            updated_at: bson::DateTime::now(),
             deleted_at: 0,
         }
     }
@@ -84,8 +82,8 @@ impl From<pb::app::AppReq> for AppEntity {
             tenant: value.tenant,
             liaison: value.liaison,
             system: value.system, // 子系统编号
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
+            created_at: bson::DateTime::now(),
+            updated_at: bson::DateTime::now(),
             deleted_at: 0,
         }
     }
@@ -103,8 +101,8 @@ impl Eq for AppEntity {}
 // 可以作为set和map的key
 impl std::hash::Hash for AppEntity {
     fn hash<H: Hasher>(&self, state: &mut H)
-        where
-            H: Hasher,
+    where
+        H: Hasher,
     {
         self.app_id.hash(state)
     }
@@ -115,7 +113,7 @@ pub struct AppRepo {
     pub col: Collection<AppEntity>,
 }
 
-    impl AppRepo {
+impl AppRepo {
     pub fn init(db: &str, collection: &str) -> Self {
         AppRepo {
             col: MONGO_CLIENT
@@ -126,7 +124,7 @@ pub struct AppRepo {
         }
     }
 
-    pub async fn insert_app(&self, app: &AppEntity) -> Result<AppEntity,mongodb::error::Error>//mongodb::error::Result<InsertOneResult> 
+    pub async fn insert_app(&self, app: &AppEntity) -> Result<AppEntity, mongodb::error::Error> //mongodb::error::Result<InsertOneResult>
     {
         // let opt = options::InsertOneOptions::build();
         let ret = self.col.insert_one(app, None).await?;
@@ -134,9 +132,7 @@ pub struct AppRepo {
         info!("inserted id = {:?}", &ret.inserted_id);
         // let mut entity = app.into();
         let _oid = match ret.inserted_id {
-            Bson::ObjectId(_id) =>{
-                Some(_id)
-            },
+            Bson::ObjectId(_id) => Some(_id),
             _ => None,
         };
         let mut app2 = app.clone();
@@ -144,8 +140,15 @@ pub struct AppRepo {
         Ok(app2)
     }
 
-    pub async fn list(&self, skip: u64, limit: i64) -> Result<Vec<AppEntity>,mongodb::error::Error> {
-        let opt = options::FindOptions::builder().limit(Some(limit)).skip(Some(skip)).build();
+    pub async fn list(
+        &self,
+        skip: u64,
+        limit: i64,
+    ) -> Result<Vec<AppEntity>, mongodb::error::Error> {
+        let opt = options::FindOptions::builder()
+            .limit(Some(limit))
+            .skip(Some(skip))
+            .build();
         let mut cursor = self.col.find(None, opt).await?;
         let mut v = Vec::new();
         while let Some(doc) = cursor.next().await {
