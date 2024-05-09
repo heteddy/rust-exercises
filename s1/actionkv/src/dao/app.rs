@@ -1,5 +1,5 @@
+
 // use crate::config::mongo;
-// use anyhow::{Ok, Result};
 // use chrono::prelude::*;
 use futures::stream::{StreamExt, TryStreamExt};
 use chrono::{DateTime, Utc};
@@ -12,7 +12,7 @@ use mongodb::bson::serde_helpers::{
     // serialize_object_id_as_hex_string,
 };
 use mongodb::{
-    bson::{doc, oid::ObjectId},
+    bson::{doc, oid::ObjectId,Bson},
     results::{InsertOneResult, UpdateResult}, //modify here
     // Client,
     Collection,
@@ -22,6 +22,7 @@ use serde::{Serialize, Deserialize, Serializer};
 // 这个是derive 宏
 use serde_derive::{Serialize as SerializeMacro, Deserialize as DeserializeMacro};
 use std::result::Result;
+use std::str::FromStr;
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::pb;
 use serde_json::to_string;
@@ -114,7 +115,7 @@ pub struct AppRepo {
     pub col: Collection<AppEntity>,
 }
 
-impl AppRepo {
+    impl AppRepo {
     pub fn init(db: &str, collection: &str) -> Self {
         AppRepo {
             col: MONGO_CLIENT
@@ -125,31 +126,34 @@ impl AppRepo {
         }
     }
 
-    pub async fn insert_app(&self, app: &AppEntity) -> mongodb::error::Result<InsertOneResult> {
+    pub async fn insert_app(&self, app: &AppEntity) -> Result<AppEntity,mongodb::error::Error>//mongodb::error::Result<InsertOneResult> 
+    {
         // let opt = options::InsertOneOptions::build();
-        let ret = self.col.insert_one(app, None).await;
+        let ret = self.col.insert_one(app, None).await?;
         info!("dao insert app {:?}", app);
-        if let Ok(value) = ret {
-            info!("inserted id = {:?}", &value.inserted_id);
-            Ok(value)
-        } else {
-            info!("insert error {:?}", ret);
-            ret
-        }
+        info!("inserted id = {:?}", &ret.inserted_id);
+        // let mut entity = app.into();
+        let _oid = match ret.inserted_id {
+            Bson::ObjectId(_id) =>{
+                Some(_id)
+            },
+            _ => None,
+        };
+        let mut app2 = app.clone();
+        app2.id = _oid;
+        Ok(app2)
     }
 
-    pub async fn list(&self, skip: u64, limit: i64) -> Vec<mongodb::error::Result<AppEntity, >> {
+    pub async fn list(&self, skip: u64, limit: i64) -> Result<Vec<AppEntity>,mongodb::error::Error> {
         let opt = options::FindOptions::builder().limit(Some(limit)).skip(Some(skip)).build();
-        let mut cursor = self.col.find(None, opt).await;
+        let mut cursor = self.col.find(None, opt).await?;
         let mut v = Vec::new();
-        while let Some(doc) = cursor.as_mut().expect("REASON").next().await {
-            // println!("{:?}", doc);
-            // v.append(*(doc.clone()));
-            v.push(doc);
+        while let Some(doc) = cursor.next().await {
+            if doc.is_ok() {
+                v.push(doc.unwrap_or_default());
+            }
         }
-        // regular Stream uses collect() and collects into a Vec<Result<T>>
-        //         let v = cursor.collect().await;
-        v
+        Ok(v)
     }
 
     pub async fn get_app(&self, id: impl AsRef<str>) -> Result<AppEntity, mongodb::error::Error> {
@@ -159,14 +163,9 @@ impl AppRepo {
         let ret = self
             .col
             .find_one(doc! {"_id": ObjectId::parse_str(id).unwrap()}, opt)
-            .await;
+            .await?;
         // ret.ok().expect("");
-        if let Ok(Some(_app)) = ret {
-            println!("{:?}", _app);
-            Ok(_app)
-        } else {
-            Ok(AppEntity::default())
-        }
+        Ok(ret.unwrap_or_default())
     }
 }
 

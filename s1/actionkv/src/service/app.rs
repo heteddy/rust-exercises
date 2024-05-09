@@ -1,7 +1,9 @@
 // use crate::pb;
 use crate::config;
 use crate::dao;
+use crate::pb;
 use std::sync::{Arc, RwLock};
+
 use tracing::{event, Level, instrument, info};
 use crate::dao::app::AppEntity;
 use std::convert::AsRef;
@@ -23,21 +25,22 @@ impl AppService {
         }
     }
     #[instrument(skip_all)]
-    pub async fn create_app_service(&self, app: dao::app::AppEntity) -> dao::app::AppEntity {
+    pub async fn create_app_service(&self, app: dao::app::AppEntity) -> Result<dao::app::AppEntity,pb::error::ApiError> {
         info!("insert app {:?}",app.app_id);
-        let _ = self.repo.insert_app(&app).await;
-        app
+        let _app = self.repo.insert_app(&app).await?;
+        Ok(_app)
     }
     #[instrument(skip_all)]
-    pub async fn list_all(&self, skip: u64, limit: i64) -> Vec<Result<AppEntity, mongodb::error::Error>> {
+    pub async fn list_all(&self, skip: u64, limit: i64) -> Result<Vec<AppEntity>, pb::error::ApiError> {
         info!("list_all apps");
-        let ret = self.repo.list(skip, limit).await;
-        ret
+        let ret = self.repo.list(skip, limit).await?;
+        Ok(ret)
     }
 
     #[instrument(skip_all)]
-    pub async fn get_app_by_id(&self, _id: impl AsRef<str> + std::fmt::Debug) -> Result<AppEntity, mongodb::error::Error> {
+    pub async fn get_app_by_id(&self, _id: impl AsRef<str> + std::fmt::Debug) -> Result<AppEntity, pb::error::ApiError> {
         info!("get_app_by_id apps :{:?}", _id);
-        self.repo.get_app(_id).await
+        let ret = self.repo.get_app(_id).await?;
+        Ok(ret)
     }
 }
