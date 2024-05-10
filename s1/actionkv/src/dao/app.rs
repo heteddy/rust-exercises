@@ -159,14 +159,14 @@ impl AppRepo {
         Ok(v)
     }
 
-    pub async fn get_app(&self, id: impl AsRef<str>) -> Result<AppEntity, mongodb::error::Error> {
+    pub async fn get_app(&self, id: impl AsRef<str>) -> Result<AppEntity, pb::error::ApiError> {
         let opt = options::FindOneOptions::builder()
             .show_record_id(true)
             .build();
-        let ret = self
-            .col
-            .find_one(doc! {"_id": ObjectId::parse_str(id).unwrap()}, opt)
-            .await?;
+
+        let oid = ObjectId::parse_str(id)?;
+        
+        let ret = self.col.find_one(doc! {"_id": oid}, opt).await?;
         // ret.ok().expect("");
         Ok(ret.unwrap_or_default())
     }
