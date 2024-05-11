@@ -1,6 +1,6 @@
 use crate::dao;
 use crate::dao::app::AppEntity;
-use crate::pb;
+use crate::pb::{app::AppReq, error::ApiError, ApiResponse};
 use crate::service;
 use axum::extract::{Json, Path, Query, State};
 use axum::http::StatusCode;
@@ -17,15 +17,15 @@ use tracing::{event, info, instrument, span, Level};
 #[instrument(skip_all)]
 async fn create_app(
     State(svc): State<service::app::AppService>,
-    Json(payload): Json<pb::app::AppReq>,
-) -> Result<pb::ApiResponse<AppEntity>, pb::error::ApiError> {
+    Json(payload): Json<AppReq>,
+) -> Result<ApiResponse<AppEntity>, ApiError> {
     let s = span!(Level::INFO, "create_app");
     let _enter = s.enter();
     event!(Level::INFO, "endpoint create app {:?}", payload);
     let app = AppEntity::from(payload);
     let u = svc.create_app_service(app).await?;
     // Ok(Json(u))
-    Ok(pb::ApiResponse::from_result(&u))
+    Ok(ApiResponse::from_result(&u))
 }
 
 #[derive(Debug, Deserialize)]
@@ -38,10 +38,10 @@ struct Pagination {
 pub async fn list_apps(
     State(svc): State<service::app::AppService>,
     page: Query<Pagination>,
-) -> Result<pb::ApiResponse<Vec<AppEntity>>, pb::error::ApiError> {
+) -> Result<ApiResponse<Vec<AppEntity>>, ApiError> {
     event!(Level::INFO, "endpoint list all apps {:?}", page);
     let results = svc.list_all(page.skip, page.limit).await?;
-    Ok(pb::ApiResponse::from_result(&results))
+    Ok(ApiResponse::from_result(&results))
 
     // match results {
     //     Ok(entity) => Ok(pb::ApiResponse::from_result(&entity)),
@@ -57,17 +57,10 @@ pub async fn list_apps(
 pub async fn get_app(
     State(svc): State<service::app::AppService>,
     Path(id): Path<String>,
-) -> Result<pb::ApiResponse<AppEntity>, pb::error::ApiError> {
+) -> Result<ApiResponse<AppEntity>, ApiError> {
     event!(Level::INFO, "endpoint get path apps {:?}", id);
     let result = svc.get_app_by_id(&id).await?;
-    Ok(pb::ApiResponse::from_result(&result))
-    // match result {
-    //     Ok(entity) => Ok(pb::ApiResponse::from_result(&entity)),
-    //     Err(e) => Err((
-    //         StatusCode::INTERNAL_SERVER_ERROR,
-    //         pb::ApiResponse::from_error(e),
-    //     )),
-    // }
+    Ok(ApiResponse::from_result(&result))
 }
 
 pub fn register_app_route() -> Router {

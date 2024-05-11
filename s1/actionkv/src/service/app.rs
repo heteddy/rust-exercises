@@ -18,10 +18,11 @@ pub struct AppService {
 
 impl AppService {
     pub fn new() -> Self {
+        let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
         AppService {
             repo: dao::app::AppRepo::init(
-                &config::cc::GLOBAL_CONFIG.lock().unwrap().mongo.database,
-                "tb_app_collection",
+                &_configure.mongo.database,
+                &_configure.table.app,
             ),
         }
     }

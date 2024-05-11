@@ -8,13 +8,17 @@ use mongodb::bson::serde_helpers::{
     // hex_string_as_object_id,
     // serialize_object_id_as_hex_string,
 };
-use mongodb::options;
 use mongodb::{
     bson::{self, doc, oid::ObjectId, Bson},
+    options::{self, IndexOptions},
     results::{InsertOneResult, UpdateResult}, //modify here
+    Client,
     // Client,
     Collection,
+    IndexModel,
 };
+use std::time::Duration;
+use tokio::sync::OnceCell;
 // 需要引入这个trait
 use serde::{Deserialize, Serialize, Serializer};
 // 这个是derive 宏
@@ -25,6 +29,7 @@ use serde_json::to_string;
 use std::hash::Hasher;
 use std::result::Result;
 use std::str::FromStr;
+use std::vec;
 use tracing::info;
 
 #[derive(Debug, Clone, SerializeMacro, DeserializeMacro)]
@@ -114,14 +119,65 @@ pub struct AppRepo {
 }
 
 impl AppRepo {
+    pub async fn init_index() -> Result<(), pb::error::ApiError> {
+        let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
+
+        let col: mongodb::Collection<AppEntity> = MONGO_CLIENT
+            .get()
+            .unwrap()
+            .database(&_configure.mongo.database)
+            .collection(&_configure.table.app);
+
+        let uniqueOpt = IndexOptions::builder()
+            .unique(true)
+            .background(true)
+            .build();
+        let opt = IndexOptions::builder()
+            .unique(false)
+            .background(true)
+            .build();
+
+        let mut indices = Vec::new();
+
+        indices.push(
+            IndexModel::builder()
+                .keys(doc! {
+                    "updated_at":-1,"deleted_at":-1,
+                })
+                .options(opt.clone())
+                .build(),
+        );
+
+        indices.push(
+            IndexModel::builder()
+                .keys(doc! {
+                    "system":1,"deleted_at":-1,
+                })
+                .options(opt.clone())
+                .build(),
+        );
+        indices.push(
+            IndexModel::builder()
+                .keys(doc! {
+                    "app_id":1,"deleted_at":-1,
+                })
+                .options(uniqueOpt)
+                .build(),
+        );
+        let o = options::CreateIndexOptions::builder()
+            .max_time(Duration::from_secs(60))
+            .build();
+        col.create_indexes(indices, o).await?;
+        Ok(())
+    }
+
     pub fn init(db: &str, collection: &str) -> Self {
-        AppRepo {
-            col: MONGO_CLIENT
-                .get()
-                .unwrap()
-                .database(db)
-                .collection(collection),
-        }
+        let col = MONGO_CLIENT
+            .get()
+            .unwrap()
+            .database(db)
+            .collection(collection);
+        AppRepo { col: col }
     }
 
     pub async fn insert_app(&self, app: &AppEntity) -> Result<AppEntity, mongodb::error::Error> //mongodb::error::Result<InsertOneResult>
@@ -146,10 +202,12 @@ impl AppRepo {
         limit: i64,
     ) -> Result<Vec<AppEntity>, mongodb::error::Error> {
         let opt = options::FindOptions::builder()
+            .sort(doc! {"updated_at":-1,"deleted_at":1})
             .limit(Some(limit))
             .skip(Some(skip))
             .build();
-        let mut cursor = self.col.find(None, opt).await?;
+        let filters = doc! {"deleted_at":0};
+        let mut cursor = self.col.find(filters, opt).await?;
         let mut v = Vec::new();
         while let Some(doc) = cursor.next().await {
             if doc.is_ok() {
@@ -165,7 +223,7 @@ impl AppRepo {
             .build();
 
         let oid = ObjectId::parse_str(id)?;
-        
+
         let ret = self.col.find_one(doc! {"_id": oid}, opt).await?;
         // ret.ok().expect("");
         Ok(ret.unwrap_or_default())

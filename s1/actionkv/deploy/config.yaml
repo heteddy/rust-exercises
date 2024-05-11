@@ -14,4 +14,11 @@ mongo:
   user:
   pass:
   database: app_search
-  replica: 
+  replica:
+
+table:
+  app: tb_collection_app
+  index: tb_collection_index
+  setting: tb_collection_setting
+  mapping: tb_collection_mapping
+  template: tb_collection_template

@@ -47,6 +47,16 @@ pub struct Configure {
     pub kafka_config: KafkaConfig,
     pub redis: RedisConfig,
     pub mongo: MongoConfig,
+    pub table: Table,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Table {
+    pub app: String,
+    pub index: String,
+    pub setting: String,
+    pub mapping: String,
+    pub template: String,
 }
 
 impl Configure {
@@ -61,7 +71,7 @@ impl Configure {
         let yaml_str = fs::read_to_string(p).unwrap();
         let de = serde_yaml::Deserializer::from_str(&yaml_str);
         let value = Configure::deserialize(de).unwrap();
-        println!("configure={:?}", value);
+        println!("{}",serde_json::to_string_pretty(&value).unwrap());
         value
     }
     /// 通过环境变量更新

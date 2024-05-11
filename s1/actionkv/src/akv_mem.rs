@@ -24,6 +24,7 @@ non_snake_case
 // use chrono::Utc;
 use libakv::{
     config,
+    dao,
     transport::http,
     // dao,
 };
@@ -39,6 +40,7 @@ async fn main() {
     // thread::sleep(Duration::from_secs(2));
     // 这里会阻塞
     config::global_configure().await;
+    let result = dao::init_indexes().await;
     //
     warn!("start tracing subscriber");
     info!("start app");
