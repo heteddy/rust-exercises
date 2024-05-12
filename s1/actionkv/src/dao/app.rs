@@ -31,6 +31,7 @@ use std::result::Result;
 use std::str::FromStr;
 use std::vec;
 use tracing::info;
+use crate::utils::bson_time::bson_datetime_as_string;
 
 #[derive(Debug, Clone, SerializeMacro, DeserializeMacro)]
 pub struct AppEntity {
@@ -52,10 +53,10 @@ pub struct AppEntity {
     //子系统名称
     pub system: String,
     // 创建时间
-    #[serde(with = "bson_datetime_as_rfc3339_string")]
+    #[serde(with = "bson_datetime_as_string")]
     pub created_at: bson::DateTime,
     // 修改时间
-    #[serde(with = "bson_datetime_as_rfc3339_string")]
+    #[serde(with = "bson_datetime_as_string")]
     pub updated_at: bson::DateTime,
     // 删除时间
     pub deleted_at: u64,
@@ -119,7 +120,7 @@ pub struct AppRepo {
 }
 
 impl AppRepo {
-    pub async fn init_index() -> Result<(), pb::error::ApiError> {
+    pub async fn create_index() -> Result<(), pb::error::ApiError> {
         let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
 
         let col: mongodb::Collection<AppEntity> = MONGO_CLIENT
@@ -135,10 +136,11 @@ impl AppRepo {
         let opt = IndexOptions::builder()
             .unique(false)
             .background(true)
+            
             .build();
 
         let mut indices = Vec::new();
-
+        // note 没有指定名字，默认生成，导致问题是修改比较困难
         indices.push(
             IndexModel::builder()
                 .keys(doc! {

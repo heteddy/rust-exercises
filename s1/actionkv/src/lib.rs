@@ -22,3 +22,4 @@ pub mod endpoint;
 pub mod service;
 pub mod pb;
 pub mod dao;
+pub mod utils;

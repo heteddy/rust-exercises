@@ -10,7 +10,7 @@ use crate::{
 };
 
 pub async fn init_indexes() -> Result<(), pb::error::ApiError> {
-    let _ = app::AppRepo::init_index().await.map_err(|e| {
+    let _ = app::AppRepo::create_index().await.map_err(|e| {
         error!("init app repo index error {:?}", e);
         ()
     });
