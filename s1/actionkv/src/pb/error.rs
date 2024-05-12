@@ -13,22 +13,22 @@ use std::io::Error as IOErr;
 // 定义
 
 #[derive(Debug)]
-pub struct InteralError(String);
+pub struct InternalError(String);
 
-// impl IntoResponse for InteralError {
+// impl IntoResponse for InternalError {
 //     fn into_response(self) -> Response {
 //         self.0.into_response()
 //     }
 // }
 
-impl fmt::Display for InteralError {
+impl Display for InternalError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         write!(f, "{}", self)
     }
 }
 
-impl std::error::Error for InteralError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl Error for InternalError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         // 泛型错误，没有记录其内部原因。
         None
     }
@@ -38,7 +38,7 @@ impl std::error::Error for InteralError {
 pub enum ApiError {
     IOError(IOErr),
     DBError(mongodb::error::Error),
-    InternalServerError(InteralError),
+    InternalServerError(InternalError),
     BsonError(bson::oid::Error),
 }
 
@@ -82,8 +82,8 @@ impl From<mongodb::error::Error> for ApiError {
     }
 }
 
-impl From<InteralError> for ApiError {
-    fn from(value: InteralError) -> Self {
+impl From<InternalError> for ApiError {
+    fn from(value: InternalError) -> Self {
         Self::InternalServerError(value)
     }
 }
@@ -102,7 +102,7 @@ impl IntoResponse for ApiError {
         let msg = format!("{:?}", &self);
 
         let err_resp: ErrorResponse = ErrorResponse::new(&msg);
-        
+
         let status_code = match self {
             // Self::IOError(e) => Some(e),
             // Self::DBError(e) => Some(e),
@@ -118,6 +118,7 @@ pub struct ErrorResponse<'a> {
     code: Option<u16>,
     msg: &'a str,
 }
+
 pub const CODE_INTERNAL_ERROR: StatusCode = StatusCode::INTERNAL_SERVER_ERROR;
 pub const CODE_BAD_REQUEST: StatusCode = StatusCode::BAD_REQUEST;
 

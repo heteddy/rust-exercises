@@ -25,7 +25,7 @@ async fn create_app(
     let app = AppEntity::from(payload);
     let u = svc.create_app_service(app).await?;
     // Ok(Json(u))
-    Ok(ApiResponse::from_result(&u))
+    Ok(ApiResponse::from_result(u))
 }
 
 #[derive(Debug, Deserialize)]
@@ -41,7 +41,7 @@ pub async fn list_apps(
 ) -> Result<ApiResponse<Vec<AppEntity>>, ApiError> {
     event!(Level::INFO, "endpoint list all apps {:?}", page);
     let results = svc.list_all(page.skip, page.limit).await?;
-    Ok(ApiResponse::from_result(&results))
+    Ok(ApiResponse::from_result(results))
 
     // match results {
     //     Ok(entity) => Ok(pb::ApiResponse::from_result(&entity)),
@@ -60,7 +60,7 @@ pub async fn get_app(
 ) -> Result<ApiResponse<AppEntity>, ApiError> {
     event!(Level::INFO, "endpoint get path apps {:?}", id);
     let result = svc.get_app_by_id(&id).await?;
-    Ok(ApiResponse::from_result(&result))
+    Ok(ApiResponse::from_result(result))
 }
 
 pub fn register_app_route() -> Router {

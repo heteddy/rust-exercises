@@ -43,23 +43,24 @@ pub mod bson_datetime_as_string {
         val: &bson::DateTime,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        let formatted = try_to_local_string(val).map_err(|e| {
+        let formatted = try_to_local_time_string(val).map_err(|e| {
             ser::Error::custom(format!("cannot format {} as local time: {:?}", val, e))
         })?;
         serializer.serialize_str(&formatted)
     }
 }
 
-fn try_to_local_string(d: &bson::DateTime) -> Result<String, InteralError> {
+fn try_to_local_time_string(d: &bson::DateTime) -> Result<String, InteralError> {
     let dt = d.to_time_0_3();
     let local = dt.to_offset(offset!(+8));
-    local.format(&f).map_err(|e| InteralError(e.to_string()))
+    let f = format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
+    local.format(f).map_err(|e| InteralError(e.to_string()))
 }
 
-fn parse_local_string(s: impl AsRef<str>) -> Result<bson::DateTime, InteralError> {
+fn parse_local_time_string(s: impl AsRef<str>) -> Result<bson::DateTime, InteralError> {
     let f = format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
     let odt =
-        time::OffsetDateTime::parse(s.as_ref(), &f).map_err(|e| InteralError(e.to_string()))?;
+        time::OffsetDateTime::parse(s.as_ref(), f).map_err(|e| InteralError(e.to_string()))?;
     Ok(bson::DateTime::from_time_0_3(odt))
 }
 
