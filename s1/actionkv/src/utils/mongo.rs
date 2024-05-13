@@ -1,9 +1,9 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use mongodb::bson::{self, oid::ObjectId};
 use mongodb::error::Error as MongoError;
-use mongodb::{bson::{self, oid::ObjectId}};
 use serde::{
     de::{self, Deserialize},
-    ser, Deserializer, Serializer, Serialize,
+    ser, Deserializer, Serialize, Serializer,
 };
 use std::fmt::{self, Display};
 use std::result::Result;
@@ -34,8 +34,8 @@ pub mod bson_datetime_as_string {
 
     /// Deserializes a [`crate::DateTime`] from an RFC 3339 formatted string.
     pub fn deserialize<'de, D>(deserializer: D) -> Result<bson::DateTime, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         let iso = String::deserialize(deserializer)?;
         let date = NaiveDateTime::parse_from_str(&iso, FORMAT).map_err(|e| {
@@ -61,14 +61,14 @@ pub mod bson_datetime_as_string {
     }
 }
 
-fn try_to_local_time_string(d: &bson::DateTime) -> Result<String, InteralError> {
+pub fn try_to_local_time_string(d: &bson::DateTime) -> Result<String, InteralError> {
     let dt = d.to_time_0_3();
     let local = dt.to_offset(offset!(+8));
     let f = format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
     local.format(f).map_err(|e| InteralError(e.to_string()))
 }
 
-fn parse_local_time_string(s: impl AsRef<str>) -> Result<bson::DateTime, InteralError> {
+pub fn parse_local_time_string(s: impl AsRef<str>) -> Result<bson::DateTime, InteralError> {
     let f = format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
     let odt =
         time::OffsetDateTime::parse(s.as_ref(), f).map_err(|e| InteralError(e.to_string()))?;

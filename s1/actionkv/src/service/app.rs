@@ -1,11 +1,11 @@
 // use crate::pb;
 use crate::config;
 use crate::dao;
-use crate::pb;
-use std::sync::{Arc, RwLock};
-
 use crate::dao::app::AppEntity;
+use crate::pb;
 use std::convert::AsRef;
+use std::fmt::{Debug, Display};
+use std::sync::{Arc, RwLock};
 use tracing::{event, info, instrument, Level};
 // use mongodb::error::Error as MongoError;
 // use mongodb::{options::ClientOptions, Client};
@@ -20,14 +20,11 @@ impl AppService {
     pub fn new() -> Self {
         let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
         AppService {
-            repo: dao::app::AppRepo::init(
-                &_configure.mongo.database,
-                &_configure.table.app,
-            ),
+            repo: dao::app::AppRepo::init(&_configure.mongo.database, &_configure.table.app),
         }
     }
     #[instrument(skip_all)]
-    pub async fn create_app_service(
+    pub async fn create_app(
         &self,
         app: dao::app::AppEntity,
     ) -> Result<dao::app::AppEntity, pb::error::ApiError> {
@@ -35,6 +32,18 @@ impl AppService {
         let _app = self.repo.insert_app(&app).await?;
         Ok(_app)
     }
+
+    #[instrument(skip_all)]
+    pub async fn update_app(
+        &self,
+        _id: impl AsRef<str> + Debug,
+        app: dao::app::AppEntity,
+    ) -> Result<dao::app::AppEntity, pb::error::ApiError> {
+        info!("update app {:?}", app.app_id);
+        let _app = self.repo.update_app_by_id(_id, &app).await?;
+        Ok(_app)
+    }
+
     #[instrument(skip_all)]
     pub async fn list_all(
         &self,
@@ -49,10 +58,20 @@ impl AppService {
     #[instrument(skip_all)]
     pub async fn get_app_by_id(
         &self,
-        _id: impl AsRef<str> + std::fmt::Debug,
+        _id: impl AsRef<str> + Debug,
     ) -> Result<AppEntity, pb::error::ApiError> {
         info!("get_app_by_id apps :{:?}", _id);
-        let ret = self.repo.get_app(_id).await?;
+        let ret = self.repo.get_app_by_id(_id).await?;
+        Ok(ret)
+    }
+
+    #[instrument(skip_all)]
+    pub async fn delete_app_by_id(
+        &self,
+        _id: impl AsRef<str> + Debug,
+    ) -> Result<AppEntity, pb::error::ApiError> {
+        info!("delete_app_by_id apps :{:?}", _id);
+        let ret = self.repo.soft_delete_app_by_id(_id).await?;
         Ok(ret)
     }
 }

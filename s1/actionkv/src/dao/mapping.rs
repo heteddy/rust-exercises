@@ -44,5 +44,5 @@ pub struct MappingEntity {
     created_at: bson::DateTime,
     #[serde(with = "bson_datetime_as_string")]
     updated_at: bson::DateTime,
-    deleted_at: u64,
+    deleted_at: i64,
 }

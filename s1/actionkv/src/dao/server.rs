@@ -46,5 +46,5 @@ pub struct ServerEntity {
     pub created_at: bson::DateTime,
     #[serde(with = "bson_datetime_as_string")]
     pub updated_at: bson::DateTime,
-    pub deleted_at: u64,
+    pub deleted_at: i64,
 }

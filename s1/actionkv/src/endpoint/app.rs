@@ -23,7 +23,7 @@ async fn create_app(
     let _enter = s.enter();
     event!(Level::INFO, "endpoint create app {:?}", payload);
     let app = AppEntity::from(payload);
-    let u = svc.create_app_service(app).await?;
+    let u = svc.create_app(app).await?;
     // Ok(Json(u))
     Ok(ApiResponse::from_result(u))
 }
@@ -63,10 +63,22 @@ pub async fn get_app(
     Ok(ApiResponse::from_result(result))
 }
 
+#[instrument(skip_all)]
+pub async fn update_app(
+    State(svc): State<service::app::AppService>,
+    Path(id): Path<String>,
+    Json(payload): Json<AppReq>,
+) -> Result<ApiResponse<AppEntity>, ApiError> {
+    event!(Level::INFO, "endpoint update path apps {:?}", id);
+    // 这里实现了from，因此类型不匹配可以直接传
+    let result = svc.update_app(&id, payload.into()).await?;
+    Ok(ApiResponse::from_result(result))
+}
+
 pub fn register_app_route() -> Router {
     let svc = service::app::AppService::new();
     let mut app_route = Router::new();
     app_route = app_route.route("/apps", post(create_app).get(list_apps));
-    app_route = app_route.route("/apps/:id", get(get_app));
+    app_route = app_route.route("/apps/:id", get(get_app).put(update_app));
     Router::new().nest("/api", app_route).with_state(svc)
 }

@@ -1,6 +1,6 @@
 // use crate::config::mongo;
 // use chrono::prelude::*;
-// use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local, Utc};
 use futures::stream::{StreamExt, TryStreamExt};
 //cursor 使用
 use mongodb::bson::serde_helpers::{
@@ -26,6 +26,7 @@ use serde::{Deserialize, Serialize, Serializer};
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
 use crate::pb;
+use crate::utils::mongo::try_to_local_time_string;
 use crate::utils::mongo::{bson_datetime_as_string, serialize_object_id_option_as_hex_string};
 use serde_json::to_string;
 use std::hash::Hasher;
@@ -38,9 +39,9 @@ use tracing::info;
 pub struct AppEntity {
     // serialize a hex string as an ObjectId and deserialize a hex string from an ObjectId
     #[serde(
-    serialize_with = "serialize_object_id_option_as_hex_string",
-    rename = "_id",
-    skip_serializing_if = "Option::is_none"
+        serialize_with = "serialize_object_id_option_as_hex_string",
+        rename = "_id",
+        skip_serializing_if = "Option::is_none"
     )]
     pub id: Option<ObjectId>,
     // pub id: Option<bson::oid::ObjectId>,
@@ -60,7 +61,7 @@ pub struct AppEntity {
     #[serde(with = "bson_datetime_as_string")]
     pub updated_at: bson::DateTime,
     // 删除时间
-    pub deleted_at: u64,
+    pub deleted_at: i64,
 }
 
 impl Default for AppEntity {
@@ -108,8 +109,8 @@ impl Eq for AppEntity {}
 // 可以作为set和map的key
 impl std::hash::Hash for AppEntity {
     fn hash<H: Hasher>(&self, state: &mut H)
-        where
-            H: Hasher,
+    where
+        H: Hasher,
     {
         self.app_id.hash(state)
     }
@@ -179,10 +180,10 @@ impl AppRepo {
             .unwrap()
             .database(db)
             .collection(collection);
-        AppRepo { col: col }
+        AppRepo { col }
     }
 
-    pub async fn insert_app(&self, app: &AppEntity) -> Result<AppEntity, mongodb::error::Error> //mongodb::error::Result<InsertOneResult>
+    pub async fn insert_app(&self, app: &AppEntity) -> Result<AppEntity, pb::error::ApiError> //mongodb::error::Result<InsertOneResult>
     {
         // let opt = options::InsertOneOptions::build();
         let ret = self.col.insert_one(app, None).await?;
@@ -197,7 +198,31 @@ impl AppRepo {
         app2.id = _oid;
         Ok(app2)
     }
-
+    pub async fn update_app_by_id(
+        &self,
+        id: impl AsRef<str>,
+        app: &AppEntity,
+    ) -> Result<AppEntity, pb::error::ApiError> {
+        let opt = options::FindOneAndUpdateOptions::builder()
+            .upsert(false)
+            .build();
+        let oid = ObjectId::parse_str(id)?;
+        let seconds = Local::now().timestamp();
+        let update = doc! {
+            "$set": doc! {
+            "updated_at": try_to_local_time_string(&bson::DateTime::now()).unwrap(), // todo: 时间的定义还是不对, 写入应该是bson::DateTime, 读出来是string
+            "tenant": &app.tenant,
+            "liaison": &app.liaison,
+            "system": &app.system,
+            }
+        };
+        let ret = self
+            .col
+            .find_one_and_update(doc! {"_id": oid}, update, opt)
+            .await?;
+        // ret.ok().expect("");
+        Ok(ret.unwrap_or_default())
+    }
     pub async fn list(
         &self,
         skip: u64,
@@ -219,7 +244,10 @@ impl AppRepo {
         Ok(v)
     }
 
-    pub async fn get_app(&self, id: impl AsRef<str>) -> Result<AppEntity, pb::error::ApiError> {
+    pub async fn get_app_by_id(
+        &self,
+        id: impl AsRef<str>,
+    ) -> Result<AppEntity, pb::error::ApiError> {
         let opt = options::FindOneOptions::builder()
             .show_record_id(true)
             .build();
@@ -227,6 +255,51 @@ impl AppRepo {
         let oid = ObjectId::parse_str(id)?;
 
         let ret = self.col.find_one(doc! {"_id": oid}, opt).await?;
+        // ret.ok().expect("");
+        Ok(ret.unwrap_or_default())
+    }
+    pub async fn get_app_by_app_id(
+        &self,
+        app_id: impl AsRef<str>,
+    ) -> Result<AppEntity, pb::error::ApiError> {
+        let opt = options::FindOneOptions::builder()
+            .show_record_id(true)
+            .build();
+
+        let ret = self
+            .col
+            .find_one(doc! {"app_id": app_id.as_ref()}, opt)
+            .await?;
+        // ret.ok().expect("");
+        Ok(ret.unwrap_or_default())
+    }
+
+    pub async fn delete_app_by_id(
+        &self,
+        id: impl AsRef<str>,
+    ) -> Result<AppEntity, pb::error::ApiError> {
+        let opt = options::FindOneAndDeleteOptions::builder()
+            // .show_record_id(true)
+            .build();
+        let oid = ObjectId::parse_str(id)?;
+        let ret = self.col.find_one_and_delete(doc! {"_id": oid}, opt).await?;
+        // ret.ok().expect("");
+        Ok(ret.unwrap_or_default())
+    }
+    pub async fn soft_delete_app_by_id(
+        &self,
+        id: impl AsRef<str>,
+    ) -> Result<AppEntity, pb::error::ApiError> {
+        let opt = options::FindOneAndUpdateOptions::builder()
+            .upsert(false)
+            .build();
+        let oid = ObjectId::parse_str(id)?;
+        let seconds = Local::now().timestamp();
+        let update = doc! { "$set": doc! { "deleted_at": bson::Bson::from(seconds)  } };
+        let ret = self
+            .col
+            .find_one_and_update(doc! {"_id": oid}, update, opt)
+            .await?;
         // ret.ok().expect("");
         Ok(ret.unwrap_or_default())
     }
