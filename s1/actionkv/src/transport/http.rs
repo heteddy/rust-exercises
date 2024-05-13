@@ -28,9 +28,8 @@ pub fn init_app() -> Router {
     app = app
         .route("/", get(hello_world))
         .merge(app::register_app_route())
-        // .merge(user::register_user())
         .fallback(fallback);
-
+    
     app = app.layer(
         ServiceBuilder::new()
             .layer(

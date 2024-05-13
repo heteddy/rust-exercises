@@ -1,7 +1,7 @@
 // use crate::config::mongo;
 // use chrono::prelude::*;
-use chrono::{DateTime, Utc};
-use futures::stream::{StreamExt, TryStreamExt};
+// use chrono::{DateTime, Utc};
+use futures::stream::{StreamExt, TryStreamExt}; //cursor 使用
 use mongodb::bson::serde_helpers::{
     bson_datetime_as_rfc3339_string,
     chrono_datetime_as_bson_datetime,
@@ -20,20 +20,20 @@ use mongodb::{
 use std::time::Duration;
 use tokio::sync::OnceCell;
 // 需要引入这个trait
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize,Serialize, Serializer};
 // 这个是derive 宏
 use crate::config::{self, mongo::MONGO_CLIENT};
+use crate::dao;
 use crate::pb;
-use serde_derive::{Deserialize as DeserializeMacro, Serialize as SerializeMacro};
+use crate::utils::mongo::{bson_datetime_as_string, serialize_object_id_option_as_hex_string};
 use serde_json::to_string;
 use std::hash::Hasher;
 use std::result::Result;
 use std::str::FromStr;
 use std::vec;
 use tracing::info;
-use crate::utils::bson_time::bson_datetime_as_string;
 
-#[derive(Debug, Clone, SerializeMacro, DeserializeMacro)]
+#[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct AppEntity {
     // serialize a hex string as an ObjectId and deserialize a hex string from an ObjectId
     #[serde(
@@ -136,7 +136,6 @@ impl AppRepo {
         let opt = IndexOptions::builder()
             .unique(false)
             .background(true)
-            
             .build();
 
         let mut indices = Vec::new();
@@ -284,14 +283,4 @@ mod tests {
     //     };
     //     let ret = app_repo.insert_app(&entity).await;
     // }
-}
-
-fn serialize_object_id_option_as_hex_string<S: Serializer>(
-    val: &Option<ObjectId>,
-    serializer: S,
-) -> Result<S::Ok, S::Error> {
-    match val {
-        Some(oid) => oid.to_hex().serialize(serializer),
-        None => serializer.serialize_none(),
-    }
 }
