@@ -24,7 +24,6 @@ use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
 use crate::pb;
 use crate::utils::mongo::{bson_datetime_as_string, serialize_object_id_option_as_hex_string};
-use serde_derive::{Deserialize as DeserializeMacro, Serialize as SerializeMacro};
 use serde_json::to_string;
 use std::hash::Hasher;
 use std::result::Result;
@@ -39,13 +38,13 @@ pub struct ServerEntity {
         rename = "_id",
         skip_serializing_if = "Option::is_none"
     )]
-    id: Option<ObjectId>,
-    name: String,
-    http_addr: String,
-    grpc_addr: String,
+    pub id: Option<ObjectId>,
+    pub name: String,
+    pub http_addr: String,
+    pub grpc_addr: String,
     #[serde(with = "bson_datetime_as_string")]
-    created_at: bson::DateTime,
+    pub created_at: bson::DateTime,
     #[serde(with = "bson_datetime_as_string")]
-    updated_at: bson::DateTime,
-    deleted_at: u64,
+    pub updated_at: bson::DateTime,
+    pub deleted_at: u64,
 }

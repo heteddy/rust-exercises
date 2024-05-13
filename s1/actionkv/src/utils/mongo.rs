@@ -1,9 +1,9 @@
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use mongodb::error::Error as MongoError;
-use mongodb::{bson::{self,oid::ObjectId}};
+use mongodb::{bson::{self, oid::ObjectId}};
 use serde::{
     de::{self, Deserialize},
-    ser, Deserializer, Serializer,Serialize
+    ser, Deserializer, Serializer, Serialize,
 };
 use std::fmt::{self, Display};
 use std::result::Result;
@@ -29,12 +29,13 @@ pub mod bson_datetime_as_string {
     // 需要 use super::*; 才能用到外面的use;
     // 或者需要把外面的use放到这里
     use super::*;
+
     const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S";
 
     /// Deserializes a [`crate::DateTime`] from an RFC 3339 formatted string.
     pub fn deserialize<'de, D>(deserializer: D) -> Result<bson::DateTime, D::Error>
-    where
-        D: Deserializer<'de>,
+        where
+            D: Deserializer<'de>,
     {
         let iso = String::deserialize(deserializer)?;
         let date = NaiveDateTime::parse_from_str(&iso, FORMAT).map_err(|e| {

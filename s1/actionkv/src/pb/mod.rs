@@ -8,6 +8,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 pub mod app;
 pub mod data;
 pub mod error;
+pub mod mapping;
 
 pub const CODE_SUCCESS: StatusCode = StatusCode::OK;
 

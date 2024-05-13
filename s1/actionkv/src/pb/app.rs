@@ -1,5 +1,5 @@
 // use axum::{extract::Json};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 use validator::Validate;
 // use axum_valid::Valid;
 
@@ -19,7 +19,7 @@ pub struct AppReq {
 }
 
 
-impl std::default::Default for AppReq {
+impl Default for AppReq {
     fn default() -> Self {
         AppReq {
             app_id: String::new(),

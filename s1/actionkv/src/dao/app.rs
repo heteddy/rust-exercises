@@ -1,7 +1,8 @@
 // use crate::config::mongo;
 // use chrono::prelude::*;
 // use chrono::{DateTime, Utc};
-use futures::stream::{StreamExt, TryStreamExt}; //cursor 使用
+use futures::stream::{StreamExt, TryStreamExt};
+//cursor 使用
 use mongodb::bson::serde_helpers::{
     bson_datetime_as_rfc3339_string,
     chrono_datetime_as_bson_datetime,
@@ -20,7 +21,7 @@ use mongodb::{
 use std::time::Duration;
 use tokio::sync::OnceCell;
 // 需要引入这个trait
-use serde::{Deserialize,Serialize, Serializer};
+use serde::{Deserialize, Serialize, Serializer};
 // 这个是derive 宏
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
@@ -33,13 +34,13 @@ use std::str::FromStr;
 use std::vec;
 use tracing::info;
 
-#[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppEntity {
     // serialize a hex string as an ObjectId and deserialize a hex string from an ObjectId
     #[serde(
-        serialize_with = "serialize_object_id_option_as_hex_string",
-        rename = "_id",
-        skip_serializing_if = "Option::is_none"
+    serialize_with = "serialize_object_id_option_as_hex_string",
+    rename = "_id",
+    skip_serializing_if = "Option::is_none"
     )]
     pub id: Option<ObjectId>,
     // pub id: Option<bson::oid::ObjectId>,
@@ -107,8 +108,8 @@ impl Eq for AppEntity {}
 // 可以作为set和map的key
 impl std::hash::Hash for AppEntity {
     fn hash<H: Hasher>(&self, state: &mut H)
-    where
-        H: Hasher,
+        where
+            H: Hasher,
     {
         self.app_id.hash(state)
     }
