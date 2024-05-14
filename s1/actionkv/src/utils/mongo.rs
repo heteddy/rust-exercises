@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use chrono::{DateTime, Duration, FixedOffset, Local, NaiveDateTime, Utc, format};
 use mongodb::bson::{self, oid::ObjectId};
 use mongodb::error::Error as MongoError;
 use serde::{
@@ -10,6 +10,7 @@ use std::result::Result;
 use time::macros::{datetime, offset};
 use time::OffsetDateTime;
 use time::{self, macros::format_description};
+use tracing::{info, warn};
 
 use crate::pb;
 
@@ -38,6 +39,7 @@ pub mod bson_datetime_as_string {
         D: Deserializer<'de>,
     {
         let iso = String::deserialize(deserializer)?;
+        info!("deserialize string to datetime {:?}", iso);
         let date = NaiveDateTime::parse_from_str(&iso, FORMAT).map_err(|e| {
             de::Error::custom(format!(
                 "{:?}cannot parse self defined datetime from \"{}\"",
@@ -57,6 +59,7 @@ pub mod bson_datetime_as_string {
         let formatted = try_to_local_time_string(val).map_err(|e| {
             ser::Error::custom(format!("cannot format {} as local time: {:?}", val, e))
         })?;
+        info!("serialize datetime to string {:?}", formatted);
         serializer.serialize_str(&formatted)
     }
 }
@@ -88,5 +91,47 @@ impl std::error::Error for InteralError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         // 泛型错误，没有记录其内部原因。
         None
+    }
+}
+
+pub mod local_date_format {
+    use super::*;
+    use chrono::{DateTime, Local, NaiveDateTime};
+    
+
+    const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S";
+
+    // serialize_with 函数的签名必须遵循以下模式：
+    //
+    //    fn serialize<S>(&T, S) -> Result<S::Ok, S::Error>
+    //    where
+    //        S: Serializer
+    //
+    // 尽管也可以对输入类型 T 进行泛型化。
+    pub fn serialize<S>(date: &DateTime<Local>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = format!("{}", date.format(FORMAT));
+        serializer.serialize_str(&s)
+    }
+
+    // deserialize_with 函数的签名必须遵循以下模式：
+    //
+    //    fn deserialize<'de, D>(D) -> Result<T, D::Error>
+    //    where
+    //        D: Deserializer<'de>
+    //
+    // 尽管也可以对输出类型 T 进行泛型化。
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<DateTime<Local>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let dt = NaiveDateTime::parse_from_str(&s, FORMAT).map_err(serde::de::Error::custom)?;
+        Ok(DateTime::<Local>::from_naive_utc_and_offset(
+            dt,
+            FixedOffset::east_opt(5 * 3600).unwrap(),
+        ))
     }
 }

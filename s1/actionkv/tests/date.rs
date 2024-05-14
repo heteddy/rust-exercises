@@ -73,10 +73,10 @@ mod tests {
         "#;
 
         let data: StructWithCustomDate = serde_json::from_str(json_str).unwrap();
-        println!("{:#?}", data);
+        println!("StructWithCustomDate = {:#?}", data);
 
         let serialized = serde_json::to_string_pretty(&data).unwrap();
-        println!("{}", serialized);
+        println!("serialized pretty = {}", serialized);
     }
     #[test]
     fn test_date() {
