@@ -1,6 +1,13 @@
-use chrono::{DateTime, Duration, FixedOffset, Local, NaiveDateTime, Utc, format};
+use crate::pb;
+use chrono::{format, DateTime, Duration, FixedOffset, Local, NaiveDateTime, Utc};
 use mongodb::bson::{self, oid::ObjectId};
 use mongodb::error::Error as MongoError;
+use mongodb::{
+    options::{self, IndexOptions}, //modify here
+    Client,
+    Collection,
+    IndexModel,
+};
 use serde::{
     de::{self, Deserialize},
     ser, Deserializer, Serialize, Serializer,
@@ -10,9 +17,8 @@ use std::result::Result;
 use time::macros::{datetime, offset};
 use time::OffsetDateTime;
 use time::{self, macros::format_description};
+use tokio::sync::OnceCell;
 use tracing::{info, warn};
-
-use crate::pb;
 
 pub fn serialize_object_id_option_as_hex_string<S: Serializer>(
     val: &Option<ObjectId>,
@@ -132,4 +138,13 @@ pub mod local_date_format {
             FixedOffset::east_opt(5 * 3600).unwrap(),
         ))
     }
+}
+
+// 支持返回值的泛化，每个子模块引用这个模块
+pub fn get_collection<T>(client: &OnceCell<Client>, db: &str, collection: &str) -> Collection<T> {
+    let col = client.get()
+        .unwrap()
+        .database(db)
+        .collection(collection);
+    col
 }

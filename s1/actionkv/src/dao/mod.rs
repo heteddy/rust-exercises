@@ -5,20 +5,10 @@ pub mod preprocess;
 pub mod server;
 pub mod setting;
 
+use crate::pb;
+use tracing::{error, event, info, info_span, instrument, span, warn, Level};
 // use mongodb::bson::oid::ObjectId;
 // use serde::{Serialize, Serializer};
-use tracing::{error, event, info, info_span, instrument, span, warn, Level};
-
-use crate::{
-    config::{self, mongo::MONGO_CLIENT},
-    pb,
-};
-use mongodb::{
-    options::{self, IndexOptions}, //modify here
-    Client,
-    Collection,
-    IndexModel,
-};
 
 // note 这里是返回值泛型，这种使用关联类型，可以实现很多种类型
 // pub trait MongoRepo {
@@ -27,16 +17,6 @@ use mongodb::{
 //         Ok(())
 //     }
 // }
-
-// 支持返回值的泛化，每个子模块引用这个模块
-pub fn get_collection<T>(db: &str, collection: &str) -> Collection<T> {
-    let col = MONGO_CLIENT
-        .get()
-        .unwrap()
-        .database(db)
-        .collection(collection);
-    col
-}
 
 // 调用子模块，不会产生循环引用
 pub async fn init_indexes() -> Result<(), pb::error::ApiError> {

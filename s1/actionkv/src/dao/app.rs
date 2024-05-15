@@ -145,8 +145,11 @@ pub struct AppRepo {
 impl AppRepo {
     pub async fn create_index() -> Result<(), pb::error::ApiError> {
         let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
-        let col =
-            dao::get_collection::<AppEntity>(&_configure.mongo.database, &_configure.table.app);
+        let col = utils::mongo::get_collection::<AppEntity>(
+            &MONGO_CLIENT,
+            &_configure.mongo.database,
+            &_configure.table.app,
+        );
 
         let uniqueOpt = IndexOptions::builder()
             .unique(true)
@@ -191,12 +194,9 @@ impl AppRepo {
         Ok(())
     }
 
-    pub fn init(db: &str, collection: &str) -> Self {
-        let col = MONGO_CLIENT
-            .get()
-            .unwrap()
-            .database(db)
-            .collection(collection);
+    pub fn new() -> AppRepo {
+        let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
+        let col = utils::mongo::get_collection::<AppEntity>(&MONGO_CLIENT, &_configure.mongo.database, &_configure.table.app);
         AppRepo { col }
     }
 

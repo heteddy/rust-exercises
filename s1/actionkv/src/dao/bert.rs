@@ -23,7 +23,10 @@ use serde::{Deserialize, Serialize, Serializer};
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
 use crate::pb;
-use crate::utils::mongo::{local_date_format, serialize_object_id_option_as_hex_string};
+use crate::utils::{
+    self,
+    mongo::{local_date_format, serialize_object_id_option_as_hex_string},
+};
 use serde_json::to_string;
 use std::hash::Hasher;
 use std::result::Result;
@@ -78,8 +81,11 @@ pub struct BertRepo {
 impl BertRepo {
     pub async fn create_index() -> Result<(), pb::error::ApiError> {
         let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
-        let col: Collection<BertEntity> =
-            dao::get_collection::<BertEntity>(&_configure.mongo.database, &_configure.table.bert);
+        let col: Collection<BertEntity> = utils::mongo::get_collection::<BertEntity>(
+            &MONGO_CLIENT,
+            &_configure.mongo.database,
+            &_configure.table.bert,
+        );
 
         let uniqueOpt = IndexOptions::builder()
             // .name()
@@ -118,8 +124,11 @@ impl BertRepo {
 
     pub fn new() -> Self {
         let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
-        let col =
-            dao::get_collection::<BertEntity>(&_configure.mongo.database, &_configure.table.bert);
+        let col = utils::mongo::get_collection::<BertEntity>(
+            &MONGO_CLIENT,
+            &_configure.mongo.database,
+            &_configure.table.bert,
+        );
         BertRepo { col }
     }
 }
