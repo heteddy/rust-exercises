@@ -115,5 +115,14 @@ mod tests {
         let duration = date2.signed_duration_since(date1);
         let days_diff = duration.num_days();
         println!("Days difference: {}", days_diff);
+
+        // 假设我们有一个UTC日期时间
+        // let utc_datetime: DateTime<Utc> = Utc::now();
+    
+        // // 转换为本地时间
+        // let local_datetime: DateTime<Utc> = Local::from_utc_datetime( &utc_datetime);//utc_datetime.with_timezone(&Utc::local());
+    
+        // println!("UTC: {}", utc_datetime);
+        // println!("Local: {}", local_datetime);
     }
 }

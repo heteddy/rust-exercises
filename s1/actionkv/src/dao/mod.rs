@@ -19,6 +19,11 @@ pub async fn init_indexes() -> Result<(), pb::error::ApiError> {
         error!("init app repo index error {:?}", e);
         ()
     });
-
+    let _ = bert::BertRepo::create_index().await.map_err(|e| {
+        error!("init bert repo index error {:?}", e);
+        ()
+    });
     Ok(())
 }
+
+

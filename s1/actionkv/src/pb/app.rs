@@ -1,4 +1,5 @@
 // use axum::{extract::Json};
+use crate::dao::app::AppEntity;
 use serde::{Deserialize, Serialize, Serializer};
 use validator::Validate;
 // use axum_valid::Valid;
@@ -18,7 +19,6 @@ pub struct AppReq {
     pub system: String,
 }
 
-
 impl Default for AppReq {
     fn default() -> Self {
         AppReq {
@@ -28,5 +28,45 @@ impl Default for AppReq {
             liaison: String::new(),
             system: String::new(),
         }
+    }
+}
+
+// 在dao中定义转换方式
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AppResp {
+    pub id: String,
+    pub app_id: String,
+    pub app_secret: String,
+    // 租户名称，
+    pub tenant: String,
+    // 联系人
+    pub liaison: String,
+    //子系统名称
+    pub system: String,
+    pub created_at: String,
+    pub updated_at: String,
+    pub deleted_at: i64,
+}
+
+impl Default for AppResp {
+    fn default() -> Self {
+        AppResp {
+            id: String::default(),
+            app_id: String::default(),
+            app_secret: String::default(),
+            tenant: String::default(),
+            liaison: String::default(),
+            system: String::default(),
+            created_at: String::default(),
+            updated_at: String::default(),
+            deleted_at: 0,
+        }
+    }
+}
+
+impl PartialEq<AppResp> for AppResp {
+    fn eq(&self, other: &AppResp) -> bool {
+        self.app_id == other.app_id
     }
 }

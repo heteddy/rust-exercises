@@ -1,6 +1,6 @@
 // use crate::config::mongo;
 // use chrono::prelude::*;
-use chrono::{DateTime, Local, Utc, format};
+use chrono::{format, DateTime, Local, Utc};
 use futures::stream::{StreamExt, TryStreamExt};
 //cursor 使用
 use mongodb::bson::serde_helpers::{
@@ -14,7 +14,6 @@ use mongodb::{
     options::{self, IndexOptions},
     results::{InsertOneResult, UpdateResult}, //modify here
     Client,
-    // Client,
     Collection,
     IndexModel,
 };
@@ -26,8 +25,9 @@ use serde::{Deserialize, Serialize, Serializer};
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
 use crate::pb;
-use crate::utils::mongo::try_to_local_time_string;
+use crate::pb::app::AppResp;
 use crate::utils::mongo::{local_date_format, serialize_object_id_option_as_hex_string};
+use crate::utils::{self, mongo::try_to_local_time_string};
 use serde_json::to_string;
 use std::hash::Hasher;
 use std::result::Result;
@@ -55,12 +55,12 @@ pub struct AppEntity {
     //子系统名称
     pub system: String,
     // 创建时间
-    #[serde(with = "local_date_format")]
-    pub created_at: DateTime<Local>,
+    #[serde(with = "chrono_datetime_as_bson_datetime")] //只能支持utc
+    pub created_at: DateTime<Utc>,
     // 修改时间
     // #[serde(serialize_with = "serialize_with_local_string")]
-    #[serde(with = "local_date_format")]
-    pub updated_at: DateTime<Local>,
+    #[serde(with = "chrono_datetime_as_bson_datetime")]
+    pub updated_at: DateTime<Utc>,
     // 删除时间
     pub deleted_at: i64,
 }
@@ -75,9 +75,29 @@ impl Default for AppEntity {
             tenant: "".into(),
             liaison: "".to_owned(),
             system: "".to_owned(), // 子系统编号
-            created_at: Local::now(),
-            updated_at: Local::now(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
             deleted_at: 0,
+        }
+    }
+}
+
+impl Into<AppResp> for AppEntity {
+    fn into(self) -> AppResp {
+        let id_str = match self.id {
+            Some(o) => o.to_hex(),
+            None => "".to_owned(),
+        };
+        AppResp {
+            id: id_str,
+            app_id: self.app_id,
+            app_secret: self.app_secret.clone(),
+            tenant: self.tenant.clone(),
+            liaison: self.liaison.clone(),
+            system: self.system.clone(), // 子系统编号
+            created_at: utils::format_chrono_utc_to_local(&self.created_at),
+            updated_at: utils::format_chrono_utc_to_local(&self.updated_at),
+            deleted_at: self.deleted_at,
         }
     }
 }
@@ -91,8 +111,8 @@ impl From<pb::app::AppReq> for AppEntity {
             tenant: value.tenant,
             liaison: value.liaison,
             system: value.system, // 子系统编号
-            created_at: Local::now(),
-            updated_at: Local::now(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
             deleted_at: 0,
         }
     }
@@ -126,7 +146,7 @@ impl AppRepo {
     pub async fn create_index() -> Result<(), pb::error::ApiError> {
         let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
 
-        let col: mongodb::Collection<AppEntity> = MONGO_CLIENT
+        let col: Collection<AppEntity> = MONGO_CLIENT
             .get()
             .unwrap()
             .database(&_configure.mongo.database)
@@ -141,7 +161,7 @@ impl AppRepo {
             .background(true)
             .build();
 
-        let mut indices = Vec::new();
+        let mut indices = Vec::with_capacity(3);
         // note 没有指定名字，默认生成，导致问题是修改比较困难
         indices.push(
             IndexModel::builder()
@@ -211,10 +231,12 @@ impl AppRepo {
         let seconds = Local::now().timestamp();
         let update = doc! {
             "$set": doc! {
-            "updated_at": Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),//try_to_local_time_string(&bson::DateTime::now()).unwrap(), // todo: 时间的定义还是不对, 写入应该是bson::DateTime, 读出来是string
-            "tenant": &app.tenant,
-            "liaison": &app.liaison,
-            "system": &app.system,
+                "app_id": &app.app_id,
+                "app_secret": &app.app_secret,
+                "tenant": &app.tenant,
+                "liaison": &app.liaison,
+                "system": &app.system,
+                "updated_at": Utc::now(),//Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),//try_to_local_time_string(&bson::DateTime::now()).unwrap(), // todo: 时间的定义还是不对, 写入应该是bson::DateTime, 读出来是string
             }
         };
         let ret = self

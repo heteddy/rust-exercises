@@ -1,6 +1,6 @@
 use crate::dao;
 use crate::dao::app::AppEntity;
-use crate::pb::{app::AppReq, error::ApiError, ApiResponse};
+use crate::pb::{app::AppReq, app::AppResp, error::ApiError, ApiResponse};
 use crate::service;
 use axum::extract::{Json, Path, Query, State};
 use axum::http::StatusCode;
@@ -18,14 +18,14 @@ use tracing::{event, info, instrument, span, Level};
 async fn create_app(
     State(svc): State<service::app::AppService>,
     Json(payload): Json<AppReq>,
-) -> Result<ApiResponse<AppEntity>, ApiError> {
+) -> Result<ApiResponse<AppResp>, ApiError> {
     let s = span!(Level::INFO, "create_app");
     let _enter = s.enter();
     event!(Level::INFO, "endpoint create app {:?}", payload);
     let app = AppEntity::from(payload);
     let u = svc.create_app(app).await?;
     // Ok(Json(u))
-    Ok(ApiResponse::from_result(u))
+    Ok(ApiResponse::from_result(u.into()))
 }
 
 #[derive(Debug, Deserialize)]
@@ -38,10 +38,12 @@ struct Pagination {
 pub async fn list_apps(
     State(svc): State<service::app::AppService>,
     page: Query<Pagination>,
-) -> Result<ApiResponse<Vec<AppEntity>>, ApiError> {
+) -> Result<ApiResponse<Vec<AppResp>>, ApiError> {
     event!(Level::INFO, "endpoint list all apps {:?}", page);
     let results = svc.list_all(page.skip, page.limit).await?;
-    Ok(ApiResponse::from_result(results))
+    let mut resp = Vec::with_capacity(results.len());
+    results.into_iter().for_each(|e| resp.push(e.into()));
+    Ok(ApiResponse::from_result(resp))
 
     // match results {
     //     Ok(entity) => Ok(pb::ApiResponse::from_result(&entity)),
@@ -57,10 +59,10 @@ pub async fn list_apps(
 pub async fn get_app(
     State(svc): State<service::app::AppService>,
     Path(id): Path<String>,
-) -> Result<ApiResponse<AppEntity>, ApiError> {
+) -> Result<ApiResponse<AppResp>, ApiError> {
     event!(Level::INFO, "endpoint get path apps {:?}", id);
     let result = svc.get_app_by_id(&id).await?;
-    Ok(ApiResponse::from_result(result))
+    Ok(ApiResponse::from_result(result.into()))
 }
 
 #[instrument(skip_all)]
@@ -68,11 +70,11 @@ pub async fn update_app(
     State(svc): State<service::app::AppService>,
     Path(id): Path<String>,
     Json(payload): Json<AppReq>,
-) -> Result<ApiResponse<AppEntity>, ApiError> {
+) -> Result<ApiResponse<AppResp>, ApiError> {
     event!(Level::INFO, "endpoint update path apps {:?}", id);
     // 这里实现了from，因此类型不匹配可以直接传
     let result = svc.update_app(&id, payload.into()).await?;
-    Ok(ApiResponse::from_result(result))
+    Ok(ApiResponse::from_result(result.into()))
 }
 
 pub fn register_app_route() -> Router {

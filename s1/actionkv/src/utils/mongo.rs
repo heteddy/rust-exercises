@@ -97,8 +97,6 @@ impl std::error::Error for InteralError {
 pub mod local_date_format {
     use super::*;
     use chrono::{DateTime, Local, NaiveDateTime};
-    
-
     const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S";
 
     // serialize_with 函数的签名必须遵循以下模式：

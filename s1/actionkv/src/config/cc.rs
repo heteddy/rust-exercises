@@ -3,7 +3,8 @@ use clap::builder::OsStr;
 use clap::{Parser, Subcommand};
 use lazy_static::lazy_static;
 use mongodb::bson::{doc, Document};
-use serde::de::Deserialize; // 调用struct实例的deserialize 方法
+use serde::de::Deserialize;
+// 调用struct实例的deserialize 方法
 use serde_derive::{Deserialize, Serialize};
 use serde_yaml;
 use std::path::{Path, PathBuf};
@@ -53,7 +54,9 @@ pub struct Configure {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Table {
     pub app: String,
-    pub index: String,
+    pub bert: String,
+    pub preprocess: String,
+    pub server: String,
     pub setting: String,
     pub mapping: String,
     pub template: String,
@@ -71,7 +74,7 @@ impl Configure {
         let yaml_str = fs::read_to_string(p).unwrap();
         let de = serde_yaml::Deserializer::from_str(&yaml_str);
         let value = Configure::deserialize(de).unwrap();
-        println!("{}",serde_json::to_string_pretty(&value).unwrap());
+        println!("{}", serde_json::to_string_pretty(&value).unwrap());
         value
     }
     /// 通过环境变量更新
@@ -84,7 +87,7 @@ impl Configure {
 }
 
 #[derive(Debug, Parser)]
-#[command(version,about,long_about=None)]
+#[command(version, about, long_about = None)]
 pub struct Cli {
     #[arg(short, long, value_name = "FILE")]
     file: Option<PathBuf>,

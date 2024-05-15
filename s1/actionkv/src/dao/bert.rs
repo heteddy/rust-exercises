@@ -1,3 +1,4 @@
+use chrono::prelude::*;
 use futures::stream::{StreamExt, TryStreamExt};
 use mongodb::bson::serde_helpers::{
     bson_datetime_as_rfc3339_string,
@@ -22,13 +23,15 @@ use serde::{Deserialize, Serialize, Serializer};
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
 use crate::pb;
-use crate::utils::mongo::{bson_datetime_as_string, serialize_object_id_option_as_hex_string};
+use crate::utils::mongo::{local_date_format, serialize_object_id_option_as_hex_string};
 use serde_json::to_string;
 use std::hash::Hasher;
 use std::result::Result;
 use std::str::FromStr;
 use std::vec;
+// use mongodb::results::CollectionType::Collection;
 use tracing::info;
+use crate::dao::app::{AppEntity, AppRepo};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BertEntity {
@@ -40,9 +43,89 @@ pub struct BertEntity {
     pub id: Option<ObjectId>,
     pub name: String,
     pub url: String,
-    #[serde(with = "bson_datetime_as_string")]
-    pub created_at: bson::DateTime,
-    #[serde(with = "bson_datetime_as_string")]
-    pub updated_at: bson::DateTime,
+    #[serde(with = "local_date_format")]
+    pub created_at: DateTime<Local>,
+    #[serde(with = "local_date_format")]
+    pub updated_at: DateTime<Local>,
     pub deleted_at: i64,
+}
+
+impl Default for BertEntity {
+    fn default() -> Self {
+        // let local: DateTime<Local> = Local::now();
+        BertEntity {
+            id: None,
+            name: "".to_owned(),
+            url: "".to_owned(),
+            created_at: Local::now(),
+            updated_at: Local::now(),
+            deleted_at: 0,
+        }
+    }
+}
+
+impl PartialEq<BertEntity> for BertEntity {
+    fn eq(&self, other: &BertEntity) -> bool {
+        self.name == other.name
+    }
+}
+
+#[derive(Clone)]
+pub struct BertRepo {
+    pub col: Collection<BertEntity>,
+}
+
+impl BertRepo {
+    pub async fn create_index() -> Result<(), pb::error::ApiError> {
+        let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
+        let col: Collection<BertEntity> = get_collection(&_configure.mongo.database, &_configure.table.bert);
+
+        let uniqueOpt = IndexOptions::builder()
+            // .name()
+            .unique(true)
+            .background(true)
+            .build();
+        let opt = IndexOptions::builder()
+            .unique(false)
+            .background(true)
+            .build();
+        let mut indices = Vec::with_capacity(2);
+        // note 没有指定名字，默认生成，导致问题是修改比较困难
+        indices.push(
+            IndexModel::builder()
+                .keys(doc! {
+                    "updated_at":-1,"deleted_at":-1,
+                })
+                .options(opt.clone())
+                .build(),
+        );
+
+        indices.push(
+            IndexModel::builder()
+                .keys(doc! {
+                    "name":1,"deleted_at":-1,
+                })
+                .options(opt.clone())
+                .build(),
+        );
+        let o = options::CreateIndexOptions::builder()
+            .max_time(Duration::from_secs(600))
+            .build();
+        col.create_indexes(indices, o).await?;
+        Ok(())
+    }
+
+    pub fn init(db: &str, collection: &str) -> Self {
+        let col = get_collection(db, collection);
+        BertRepo { col }
+    }
+}
+
+pub fn get_collection<T>(db: &str, collection: &str) -> Collection<T> {
+    let col: Collection<T> = MONGO_CLIENT
+        .get()
+        .unwrap()
+        .database(db)
+        .collection(collection);
+    col
 }
