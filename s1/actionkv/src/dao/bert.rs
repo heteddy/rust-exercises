@@ -30,15 +30,15 @@ use std::result::Result;
 use std::str::FromStr;
 use std::vec;
 // use mongodb::results::CollectionType::Collection;
-use tracing::info;
 use crate::dao::app::{AppEntity, AppRepo};
+use tracing::info;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BertEntity {
     #[serde(
-    serialize_with = "serialize_object_id_option_as_hex_string",
-    rename = "_id",
-    skip_serializing_if = "Option::is_none"
+        serialize_with = "serialize_object_id_option_as_hex_string",
+        rename = "_id",
+        skip_serializing_if = "Option::is_none"
     )]
     pub id: Option<ObjectId>,
     pub name: String,
@@ -78,7 +78,8 @@ pub struct BertRepo {
 impl BertRepo {
     pub async fn create_index() -> Result<(), pb::error::ApiError> {
         let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
-        let col: Collection<BertEntity> = get_collection(&_configure.mongo.database, &_configure.table.bert);
+        let col: Collection<BertEntity> =
+            dao::get_collection::<BertEntity>(&_configure.mongo.database, &_configure.table.bert);
 
         let uniqueOpt = IndexOptions::builder()
             // .name()
@@ -115,17 +116,10 @@ impl BertRepo {
         Ok(())
     }
 
-    pub fn init(db: &str, collection: &str) -> Self {
-        let col = get_collection(db, collection);
+    pub fn new() -> Self {
+        let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
+        let col =
+            dao::get_collection::<BertEntity>(&_configure.mongo.database, &_configure.table.bert);
         BertRepo { col }
     }
-}
-
-pub fn get_collection<T>(db: &str, collection: &str) -> Collection<T> {
-    let col: Collection<T> = MONGO_CLIENT
-        .get()
-        .unwrap()
-        .database(db)
-        .collection(collection);
-    col
 }
