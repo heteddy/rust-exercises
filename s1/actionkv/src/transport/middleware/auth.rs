@@ -1,4 +1,4 @@
-use crate::service::auth::{self as auth_state, AuthTrait};
+use crate::server::auth::{self as auth_state, AuthTrait};
 use axum::{
     extract::{Path, Request, State},
     http::{HeaderMap, HeaderValue, StatusCode},

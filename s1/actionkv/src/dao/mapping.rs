@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize, Serializer};
 // 这个是derive 宏
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
-use crate::pb;
+use crate::pb::svr::mapping::MappingField;
 use crate::utils::mongo::{local_date_format, serialize_object_id_option_as_hex_string};
 use serde_json::to_string;
 use std::hash::Hasher;
@@ -33,14 +33,14 @@ use tracing::info;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MappingEntity {
     #[serde(
-        serialize_with = "serialize_object_id_option_as_hex_string",
-        rename = "_id",
-        skip_serializing_if = "Option::is_none"
+    serialize_with = "serialize_object_id_option_as_hex_string",
+    rename = "_id",
+    skip_serializing_if = "Option::is_none"
     )]
     pub id: Option<ObjectId>,
     pub app_id: String,
     pub name: String,
-    pub fields: Vec<pb::mapping::MappingField>,
+    pub fields: Vec<MappingField>,
     #[serde(with = "local_date_format")]
     created_at: DateTime<Local>,
     #[serde(with = "local_date_format")]

@@ -22,7 +22,7 @@ use serde::{Deserialize, Serialize, Serializer};
 // 这个是derive 宏
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
-use crate::pb;
+use crate::pb::svr::ApiError;
 use crate::utils::{
     self,
     mongo::{local_date_format, serialize_object_id_option_as_hex_string},
@@ -39,9 +39,9 @@ use tracing::info;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BertEntity {
     #[serde(
-        serialize_with = "serialize_object_id_option_as_hex_string",
-        rename = "_id",
-        skip_serializing_if = "Option::is_none"
+    serialize_with = "serialize_object_id_option_as_hex_string",
+    rename = "_id",
+    skip_serializing_if = "Option::is_none"
     )]
     pub id: Option<ObjectId>,
     pub name: String,
@@ -79,7 +79,7 @@ pub struct BertRepo {
 }
 
 impl BertRepo {
-    pub async fn create_index() -> Result<(), pb::error::ApiError> {
+    pub async fn create_index() -> Result<(), ApiError> {
         let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
         let col: Collection<BertEntity> = utils::mongo::get_collection::<BertEntity>(
             &MONGO_CLIENT,

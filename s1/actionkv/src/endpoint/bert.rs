@@ -1,7 +1,7 @@
 use crate::dao;
 use crate::dao::app::AppEntity;
-use crate::pb::{app::AppReq, app::AppResp, error::ApiError, ApiResponse};
-use crate::service;
+use crate::pb::svr::{app::AppReq, app::AppResp, ApiError, ApiResponse};
+use crate::server;
 use axum::extract::{Json, Path, Query, State};
 use axum::http::{header::HeaderMap, StatusCode};
 use axum::response::IntoResponse;
@@ -16,7 +16,7 @@ use tracing::{event, info, instrument, span, Level};
 
 #[instrument(skip_all)]
 async fn create_bert(
-    State(svc): State<service::app::AppService>,
+    State(svc): State<server::app::AppService>,
     Json(payload): Json<AppReq>,
 ) -> Result<ApiResponse<AppResp>, ApiError> {
     let s = span!(Level::INFO, "create_app");
@@ -36,7 +36,7 @@ async fn create_bert(
 
 // #[instrument(skip_all)]
 // pub async fn list_apps(
-//     State(svc): State<service::app::AppService>,
+//     State(svc): State<server::app::AppService>,
 //     headers: HeaderMap,
 //     page: Query<Pagination>,
 // ) -> Result<ApiResponse<Vec<AppResp>>, ApiError> {
@@ -66,7 +66,7 @@ async fn create_bert(
 
 // #[instrument(skip_all)]
 // pub async fn get_app(
-//     State(svc): State<service::app::AppService>,
+//     State(svc): State<server::app::AppService>,
 //     Path(id): Path<String>,
 // ) -> Result<ApiResponse<AppResp>, ApiError> {
 //     event!(Level::INFO, "endpoint get path apps {:?}", id);
@@ -76,7 +76,7 @@ async fn create_bert(
 
 // #[instrument(skip_all)]
 // pub async fn update_app(
-//     State(svc): State<service::app::AppService>,
+//     State(svc): State<server::app::AppService>,
 //     headers: HeaderMap,
 //     Path(id): Path<String>,
 //     Json(payload): Json<AppReq>,
@@ -96,9 +96,9 @@ async fn create_bert(
 // }
 
 pub fn register_bert_route() -> Router {
-    let svc = service::app::AppService::new();
+    let svc = server::app::AppService::new();
     let mut _route = Router::new();
-    _route = _route.route("/bert", post(create_app).get(list_apps));
+    // _route = _route.route("/bert", post(create_app).get(list_apps));
     // _route = _route.route("/bert", get(get_app).put(update_app));
-    Router::new().nest("/api", app_route).with_state(svc)
+    Router::new().nest("/api", _route).with_state(svc)
 }

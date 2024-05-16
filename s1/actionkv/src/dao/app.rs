@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize, Serializer};
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
 use crate::pb;
-use crate::pb::app::AppResp;
+use crate::pb::svr::{ApiResponse, ApiError, app::{AppReq, AppResp}};
 use crate::utils::mongo::{local_date_format, serialize_object_id_option_as_hex_string};
 use crate::utils::{self, mongo::try_to_local_time_string};
 use serde_json::to_string;
@@ -39,9 +39,9 @@ use tracing::info;
 pub struct AppEntity {
     // serialize a hex string as an ObjectId and deserialize a hex string from an ObjectId
     #[serde(
-        serialize_with = "serialize_object_id_option_as_hex_string",
-        rename = "_id",
-        skip_serializing_if = "Option::is_none"
+    serialize_with = "serialize_object_id_option_as_hex_string",
+    rename = "_id",
+    skip_serializing_if = "Option::is_none"
     )]
     pub id: Option<ObjectId>,
     // pub id: Option<bson::oid::ObjectId>,
@@ -102,8 +102,8 @@ impl Into<AppResp> for AppEntity {
     }
 }
 
-impl From<pb::app::AppReq> for AppEntity {
-    fn from(value: pb::app::AppReq) -> Self {
+impl From<AppReq> for AppEntity {
+    fn from(value: AppReq) -> Self {
         AppEntity {
             id: None,
             app_id: value.app_id,
@@ -130,8 +130,8 @@ impl Eq for AppEntity {}
 // 可以作为set和map的key
 impl std::hash::Hash for AppEntity {
     fn hash<H: Hasher>(&self, state: &mut H)
-    where
-        H: Hasher,
+        where
+            H: Hasher,
     {
         self.app_id.hash(state)
     }
@@ -143,7 +143,7 @@ pub struct AppRepo {
 }
 
 impl AppRepo {
-    pub async fn create_index() -> Result<(), pb::error::ApiError> {
+    pub async fn create_index() -> Result<(), ApiError> {
         let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
         let col = utils::mongo::get_collection::<AppEntity>(
             &MONGO_CLIENT,
@@ -200,7 +200,7 @@ impl AppRepo {
         AppRepo { col }
     }
 
-    pub async fn insert_app(&self, app: &AppEntity) -> Result<AppEntity, pb::error::ApiError> //mongodb::error::Result<InsertOneResult>
+    pub async fn insert_app(&self, app: &AppEntity) -> Result<AppEntity, ApiError> //mongodb::error::Result<InsertOneResult>
     {
         // let opt = options::InsertOneOptions::build();
         let ret = self.col.insert_one(app, None).await?;
@@ -219,7 +219,7 @@ impl AppRepo {
         &self,
         id: impl AsRef<str>,
         app: &AppEntity,
-    ) -> Result<AppEntity, pb::error::ApiError> {
+    ) -> Result<AppEntity, ApiError> {
         let opt = options::FindOneAndUpdateOptions::builder()
             .upsert(false)
             .build();
@@ -266,7 +266,7 @@ impl AppRepo {
     pub async fn get_app_by_id(
         &self,
         id: impl AsRef<str>,
-    ) -> Result<AppEntity, pb::error::ApiError> {
+    ) -> Result<AppEntity, ApiError> {
         let opt = options::FindOneOptions::builder()
             .show_record_id(true)
             .build();
@@ -280,7 +280,7 @@ impl AppRepo {
     pub async fn get_app_by_app_id(
         &self,
         app_id: impl AsRef<str>,
-    ) -> Result<AppEntity, pb::error::ApiError> {
+    ) -> Result<AppEntity, ApiError> {
         let opt = options::FindOneOptions::builder()
             .show_record_id(true)
             .build();
@@ -296,7 +296,7 @@ impl AppRepo {
     pub async fn delete_app_by_id(
         &self,
         id: impl AsRef<str>,
-    ) -> Result<AppEntity, pb::error::ApiError> {
+    ) -> Result<AppEntity, ApiError> {
         let opt = options::FindOneAndDeleteOptions::builder()
             // .show_record_id(true)
             .build();
@@ -308,7 +308,7 @@ impl AppRepo {
     pub async fn soft_delete_app_by_id(
         &self,
         id: impl AsRef<str>,
-    ) -> Result<AppEntity, pb::error::ApiError> {
+    ) -> Result<AppEntity, ApiError> {
         let opt = options::FindOneAndUpdateOptions::builder()
             .upsert(false)
             .build();
