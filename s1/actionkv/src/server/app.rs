@@ -12,13 +12,13 @@ use tracing::{event, info, instrument, Level};
 
 // use tokio::sync::OnceCell;
 #[derive(Clone)]
-pub struct AppService {
+pub struct AppSvc {
     repo: dao::app::AppRepo,
 }
 
-impl AppService {
+impl AppSvc {
     pub fn new() -> Self {
-        AppService {
+        AppSvc {
             repo: dao::app::AppRepo::new(),
         }
     }

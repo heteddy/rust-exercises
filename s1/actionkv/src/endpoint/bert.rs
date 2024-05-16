@@ -16,7 +16,7 @@ use tracing::{event, info, instrument, span, Level};
 
 #[instrument(skip_all)]
 async fn create_bert(
-    State(svc): State<server::app::AppService>,
+    State(svc): State<server::app::AppSvc>,
     Json(payload): Json<AppReq>,
 ) -> Result<ApiResponse<AppResp>, ApiError> {
     let s = span!(Level::INFO, "create_app");
@@ -96,7 +96,7 @@ async fn create_bert(
 // }
 
 pub fn register_bert_route() -> Router {
-    let svc = server::app::AppService::new();
+    let svc = server::app::AppSvc::new();
     let mut _route = Router::new();
     // _route = _route.route("/bert", post(create_app).get(list_apps));
     // _route = _route.route("/bert", get(get_app).put(update_app));
