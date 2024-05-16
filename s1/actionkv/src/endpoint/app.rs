@@ -95,7 +95,7 @@ pub async fn update_app(
     Ok(ApiResponse::from_result(result.into()))
 }
 
-pub fn register_app_route() -> Router {
+pub fn register_route() -> Router {
     let svc = server::app::AppSvc::new();
     let mut app_route = Router::new();
     app_route = app_route.route("/apps", post(create_app).get(list_apps));

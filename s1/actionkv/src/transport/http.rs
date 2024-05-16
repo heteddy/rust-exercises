@@ -10,6 +10,7 @@ use axum::{
 use std::time::Duration;
 // use tokio::time::sleep;
 use crate::endpoint::app;
+use crate::endpoint::bert;
 use tower::{self, ServiceBuilder};
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::{Any, CorsLayer};
@@ -27,7 +28,8 @@ pub fn init_app() -> Router {
 
     app = app
         .route("/", get(hello_world))
-        .merge(app::register_app_route())
+        .merge(app::register_route())
+        .merge(bert::register_route())
         // .route_layer(layer)   // 仅命中路由才打印
         .fallback(fallback);
     

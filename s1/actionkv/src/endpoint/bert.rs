@@ -1,6 +1,6 @@
 use crate::dao;
-use crate::dao::app::AppEntity;
-use crate::pb::svr::{app::AppReq, app::AppResp, ApiError, ApiResponse};
+use crate::dao::bert::BertEntity;
+use crate::pb::svr::{bert::BertReq, bert::BertResp, ApiError, ApiResponse};
 use crate::server;
 use axum::extract::{Json, Path, Query, State};
 use axum::http::{header::HeaderMap, StatusCode};
@@ -15,15 +15,15 @@ use std::convert::From;
 use tracing::{event, info, instrument, span, Level};
 
 #[instrument(skip_all)]
-async fn create_bert(
-    State(svc): State<server::app::AppSvc>,
-    Json(payload): Json<AppReq>,
-) -> Result<ApiResponse<AppResp>, ApiError> {
-    let s = span!(Level::INFO, "create_app");
+async fn create(
+    State(svc): State<server::bert::BertSvc>,
+    Json(payload): Json<BertReq>,
+) -> Result<ApiResponse<BertResp>, ApiError> {
+    let s = span!(Level::INFO, "create_bert");
     let _enter = s.enter();
-    event!(Level::INFO, "endpoint create app {:?}", payload);
-    let app = AppEntity::from(payload);
-    let u = svc.create_app(app).await?;
+    event!(Level::INFO, "endpoint create bert {:?}", payload);
+    let b = BertEntity::from(payload);
+    let u = svc.create(b).await?;
     // Ok(Json(u))
     Ok(ApiResponse::from_result(u.into()))
 }
@@ -95,10 +95,10 @@ async fn create_bert(
 //     Ok(ApiResponse::from_result(result.into()))
 // }
 
-pub fn register_bert_route() -> Router {
-    let svc = server::app::AppSvc::new();
+pub fn register_route() -> Router {
+    let svc = server::bert::BertSvc::new();
     let mut _route = Router::new();
-    // _route = _route.route("/bert", post(create_app).get(list_apps));
+    _route = _route.route("/berts", post(create));
     // _route = _route.route("/bert", get(get_app).put(update_app));
     Router::new().nest("/api", _route).with_state(svc)
 }

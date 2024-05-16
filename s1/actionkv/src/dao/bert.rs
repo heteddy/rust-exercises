@@ -22,6 +22,7 @@ use serde::{Deserialize, Serialize, Serializer};
 // 这个是derive 宏
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
+use crate::pb::svr::bert::{BertReq, BertResp};
 use crate::pb::svr::ApiError;
 use crate::utils::{
     self,
@@ -32,24 +33,24 @@ use std::hash::Hasher;
 use std::result::Result;
 use std::str::FromStr;
 use std::vec;
-// use mongodb::results::CollectionType::Collection;
-use crate::dao::app::{AppEntity, AppRepo};
 use tracing::info;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BertEntity {
     #[serde(
-    serialize_with = "serialize_object_id_option_as_hex_string",
-    rename = "_id",
-    skip_serializing_if = "Option::is_none"
+        serialize_with = "serialize_object_id_option_as_hex_string",
+        rename = "_id",
+        skip_serializing_if = "Option::is_none"
     )]
     pub id: Option<ObjectId>,
     pub name: String,
     pub url: String,
-    #[serde(with = "local_date_format")]
-    pub created_at: DateTime<Local>,
-    #[serde(with = "local_date_format")]
-    pub updated_at: DateTime<Local>,
+    #[serde(with = "chrono_datetime_as_bson_datetime")] //只能支持utc
+    pub created_at: DateTime<Utc>,
+    // 修改时间
+    // #[serde(serialize_with = "serialize_with_local_string")]
+    #[serde(with = "chrono_datetime_as_bson_datetime")]
+    pub updated_at: DateTime<Utc>,
     pub deleted_at: i64,
 }
 
@@ -60,9 +61,38 @@ impl Default for BertEntity {
             id: None,
             name: "".to_owned(),
             url: "".to_owned(),
-            created_at: Local::now(),
-            updated_at: Local::now(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
             deleted_at: 0,
+        }
+    }
+}
+
+impl From<BertReq> for BertEntity {
+    fn from(value: BertReq) -> Self {
+        BertEntity {
+            id: None,
+            name: value.name,
+            url: value.url,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            deleted_at: 0,
+        }
+    }
+}
+impl Into<BertResp> for BertEntity {
+    fn into(self) -> BertResp {
+        let id_str = match self.id {
+            Some(o) => o.to_hex(),
+            None => "".to_owned(),
+        };
+        BertResp {
+            id: id_str,
+            name: self.name.clone(),
+            url: self.url.clone(),
+            created_at: utils::format_chrono_utc_to_local(&self.created_at),
+            updated_at: utils::format_chrono_utc_to_local(&self.updated_at),
+            deleted_at: self.deleted_at,
         }
     }
 }
@@ -130,5 +160,21 @@ impl BertRepo {
             &_configure.table.bert,
         );
         BertRepo { col }
+    }
+
+    pub async fn insert(&self, _bert: &BertEntity) -> Result<BertEntity, ApiError> //mongodb::error::Result<InsertOneResult>
+    {
+        // let opt = options::InsertOneOptions::build();
+        let ret = self.col.insert_one(_bert, None).await?;
+        info!("dao insert _bert {:?}", _bert);
+        info!("inserted id = {:?}", &ret.inserted_id);
+        // let mut entity = app.into();
+        let _oid = match ret.inserted_id {
+            Bson::ObjectId(_id) => Some(_id),
+            _ => None,
+        };
+        let mut _bert2 = _bert.clone();
+        _bert2.id = _oid;
+        Ok(_bert2)
     }
 }

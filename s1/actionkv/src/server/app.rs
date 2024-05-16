@@ -1,11 +1,10 @@
 // use crate::pb;
 use crate::config;
-use crate::dao;
-use crate::dao::app::AppEntity;
-use crate::pb::svr::{ApiResponse, ApiError};
+use crate::dao::app::{AppEntity, AppRepo};
+use crate::pb::svr::{ApiError, ApiResponse};
 use std::convert::AsRef;
 use std::fmt::{Debug, Display};
-use std::sync::{Arc, RwLock};
+// use std::sync::{Arc, RwLock};
 use tracing::{event, info, instrument, Level};
 // use mongodb::error::Error as MongoError;
 // use mongodb::{options::ClientOptions, Client};
@@ -13,20 +12,17 @@ use tracing::{event, info, instrument, Level};
 // use tokio::sync::OnceCell;
 #[derive(Clone)]
 pub struct AppSvc {
-    repo: dao::app::AppRepo,
+    repo: AppRepo,
 }
 
 impl AppSvc {
     pub fn new() -> Self {
         AppSvc {
-            repo: dao::app::AppRepo::new(),
+            repo: AppRepo::new(),
         }
     }
     #[instrument(skip_all)]
-    pub async fn create_app(
-        &self,
-        app: dao::app::AppEntity,
-    ) -> Result<dao::app::AppEntity, ApiError> {
+    pub async fn create_app(&self, app: AppEntity) -> Result<AppEntity, ApiError> {
         info!("insert app {:?}", app.app_id);
         let _app = self.repo.insert_app(&app).await?;
         Ok(_app)
@@ -44,21 +40,14 @@ impl AppSvc {
     }
 
     #[instrument(skip_all)]
-    pub async fn list_all(
-        &self,
-        skip: u64,
-        limit: i64,
-    ) -> Result<Vec<AppEntity>, ApiError> {
+    pub async fn list_all(&self, skip: u64, limit: i64) -> Result<Vec<AppEntity>, ApiError> {
         info!("list_all apps");
         let ret = self.repo.list(skip, limit).await?;
         Ok(ret)
     }
 
     #[instrument(skip_all)]
-    pub async fn get_app_by_id(
-        &self,
-        _id: impl AsRef<str> + Debug,
-    ) -> Result<AppEntity, ApiError> {
+    pub async fn get_app_by_id(&self, _id: impl AsRef<str> + Debug) -> Result<AppEntity, ApiError> {
         info!("get_app_by_id apps :{:?}", _id);
         let ret = self.repo.get_app_by_id(_id).await?;
         Ok(ret)
