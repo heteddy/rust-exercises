@@ -13,6 +13,10 @@ use std::time::Duration;
 use std::{env, fs, thread};
 use tokio::sync::mpsc;
 use tracing::{event, info, info_span, instrument, span, warn, Level};
+lazy_static! {
+    pub static ref CLI_ARGS: Cli = init_cli_args();
+    pub static ref GLOBAL_CONFIG: Mutex<Configure> = Mutex::new(Configure::build());  // 全局共享不需要arc
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Server {
@@ -97,11 +101,6 @@ pub struct Cli {
     port: String,
     #[arg(short, long, default_value_t = 1)]
     count: u8,
-}
-
-lazy_static! {
-    pub static ref CLI_ARGS: Cli = init_cli_args();
-    pub static ref GLOBAL_CONFIG: Mutex<Configure> = Mutex::new(Configure::build());  // 全局共享不需要arc
 }
 
 #[instrument]

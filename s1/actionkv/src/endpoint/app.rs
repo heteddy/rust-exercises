@@ -3,7 +3,7 @@ use crate::dao::app::AppEntity;
 use crate::pb::{app::AppReq, app::AppResp, error::ApiError, ApiResponse};
 use crate::service;
 use axum::extract::{Json, Path, Query, State};
-use axum::http::StatusCode;
+use axum::http::{header::HeaderMap, StatusCode};
 use axum::response::IntoResponse;
 use axum::{
     routing::MethodFilter,
@@ -37,9 +37,18 @@ struct Pagination {
 #[instrument(skip_all)]
 pub async fn list_apps(
     State(svc): State<service::app::AppService>,
+    headers: HeaderMap,
     page: Query<Pagination>,
 ) -> Result<ApiResponse<Vec<AppResp>>, ApiError> {
     event!(Level::INFO, "endpoint list all apps {:?}", page);
+    headers.iter().for_each(|(name, value)| {
+        event!(
+            Level::INFO,
+            "received headers key={:?} value={:?}",
+            name,
+            value
+        );
+    });
     let results = svc.list_all(page.skip, page.limit).await?;
     let mut resp = Vec::with_capacity(results.len());
     results.into_iter().for_each(|e| resp.push(e.into()));
@@ -68,9 +77,18 @@ pub async fn get_app(
 #[instrument(skip_all)]
 pub async fn update_app(
     State(svc): State<service::app::AppService>,
+    headers: HeaderMap,
     Path(id): Path<String>,
     Json(payload): Json<AppReq>,
 ) -> Result<ApiResponse<AppResp>, ApiError> {
+    headers.iter().for_each(|(name, value)| {
+        event!(
+            Level::INFO,
+            "received headers key={:?} value={:?}",
+            name,
+            value
+        );
+    });
     event!(Level::INFO, "endpoint update path apps {:?}", id);
     // 这里实现了from，因此类型不匹配可以直接传
     let result = svc.update_app(&id, payload.into()).await?;

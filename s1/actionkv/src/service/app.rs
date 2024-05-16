@@ -63,7 +63,7 @@ impl AppService {
         let ret = self.repo.get_app_by_id(_id).await?;
         Ok(ret)
     }
-
+    
     #[instrument(skip_all)]
     pub async fn delete_app_by_id(
         &self,

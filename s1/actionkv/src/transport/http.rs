@@ -28,8 +28,10 @@ pub fn init_app() -> Router {
     app = app
         .route("/", get(hello_world))
         .merge(app::register_app_route())
+        // .route_layer(layer)   // 仅命中路由才打印
         .fallback(fallback);
     
+    // 先添加的路由会被后面的middleware处理，后添加的不处理
     app = app.layer(
         ServiceBuilder::new()
             .layer(

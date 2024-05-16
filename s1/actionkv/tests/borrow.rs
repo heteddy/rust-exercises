@@ -53,7 +53,7 @@ impl std::hash::Hash for App {
 }
 
 
-/*
+/**
 println!("{:?}",v.get("meeting_minutes").unwrap_or_default());
 下面的报错
  --> tests/borrow.rs:97:37
@@ -68,6 +68,7 @@ println!("{:?}",v.get("meeting_minutes").unwrap_or_default());
 
 
  */
+/// 实现了borrow才能用于hashmap的get接口
 impl std::borrow::Borrow<str> for App {
     fn borrow(&self) -> &str {
         println! {"calling borrow {}", &self.app_id};
