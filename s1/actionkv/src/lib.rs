@@ -16,13 +16,13 @@ pub fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())
 }
 
-pub mod search;
 pub mod config;
-pub mod transport;
-pub mod endpoint;
-pub mod server;
-pub mod pb;
 pub mod dao;
+pub mod endpoint;
+pub mod middleware;
+pub mod pb;
+pub mod search;
+pub mod server;
 pub mod sync;
-
+pub mod transport;
 pub mod utils;

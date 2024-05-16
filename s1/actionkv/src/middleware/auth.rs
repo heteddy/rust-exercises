@@ -66,20 +66,20 @@ use axum::{Extension, Router};
  use http::request::Parts;
  use http::{HeaderName, HeaderValue, StatusCode};
  use async_trait::async_trait;
- ​
+
  async fn aaa() -> &'static str {
      "hello"
  }
- ​
+
  struct RequireSign;
- ​
+
  #[async_trait]
  impl <S> FromRequestParts<S> for RequireSign
      where
          S: Send + Sync,
  {
      type Rejection = StatusCode;
- ​
+
      async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
          let app_id_header = parts.headers
              .get(HeaderName::from_static("x-app-id"))
@@ -87,7 +87,7 @@ use axum::{Extension, Router};
          let sign_header = parts.headers
              .get(HeaderName::from_static("x-sign"))
              .and_then(|value| value.to_str().ok());
- ​
+
          match (app_id_header, sign_header) {
              (Some(app_id), Some(sign)) if verify(app_id, sign) => {
                  Ok(Self)
@@ -96,20 +96,20 @@ use axum::{Extension, Router};
          }
      }
  }
- ​
+
  fn verify(app_id: &str, sign: &str) -> bool {
      //replace with some real logic code
      true
  }
- ​
+
  #[tokio::main]
  async fn main() {
      let duration = std::time::Duration::from_secs(3);
- ​
+
      let app = Router::new()
          .route("/aaa",get(aaa))
          .layer(axum::middleware::from_extractor::<RequireSign>());
- ​
+
      // run it with hyper on localhost:3000
      axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
          .serve(app.into_make_service())
@@ -202,9 +202,9 @@ let app = Router::new()
 
 /// 基于 from_fn_with_state 实现app_id和app_secret的校验
 ///
-/// 
+///
 
-async fn auth_middleware(
+pub async fn auth_middleware(
     State(svc): State<auth_state::TenantAuthSvc>,
     Path(name): Path<String>,
     headers: HeaderMap,
@@ -221,12 +221,13 @@ async fn auth_middleware(
         .get("x-app-secret")
         .map_or("".to_owned(), get_header_value);
     // 绑定name是参数
-
+    info!("auth_middleware {:?},{:?}", app_id, app_secret);
     if name.len() > 0 && app_id.len() > 0 && app_secret.len() > 0 {
         if !svc.auth(&app_id, &app_secret, &name) {
             return Err(StatusCode::UNAUTHORIZED);
         }
     } else {
+        warn!("auth_middleware {:?},{:?}", app_id, app_secret);
         return Err(StatusCode::UNAUTHORIZED);
     }
     let response = next.run(request).await;
