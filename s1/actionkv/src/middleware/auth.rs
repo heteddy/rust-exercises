@@ -211,7 +211,7 @@ pub async fn auth_middleware(
     headers: HeaderMap,
     request: Request,
     next: Next,
-) -> Result<Response, StatusCode> {
+) -> Result<Response, (StatusCode, String)> {
     let get_header_value = |v: &HeaderValue| v.to_str().unwrap_or("").to_owned();
 
     let app_id = headers
@@ -232,11 +232,17 @@ pub async fn auth_middleware(
         let mut s = svc.lock().unwrap();
         s.add_counter();
         if !s.auth(&app_id, &app_secret, &name) {
-            return Err(StatusCode::UNAUTHORIZED);
+            return Err((
+                StatusCode::UNAUTHORIZED,
+                "app_id or app_secret 错误".to_owned(),
+            ));
         }
     } else {
         warn!("auth_middleware {:?},{:?}", app_id, app_secret);
-        return Err(StatusCode::UNAUTHORIZED);
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            "app_id or app_secret 错误".to_owned(),
+        ));
     }
     let response = next.run(request).await;
     Ok(response)

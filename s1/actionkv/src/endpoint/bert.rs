@@ -4,6 +4,7 @@ use crate::middleware::auth::auth_middleware;
 use crate::pb::svr::{bert::BertReq, bert::BertResp, ApiError, ApiResponse};
 use crate::server;
 use axum::extract::{Json, Path, Query, State};
+use axum::handler::Handler;
 use axum::http::{header::HeaderMap, StatusCode};
 use axum::response::IntoResponse;
 use axum::{
@@ -101,9 +102,12 @@ pub fn register_route() -> Router {
     let svc = server::bert::BertSvc::new();
     let mut _route = Router::new();
     let middle_svc = server::auth::TENANT_AUTH_SVC.clone();
-    _route = _route
-        .route("/berts/:name", post(create))
-        .route_layer(from_fn_with_state(middle_svc, auth_middleware));
+    _route = _route.route(
+        "/berts/:name",
+        post(create.layer(from_fn_with_state(middle_svc, auth_middleware))),
+    );
+    // https://docs.rs/axum/latest/axum/middleware/index.html#passing-state-from-middleware-to-handlers
+    //.route_layer(from_fn_with_state(middle_svc, auth_middleware));
     // _route = _route.route("/bert", get(get_app).put(update_app));
     Router::new().nest("/api", _route).with_state(svc)
 }
