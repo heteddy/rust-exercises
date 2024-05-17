@@ -7,6 +7,7 @@ use axum::{
     routing::get,
     Router,
 };
+use std::sync::{Arc, Mutex};
 use tracing::{info, warn};
 /// 通过router
 /**
@@ -205,7 +206,7 @@ let app = Router::new()
 ///
 
 pub async fn auth_middleware(
-    State(svc): State<auth_state::TenantAuthSvc>,
+    State(svc): State<Arc<Mutex<auth_state::TenantAuthSvc>>>,
     Path(name): Path<String>,
     headers: HeaderMap,
     request: Request,
@@ -221,9 +222,16 @@ pub async fn auth_middleware(
         .get("x-app-secret")
         .map_or("".to_owned(), get_header_value);
     // 绑定name是参数
-    info!("auth_middleware {:?},{:?}", app_id, app_secret);
+    info!(
+        "auth_middleware app_id={:?},app_secret={:?} uri={:?}",
+        app_id,
+        app_secret,
+        request.uri()
+    );
     if name.len() > 0 && app_id.len() > 0 && app_secret.len() > 0 {
-        if !svc.auth(&app_id, &app_secret, &name) {
+        let mut s = svc.lock().unwrap();
+        s.add_counter();
+        if !s.auth(&app_id, &app_secret, &name) {
             return Err(StatusCode::UNAUTHORIZED);
         }
     } else {

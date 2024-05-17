@@ -34,11 +34,19 @@ struct Pagination {
     limit: i64,
 }
 
+impl Pagination {}
+
+impl Default for Pagination {
+    fn default() -> Self {
+        Pagination { skip: 0, limit: 10 }
+    }
+}
+
 #[instrument(skip_all)]
 pub async fn list_apps(
     State(svc): State<server::app::AppSvc>,
     headers: HeaderMap,
-    page: Query<Pagination>,
+    page: Option<Query<Pagination>>,
 ) -> Result<ApiResponse<Vec<AppResp>>, ApiError> {
     event!(Level::INFO, "endpoint list all apps {:?}", page);
     headers.iter().for_each(|(name, value)| {
@@ -49,6 +57,7 @@ pub async fn list_apps(
             value
         );
     });
+    let page = page.unwrap_or_default();
     let results = svc.list_all(page.skip, page.limit).await?;
     let mut resp = Vec::with_capacity(results.len());
     results.into_iter().for_each(|e| resp.push(e.into()));

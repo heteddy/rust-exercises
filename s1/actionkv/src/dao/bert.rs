@@ -133,16 +133,16 @@ impl BertRepo {
                 .keys(doc! {
                     "updated_at":-1,"deleted_at":-1,
                 })
-                .options(opt.clone())
+                .options(opt)
                 .build(),
         );
 
         indices.push(
             IndexModel::builder()
                 .keys(doc! {
-                    "name":1,"deleted_at":-1,
+                    "uniqueOpt":1,"deleted_at":-1,
                 })
-                .options(opt.clone())
+                .options(uniqueOpt)
                 .build(),
         );
         let o = options::CreateIndexOptions::builder()

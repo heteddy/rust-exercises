@@ -41,9 +41,9 @@ pub struct MappingEntity {
     pub app_id: String,
     pub name: String,
     pub fields: Vec<MappingField>,
-    #[serde(with = "local_date_format")]
-    created_at: DateTime<Local>,
-    #[serde(with = "local_date_format")]
-    updated_at: DateTime<Local>,
+    #[serde(with = "chrono_datetime_as_bson_datetime")] //只能支持utc
+    pub created_at: DateTime<Utc>,
+    #[serde(with = "chrono_datetime_as_bson_datetime")]
+    pub updated_at: DateTime<Utc>,
     deleted_at: i64,
 }

@@ -100,7 +100,7 @@ async fn create(
 pub fn register_route() -> Router {
     let svc = server::bert::BertSvc::new();
     let mut _route = Router::new();
-    let middle_svc = server::auth::TenantAuthSvc::new();
+    let middle_svc = server::auth::TENANT_AUTH_SVC.clone();
     _route = _route
         .route("/berts/:name", post(create))
         .route_layer(from_fn_with_state(middle_svc, auth_middleware));

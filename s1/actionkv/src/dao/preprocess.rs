@@ -41,9 +41,9 @@ pub struct PreprocessEntity {
     pub id: Option<ObjectId>,
     pub name: String,
     pub url: String,
-    #[serde(with = "local_date_format")]
-    pub created_at: DateTime<Local>,
-    #[serde(with = "local_date_format")]
-    pub updated_at: DateTime<Local>,
+    #[serde(with = "chrono_datetime_as_bson_datetime")] //只能支持utc
+    pub created_at: DateTime<Utc>,
+    #[serde(with = "chrono_datetime_as_bson_datetime")]
+    pub updated_at: DateTime<Utc>,
     pub deleted_at: i64,
 }
