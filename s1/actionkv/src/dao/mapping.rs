@@ -3,8 +3,6 @@ use futures::stream::{StreamExt, TryStreamExt};
 use mongodb::bson::serde_helpers::{
     bson_datetime_as_rfc3339_string,
     chrono_datetime_as_bson_datetime,
-    // hex_string_as_object_id,
-    // serialize_object_id_as_hex_string,
 };
 use mongodb::{
     bson::{self, doc, oid::ObjectId, Bson},
@@ -18,7 +16,6 @@ use std::time::Duration;
 use tokio::sync::OnceCell;
 // 需要引入这个trait
 use serde::{Deserialize, Serialize, Serializer};
-// 这个是derive 宏
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
 use crate::pb::svr::mapping::MappingField;
