@@ -1,9 +1,12 @@
 // use crate::pb;
+use crate::cache::repo;
 use crate::config;
 use crate::dao::app::{AppEntity, AppRepo};
 use crate::pb::svr::{ApiError, ApiResponse};
 use std::convert::AsRef;
 use std::fmt::{Debug, Display};
+// use std::sync::{Arc, Mutex};
+use tokio::sync::mpsc;
 // use std::sync::{Arc, RwLock};
 use tracing::{event, info, instrument, Level};
 // use mongodb::error::Error as MongoError;
@@ -13,18 +16,25 @@ use tracing::{event, info, instrument, Level};
 #[derive(Clone)]
 pub struct AppSvc {
     repo: AppRepo,
+    sender: mpsc::Sender<repo::SyncMsg>,
 }
 
 impl AppSvc {
     pub fn new() -> Self {
         AppSvc {
             repo: AppRepo::new(),
+            sender: repo::GLOBAL_SYNCHRONIZER.lock().unwrap().get_tx(),
         }
     }
     #[instrument(skip_all)]
     pub async fn create_app(&self, app: AppEntity) -> Result<AppEntity, ApiError> {
         info!("insert app {:?}", app.app_id);
         let _app = self.repo.insert_app(&app).await?;
+        match self.sender.send(repo::SyncMsg::App(_app.clone())).await {
+            _ => {
+
+            }
+        }
         Ok(_app)
     }
 
@@ -36,6 +46,11 @@ impl AppSvc {
     ) -> Result<AppEntity, ApiError> {
         info!("update app {:?}", app.app_id);
         let _app = self.repo.update_app_by_id(_id, &app).await?;
+        match self.sender.send(repo::SyncMsg::App(_app.clone())).await {
+            _ => {
+                
+            }
+        }
         Ok(_app)
     }
 

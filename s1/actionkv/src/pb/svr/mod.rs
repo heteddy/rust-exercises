@@ -13,7 +13,7 @@ pub mod app;
 pub mod bert;
 pub mod data;
 pub mod error;
-pub mod mapping;
+pub mod index;
 
 pub const CODE_SUCCESS: StatusCode = StatusCode::OK;
 

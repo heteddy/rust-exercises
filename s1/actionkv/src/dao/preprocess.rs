@@ -44,3 +44,9 @@ pub struct PreprocessEntity {
     pub updated_at: DateTime<Utc>,
     pub deleted_at: i64,
 }
+
+impl PartialEq<PreprocessEntity> for PreprocessEntity {
+    fn eq(&self, other: &PreprocessEntity) -> bool {
+        self.name == other.name
+    }
+}

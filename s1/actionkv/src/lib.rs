@@ -23,6 +23,6 @@ pub mod middleware;
 pub mod pb;
 pub mod search;
 pub mod server;
-pub mod sync;
+pub mod cache;
 pub mod transport;
 pub mod utils;

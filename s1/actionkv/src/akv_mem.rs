@@ -25,16 +25,16 @@ non_snake_case
 use libakv::{
     config,
     dao,
-    transport::http,
+    cache,
     // dao,
+    transport::http,
 };
 
 use tokio::net::TcpListener;
 // use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 // use tracing::{event, info, info_span, instrument, span, span::Span, warn, Level};
-use tracing::{info, warn, debug};
+use tracing::{debug, info, warn};
 // use libakv::dao::app::AppEntity;
-
 #[tokio::main]
 async fn main() {
     // thread::sleep(Duration::from_secs(2));
@@ -42,14 +42,14 @@ async fn main() {
     config::global_configure().await;
     let result = dao::init_indexes().await;
     //
+    cache::repo::GLOBAL_SYNCHRONIZER.lock().unwrap().receive().await;
     warn!("start tracing subscriber");
-    info!("start app");
+    info!("start app"); 
     // build our application with a route
     let app = http::init_app();
     let listener = TcpListener::bind("127.0.0.1:8090").await.unwrap();
     debug!("listening on {}", listener.local_addr().unwrap());
     warn!("add tracing info");
-
 
     // let app_repo = dao::app::AppRepo::init("test","vector_app");
     // // let entity = dao::app::AppEntity{

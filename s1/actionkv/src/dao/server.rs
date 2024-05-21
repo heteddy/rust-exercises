@@ -2,8 +2,7 @@
 use chrono::prelude::*;
 use futures::stream::{StreamExt, TryStreamExt};
 use mongodb::bson::serde_helpers::{
-    bson_datetime_as_rfc3339_string,
-    chrono_datetime_as_bson_datetime,
+    bson_datetime_as_rfc3339_string, chrono_datetime_as_bson_datetime,
 };
 use mongodb::{
     bson::{self, doc, oid::ObjectId, Bson},
@@ -45,4 +44,10 @@ pub struct ServerEntity {
     #[serde(with = "chrono_datetime_as_bson_datetime")]
     pub updated_at: DateTime<Utc>,
     pub deleted_at: i64,
+}
+
+impl PartialEq<ServerEntity> for ServerEntity {
+    fn eq(&self, other: &ServerEntity) -> bool {
+        self.name == other.name
+    }
 }

@@ -1,9 +1,8 @@
 pub mod app;
 pub mod bert;
-pub mod mapping;
 pub mod preprocess;
 pub mod server;
-pub mod setting;
+pub mod index;
 
 use crate::pb::svr::{ApiError, ApiResponse};
 use tracing::{error, event, info, info_span, instrument, span, warn, Level};
