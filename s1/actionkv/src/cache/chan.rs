@@ -3,20 +3,18 @@ use crate::dao::{
     server::ServerEntity,
 };
 use crate::pb;
+use anyhow;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::{Arc, Mutex, RwLock};
-use tokio::sync::mpsc;
-use tokio::sync::OnceCell;
+use tokio::{spawn, sync::mpsc, sync::OnceCell};
 use tracing::{info, instrument, trace};
-use anyhow;
 //  定义一个oncecell，然后初始化它
 // pub static GLOBAL_SYNCHRONIZER: OnceCell<Synchronizer> = OnceCell::const_new();
 lazy_static! {
-    pub static ref GLOBAL_SYNCHRONIZER: Mutex<Synchronizer> =
-        Mutex::new(Synchronizer::build());
+    pub static ref GLOBAL_SYNCHRONIZER: Mutex<Synchronizer> = Mutex::new(Synchronizer::build());
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -88,10 +86,7 @@ pub struct Synchronizer
     listeners: Arc<RwLock<HashMap<String, Vec<mpsc::Sender<SyncData>>>>>,
 }
 
-impl Synchronizer
-// where
-//     T: Messager + 'static + Send + Sync + Clone + Debug,
-{
+impl Synchronizer {
     #[instrument]
     pub fn build() -> Synchronizer {
         // 已经移动到Synchronizer
@@ -115,7 +110,7 @@ impl Synchronizer
     //     self.tx.clone()
     // }
     #[instrument]
-    pub async fn send<E>(&self, msg_type: &str, e: &E) ->anyhow::Result<()>
+    pub async fn send<E>(&self, msg_type: &str, e: &E) -> anyhow::Result<()>
     where
         E: Serialize + Clone + Debug,
     {
@@ -142,18 +137,35 @@ impl Synchronizer
 
                     let map = table.read().unwrap();
                     let listener_senders = map.get(res.get_type());
-                    info!("received msg={:?}", &res);
+
                     // 这里虽然没有解析
-                    // match listener_senders {
-                    //     Some(t) => {
-                    //         t.iter().for_each(|l| async {
-                    //             l.send(res).await;
-            
-                    //         });
-                    //     }
-                    //     None => {}
-                    // }
-                    // 定义一个watch
+                    match listener_senders {
+                        Some(s) => {
+                            s.iter().map(|l| async {
+                                let l2: mpsc::Sender<SyncData> = l.clone();
+                                let res2 = res.clone();
+                                spawn(async move {
+                                    // l2.send(res2).await;
+                                    l2.send(res2).await;
+                                    info!("send message to tx");
+                                })
+                            });
+                        }
+                        None => {}
+                    } // todo map 和 for_each的区别, 下面的代码不能编译
+                      // match listener_senders {
+                      //     Some(t) => {
+                      //         t.iter().for_each(| l| async{
+                      //             let l2 = l.clone();
+                      //             let res2 = res.clone();
+                      //             spawn(async move {
+                      //                 l2.send(res2).await;
+                      //             });
+                      //         });
+                      //     }
+                      //     None => {}
+                      // }
+                      // 定义一个watch
                 }
             });
         }
