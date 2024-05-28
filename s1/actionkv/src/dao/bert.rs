@@ -1,8 +1,7 @@
 use chrono::prelude::*;
 use futures::stream::{StreamExt, TryStreamExt};
 use mongodb::bson::serde_helpers::{
-    bson_datetime_as_rfc3339_string,
-    chrono_datetime_as_bson_datetime,
+    bson_datetime_as_rfc3339_string, chrono_datetime_as_bson_datetime,
 };
 use mongodb::{
     bson::{self, doc, oid::ObjectId, Bson},
@@ -15,21 +14,30 @@ use mongodb::{
 use std::time::Duration;
 use tokio::sync::OnceCell;
 // 需要引入这个trait
-use serde::{Deserialize, Serialize, Serializer};
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
-use crate::pb::svr::bert::{BertReq, BertResp};
-use crate::pb::svr::ApiError;
+
+use crate::pb::{
+    entity,
+    svr::{
+        bert::{BertReq, BertResp},
+        ApiError,
+    },
+};
 use crate::utils::{
     self,
     mongo::{local_date_format, serialize_object_id_option_as_hex_string},
 };
+use serde::{Deserialize, Serialize, Serializer};
 use serde_json::to_string;
 use std::hash::Hasher;
 use std::result::Result;
 use std::str::FromStr;
 use std::vec;
 use tracing::info;
+
+
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BertEntity {
@@ -48,6 +56,12 @@ pub struct BertEntity {
     #[serde(with = "chrono_datetime_as_bson_datetime")]
     pub updated_at: DateTime<Utc>,
     pub deleted_at: i64,
+}
+
+impl entity::Namer for BertEntity {
+    fn name(&self) -> &'static str {
+        dao::ENTITY_BERT
+    }
 }
 
 impl Default for BertEntity {

@@ -1,8 +1,7 @@
 use chrono::prelude::*;
 use futures::stream::{StreamExt, TryStreamExt};
 use mongodb::bson::serde_helpers::{
-    bson_datetime_as_rfc3339_string,
-    chrono_datetime_as_bson_datetime,
+    bson_datetime_as_rfc3339_string, chrono_datetime_as_bson_datetime,
 };
 use mongodb::{
     bson::{self, doc, oid::ObjectId, Bson},
@@ -31,9 +30,9 @@ use tracing::info;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PreprocessEntity {
     #[serde(
-    serialize_with = "serialize_object_id_option_as_hex_string",
-    rename = "_id",
-    skip_serializing_if = "Option::is_none"
+        serialize_with = "serialize_object_id_option_as_hex_string",
+        rename = "_id",
+        skip_serializing_if = "Option::is_none"
     )]
     pub id: Option<ObjectId>,
     pub name: String,
@@ -45,8 +44,15 @@ pub struct PreprocessEntity {
     pub deleted_at: i64,
 }
 
+
 impl PartialEq<PreprocessEntity> for PreprocessEntity {
     fn eq(&self, other: &PreprocessEntity) -> bool {
         self.name == other.name
+    }
+}
+
+impl pb::entity::Namer for PreprocessEntity {
+    fn name(&self) -> &'static str {
+        dao::ENTITY_PREPROCESS
     }
 }

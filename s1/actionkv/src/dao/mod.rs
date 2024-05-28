@@ -1,11 +1,17 @@
 pub mod app;
 pub mod bert;
+pub mod index;
 pub mod preprocess;
 pub mod server;
-pub mod index;
 
 use crate::pb::svr::{ApiError, ApiResponse};
 use tracing::{error, event, info, info_span, instrument, span, warn, Level};
+
+pub const ENTITY_APP: &'static str = "app_entity";
+pub const ENTITY_BERT: &'static str = "bert_entity";
+pub const ENTITY_PREPROCESS: &'static str = "preprocess_entity";
+pub const ENTITY_SERVER: &'static str = "server_entity";
+pub const ENTITY_INDEX: &'static str = "index_entity";
 // use mongodb::bson::oid::ObjectId;
 // use serde::{Serialize, Serializer};
 

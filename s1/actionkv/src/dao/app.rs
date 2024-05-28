@@ -38,6 +38,8 @@ use std::str::FromStr;
 use std::vec;
 use tracing::info;
 
+
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppEntity {
     // serialize a hex string as an ObjectId and deserialize a hex string from an ObjectId
@@ -66,6 +68,12 @@ pub struct AppEntity {
     pub updated_at: DateTime<Utc>,
     // 删除时间
     pub deleted_at: i64,
+}
+
+impl pb::entity::Namer for AppEntity {
+    fn name(&self) -> &'static str {
+        dao::ENTITY_APP
+    }
 }
 
 impl Default for AppEntity {
@@ -262,7 +270,7 @@ impl AppRepo {
             e.updated_at = updated_at;
             e
         });
-        
+
         Ok(updated.unwrap_or_default())
     }
     pub async fn list(

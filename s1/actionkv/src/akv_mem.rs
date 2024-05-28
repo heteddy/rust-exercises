@@ -1,13 +1,14 @@
 #![cfg_attr(
-debug_assertions,
-allow(
-// unused,
-dead_code,
-// unused_imports,
-unused_variables,
-unused_assignments,
-non_snake_case
-)
+    debug_assertions,
+    allow(
+        unused,
+        dead_code,
+        unused_imports,
+        unreachable_patterns,
+        unused_variables,
+        unused_assignments,
+        non_snake_case
+    )
 )]
 
 // use ansi_term::Colour;
@@ -23,9 +24,9 @@ non_snake_case
 
 // use chrono::Utc;
 use libakv::{
+    cache,
     config,
     dao,
-    cache,
     // dao,
     transport::http,
 };
@@ -42,9 +43,9 @@ async fn main() {
     config::global_configure().await;
     let result = dao::init_indexes().await;
     //
-    cache::repo::GLOBAL_SYNCHRONIZER.lock().unwrap().receive().await;
+
     warn!("start tracing subscriber");
-    info!("start app"); 
+    info!("start app");
     // build our application with a route
     let app = http::init_app();
     let listener = TcpListener::bind("127.0.0.1:8090").await.unwrap();

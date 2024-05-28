@@ -1,4 +1,3 @@
-// use chrono::{DateTime, Utc};
 use chrono::prelude::*;
 use futures::stream::{StreamExt, TryStreamExt};
 use mongodb::bson::serde_helpers::{
@@ -20,6 +19,7 @@ use serde::{Deserialize, Serialize, Serializer};
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
 use crate::pb;
+use crate::pb::svr::index::MappingField;
 use crate::utils::mongo::{local_date_format, serialize_object_id_option_as_hex_string};
 use serde_json::to_string;
 use std::hash::Hasher;
@@ -29,16 +29,29 @@ use std::vec;
 use tracing::info;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ServerEntity {
-    #[serde(
-        serialize_with = "serialize_object_id_option_as_hex_string",
-        rename = "_id",
-        skip_serializing_if = "Option::is_none"
-    )]
+pub struct Setting {
+    pub replica: u32,
+    pub shards: u32,
+    pub vector_size: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IndexConfig {
+    pub bert: String,
+    pub server: String,
+    pub preprocess: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IndexEntity {
     pub id: Option<ObjectId>,
-    pub name: String,
-    pub http_addr: String,
-    pub grpc_addr: String,
+    pub app_id: String,
+    pub name: String, // 索引名称; 也是alias
+    pub active: String,
+    pub inactive: String,
+    pub setting: Setting,
+    pub mapping: Vec<MappingField>, // 设置字段以及类型
+    pub configure: IndexConfig,
     #[serde(with = "chrono_datetime_as_bson_datetime")] //只能支持utc
     pub created_at: DateTime<Utc>,
     #[serde(with = "chrono_datetime_as_bson_datetime")]
@@ -46,14 +59,15 @@ pub struct ServerEntity {
     pub deleted_at: i64,
 }
 
-impl PartialEq<ServerEntity> for ServerEntity {
-    fn eq(&self, other: &ServerEntity) -> bool {
+
+impl PartialEq<IndexEntity> for IndexEntity {
+    fn eq(&self, other: &IndexEntity) -> bool {
         self.name == other.name
     }
 }
 
-impl pb::entity::Namer for ServerEntity {
+impl pb::entity::Namer for IndexEntity {
     fn name(&self) -> &'static str {
-        dao::ENTITY_SERVER
+        dao::ENTITY_INDEX
     }
 }
