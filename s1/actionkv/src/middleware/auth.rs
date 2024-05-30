@@ -229,7 +229,7 @@ pub async fn auth_middleware(
         request.uri()
     );
     if name.len() > 0 && app_id.len() > 0 && app_secret.len() > 0 {
-        let mut s = svc.lock().unwrap();
+        let mut s: std::sync::MutexGuard<auth_state::TenantAuthSvc> = svc.lock().unwrap();
         s.add_counter();
         if !s.auth(&app_id, &app_secret, &name) {
             return Err((

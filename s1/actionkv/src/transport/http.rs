@@ -18,18 +18,20 @@ use tower_http::request_id::{MakeRequestUuid, SetRequestIdLayer};
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
+use tokio::sync::mpsc;
+use crate::cache::chan;
 
 #[derive(Clone)]
 struct State {}
 
-pub fn init_app() -> Router {
+pub fn init_app(tx: mpsc::Sender<chan::SyncData>) -> Router {
     // 会move
     let mut app = Router::new();
-
+    
     app = app
         .route("/", get(hello_world))
-        .merge(app::register_route())
-        .merge(bert::register_route())
+        .merge(app::register_route(tx.clone()))
+        .merge(bert::register_route(tx))
         // .route_layer(layer)   // 仅命中路由才打印
         .fallback(fallback);
     

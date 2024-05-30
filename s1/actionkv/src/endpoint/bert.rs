@@ -1,3 +1,4 @@
+use crate::cache::chan;
 use crate::dao;
 use crate::dao::bert::BertEntity;
 use crate::middleware::auth::auth_middleware;
@@ -15,6 +16,7 @@ use axum::{
 };
 use serde_derive::Deserialize;
 use std::convert::From;
+use tokio::sync::mpsc;
 use tracing::{event, info, instrument, span, Level};
 
 #[instrument(skip_all)]
@@ -98,11 +100,11 @@ async fn create(
 //     Ok(ApiResponse::from_result(result.into()))
 // }
 
-pub fn register_route() -> Router {
-    let svc = server::bert::BertSvc::new();
+pub fn register_route(tx: mpsc::Sender<chan::SyncData>) -> Router {
+    let svc = server::bert::BertSvc::new(tx);
     let mut _route = Router::new();
     let middle_svc = server::auth::TENANT_AUTH_SVC.clone();
-    
+
     // todo 新构建一个route然后使用route_layer 添加middleware
     _route = _route.route(
         "/berts/:name",

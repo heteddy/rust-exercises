@@ -22,43 +22,23 @@ use tracing::{info, instrument, trace, warn};
 //             _app_repo2.update(irx).await;
 //         });
 
-
-
 //         app_repo
 
 //     }).await
 // }
 
 /// 这里有问题，需要定义一个inner struct来存储，并且使用refcell，否则无法编译通过
-pub async fn start_cacher() {
-    // todo 需要定义drop
-    let mut synchronizer = chan::GLOBAL_SYNCHRONIZER.lock().unwrap();
-    let (itx, mut irx) = mpsc::channel::<chan::SyncData>(1);
+pub async fn start_cacher() -> (
+    Arc<Mutex<repo::IndexConfigureRepository>>,
+    mpsc::Sender<chan::SyncData>,
+) {
+    let (tx, rx) = mpsc::channel::<chan::SyncData>(10);
+    let configure_rep: repo::IndexConfigureRepository = repo::IndexConfigureRepository::new();
+    let conf_rep = Arc::new(Mutex::new(configure_rep));
+    let configure1 = conf_rep.clone();
+    tokio::spawn(async move{
+        repo::watch_configure_change(configure1, rx).await;
+    });
 
-    info!("index_repo starting receiving");
-    // let index_repo = repo::G_INDEX_REPO_INSTANCE.clone();
-    // tokio::spawn(async move {
-    //     // let mut _repo = index_repo.lock().unwrap();
-    //     index_repo.lock().unwrap().update(irx).await;
-    // });
-
-    info!("index_repo started receiving");
-    synchronizer.register("index", itx);
-
-    let (atx, mut arx) = mpsc::channel::<chan::SyncData>(1);
-
-    // tokio::spawn(async move {
-    //     let mut app_repo = repo::G_APP_REPO_INSTANCE.lock().unwrap();
-    //     app_repo.update(arx).await;
-    // });
-
-    let mut app_repo: std::sync::MutexGuard<repo::AppRepo> =
-        repo::G_APP_REPO_INSTANCE.lock().unwrap();
-    app_repo.update(arx).await;
-
-    info!("app_repo started receiving");
-    synchronizer.register("app", atx);
-
-    synchronizer.receive().await;
-    info!("synchronizer started watching");
+    (conf_rep.clone(), tx)
 }

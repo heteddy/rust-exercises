@@ -1,3 +1,5 @@
+use crate::cache::chan;
+
 use crate::dao;
 use crate::dao::app::AppEntity;
 use crate::pb::svr::{app::AppReq, app::AppResp, ApiError, ApiResponse};
@@ -12,6 +14,7 @@ use axum::{
 };
 use serde_derive::Deserialize;
 use std::convert::From;
+use tokio::sync::mpsc;
 use tracing::{event, info, instrument, span, Level};
 
 #[instrument(skip_all)]
@@ -104,8 +107,8 @@ pub async fn update_app(
     Ok(ApiResponse::from_result(result.into()))
 }
 
-pub fn register_route() -> Router {
-    let svc = server::app::AppSvc::new();
+pub fn register_route(tx: mpsc::Sender<chan::SyncData>) -> Router {
+    let svc = server::app::AppSvc::new(tx);
     let mut app_route = Router::new();
     app_route = app_route.route("/apps", post(create_app).get(list_apps));
     app_route = app_route.route("/apps/:id", get(get_app).put(update_app));

@@ -1,9 +1,15 @@
+//! 采用actor的方式实现，分离actor和actor handler，否则需要保证self是'static
+//! actor只处理 接收到的信息，run方法独立到另外一个函数中，可以move actor
+//! handler是想actor发送消息方面；
+//!
+
 use crate::dao::{
     app::AppEntity, bert::BertEntity, index::IndexEntity, preprocess::PreprocessEntity,
     server::ServerEntity,
 };
 use crate::pb;
 use anyhow;
+use core::sync;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -14,7 +20,7 @@ use tracing::{info, instrument, trace};
 //  定义一个oncecell，然后初始化它
 // pub static GLOBAL_SYNCHRONIZER: OnceCell<Synchronizer> = OnceCell::const_new();
 lazy_static! {
-    pub static ref GLOBAL_SYNCHRONIZER: Mutex<Synchronizer> = Mutex::new(Synchronizer::build());
+    // pub static ref GLOBAL_SYNCHRONIZER: Mutex<Synchronizer> = Mutex::new(Synchronizer::build());
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -121,53 +127,44 @@ impl Synchronizer {
     }
 
     #[instrument]
-    pub async fn receive(&mut self) {
-        // 启动一个新的routine
-        let rx = self.rx.take();
-        // let listeners = self.table.clone();
-        if let Some(mut _rx) = rx {
-            let table = self.listeners.clone();
-            tokio::spawn(async move {
-                // todo 优化方式，发送到redis或消息队列，然后都从amqp中订阅
-                // 启动一个新的协程处理
-                // let received = ;
-                while let Some(res) = _rx.recv().await {
-                    // todo 收到了更新的通知，分发到指定的
-                    info!("received message:{:?}", res);
+    pub async fn handle_sync_data(&mut self, data: SyncData) {
+        let map = self.listeners.read().unwrap();
+        let listener_senders = map.get(data.get_type());
 
-                    let map = table.read().unwrap();
-                    let listener_senders = map.get(res.get_type());
+        // 这里虽然没有解析
+        match listener_senders {
+            Some(s) => {
+                s.iter().map(|l| async { // todo 为什么不能用async move
+                    // let l2: mpsc::Sender<SyncData> = l.clone();
+                    let _d2 = data.clone(); // todo 这里能不能用arc
+                    l.send(_d2).await;
+                });
+            }
+            None => {}
+        } // todo map 和 for_each的区别, 下面的代码不能编译
+          // match listener_senders {
+          //     Some(t) => {
+          //         t.iter().for_each(| l| async{
+          //             let l2 = l.clone();
+          //             let res2 = res.clone();
+          //             spawn(async move {
+          //                 l2.send(res2).await;
+          //             });
+          //         });
+          //     }
+          //     None => {}
+          // }
+          // 定义一个watch
+    }
+}
 
-                    // 这里虽然没有解析
-                    match listener_senders {
-                        Some(s) => {
-                            s.iter().map(|l| async {
-                                let l2: mpsc::Sender<SyncData> = l.clone();
-                                let res2 = res.clone();
-                                spawn(async move {
-                                    // l2.send(res2).await;
-                                    l2.send(res2).await;
-                                    info!("send message to tx");
-                                })
-                            });
-                        }
-                        None => {}
-                    } // todo map 和 for_each的区别, 下面的代码不能编译
-                      // match listener_senders {
-                      //     Some(t) => {
-                      //         t.iter().for_each(| l| async{
-                      //             let l2 = l.clone();
-                      //             let res2 = res.clone();
-                      //             spawn(async move {
-                      //                 l2.send(res2).await;
-                      //             });
-                      //         });
-                      //     }
-                      //     None => {}
-                      // }
-                      // 定义一个watch
-                }
-            });
-        }
+#[instrument]
+pub async fn run_synchronizer(mut synchronizer: Synchronizer) {
+    let mut _rx = synchronizer.rx.take().unwrap();
+
+    while let Some(res) = _rx.recv().await {
+        // todo 收到了更新的通知，分发到指定的
+        info!("received message:{:?}", res);
+        synchronizer.handle_sync_data(res).await;
     }
 }

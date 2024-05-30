@@ -34,17 +34,17 @@ async fn main() {
     config::global_configure().await;
     let result = dao::init_indexes().await;
     //
-
+    
     warn!("start tracing subscriber");
     info!("start app");
     // build our application with a route
-    let app = http::init_app();
+    
+    let (repo,tx) = cache::start_cacher().await;
+    warn!("cache started");
+
+    let app = http::init_app(tx.clone());
     let listener = TcpListener::bind("127.0.0.1:8090").await.unwrap();
     debug!("listening on {}", listener.local_addr().unwrap());
-    
-
-    cache::start_cacher().await;
-    warn!("cache started");
 
     // let app_repo = dao::app::AppRepo::init("test","vector_app");
     // // let entity = dao::app::AppEntity{

@@ -1,5 +1,5 @@
 // use crate::pb;
-use crate::cache::repo;
+use crate::cache::{repo,chan};
 use crate::config;
 use crate::dao::app::{AppEntity, AppRepo};
 use crate::pb::svr::{ApiError, ApiResponse};
@@ -16,14 +16,15 @@ use tracing::{event, info, instrument, Level};
 #[derive(Clone)]
 pub struct AppSvc {
     repo: AppRepo,
-
+    sender: mpsc::Sender<chan::SyncData>,
 }
 
 impl AppSvc {
-    pub fn new() -> Self {
+    pub fn new(tx: mpsc::Sender<chan::SyncData>) -> Self {
         AppSvc {
             repo: AppRepo::new(),
             // 通过sender发送到
+            sender: tx,
             // sender: repo::GLOBAL_SYNCHRONIZER.lock().unwrap().get_tx(),
         }
     }
@@ -49,7 +50,7 @@ impl AppSvc {
         let _app = self.repo.update_app_by_id(_id, &app).await?;
         // match self.sender.send(repo::SyncMsg::App(_app.clone())).await {
         //     _ => {
-                
+
         //     }
         // }
         Ok(_app)
