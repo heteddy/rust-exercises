@@ -36,6 +36,7 @@ bson = { version = "2.10.0", features = [
     "time-0_3",
     "serde_with",
 ] }
+features="0.10.0"
 validator = { version = "0.16.1", features = ["derive"] }
 axum-valid = "0.18.0"
 futures = { version = "0.3", features = ["thread-pool"] }

@@ -40,11 +40,11 @@ async fn main() {
     // build our application with a route
     
     let (repo, tx) = cache::start_cacher();
-    warn!("cache started");
+    info!("cache started......");
 
     let app = http::init_app(tx.clone());
     let listener = TcpListener::bind("127.0.0.1:8090").await.unwrap();
-    debug!("listening on {}", listener.local_addr().unwrap());
+    info!("listening on {}", listener.local_addr().unwrap());
 
     // let app_repo = dao::app::AppRepo::init("test","vector_app");
     // // let entity = dao::app::AppEntity{

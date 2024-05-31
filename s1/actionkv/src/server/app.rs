@@ -1,5 +1,5 @@
 // use crate::pb;
-use crate::cache::{repo,sync};
+use crate::cache::{repo, sync};
 use crate::config;
 use crate::dao::app::{AppEntity, AppRepo};
 use crate::pb::svr::{ApiError, ApiResponse};
@@ -32,11 +32,10 @@ impl AppSvc {
     pub async fn create_app(&self, app: AppEntity) -> Result<AppEntity, ApiError> {
         info!("insert app {:?}", app.app_id);
         let _app = self.repo.insert_app(&app).await?;
-        // match self.sender.send(repo::SyncMsg::App(_app.clone())).await {
-        //     _ => {
 
-        //     }
-        // }
+        self.sender
+            .send(sync::SyncData::build::<AppEntity>("app", &_app))
+            .await;
         Ok(_app)
     }
 
@@ -48,6 +47,9 @@ impl AppSvc {
     ) -> Result<AppEntity, ApiError> {
         info!("update app {:?}", app.app_id);
         let _app = self.repo.update_app_by_id(_id, &app).await?;
+        self.sender
+            .send(sync::SyncData::build::<AppEntity>("app", &_app))
+            .await;
         // match self.sender.send(repo::SyncMsg::App(_app.clone())).await {
         //     _ => {
 
@@ -69,7 +71,7 @@ impl AppSvc {
         let ret = self.repo.get_app_by_id(_id).await?;
         Ok(ret)
     }
-
+    ///todo add 删除逻辑
     #[instrument(skip_all)]
     pub async fn delete_app_by_id(
         &self,

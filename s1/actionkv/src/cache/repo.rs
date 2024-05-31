@@ -114,6 +114,10 @@ impl IndexConfigureRepository {
     /// 分发到对应的repo中
     pub fn handle_data(&mut self, mut data: sync::SyncData) {
         let t: &str = data.get_type();
+        info!(
+            "index configuration received data_type={:?},msg={:?}",
+            t, data
+        );
         match t {
             "app" => {
                 if let Some(ref body) = data.get_body() {
