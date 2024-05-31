@@ -39,9 +39,15 @@ impl AppRepo {
     pub fn auth(&self, app_id: &str, app_secret: &str) -> bool {
         false
     }
+    #[instrument]
     pub fn handle_entity(&mut self, e: AppEntity) {
         let app_id = &e.app_id;
         let app_secret = &e.app_secret;
+        info!(
+            "update app entity: app_id={:?}, app_secret={:?}",
+            app_id, app_secret
+        );
+
         let mut auth_table = self.auth_table.write().unwrap();
         auth_table
             .entry(app_id.to_string())
@@ -69,8 +75,12 @@ impl IndexRepo {
             index_table: Arc::new(RwLock::new(HashMap::with_capacity(10))),
         }
     }
+    #[instrument]
     pub fn handle_entity(&mut self, e: IndexEntity) {
-        info!("update name={:?}, app_id={:?}", e.name, e.app_id);
+        info!(
+            "update index entity name={:?}, app_id={:?}",
+            e.name, e.app_id
+        );
         let mut index_table = self.index_table.write().unwrap();
         index_table
             .entry(e.name.clone())
@@ -84,7 +94,7 @@ impl IndexRepo {
 }
 
 pub struct IndexConfigureRepository {
-    app: AppRepo,   // 会不会有运行时的问题, refcell 不能send
+    app: AppRepo, // 会不会有运行时的问题, refcell 不能send
     index: IndexRepo,
     // rx: mpsc::Receiver<chan::SyncData>,
 }

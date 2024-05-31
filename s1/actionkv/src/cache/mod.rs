@@ -28,17 +28,32 @@ use tracing::{info, instrument, trace, warn};
 // }
 
 /// 这里有问题，需要定义一个inner struct来存储，并且使用refcell，否则无法编译通过
-pub async fn start_cacher() -> (
+pub fn start_cacher() -> (
     Arc<Mutex<repo::IndexConfigureRepository>>,
     mpsc::Sender<chan::SyncData>,
 ) {
-    let (tx, rx) = mpsc::channel::<chan::SyncData>(10);
+    let (entity_tx, entity_rx) = mpsc::channel::<chan::SyncData>(10);
     let configure_rep: repo::IndexConfigureRepository = repo::IndexConfigureRepository::new();
     let conf_rep = Arc::new(Mutex::new(configure_rep));
     let configure1 = conf_rep.clone();
-    tokio::spawn(async move{
-        repo::watch_configure_change(configure1, rx).await;
+
+    tokio::spawn(async move {
+        repo::watch_configure_change(configure1, entity_rx).await;
     });
 
-    (conf_rep.clone(), tx)
+    let (sync_tx, mut sync_rx) = mpsc::channel::<chan::SyncData>(10);
+
+    // let _synchronizer = chan::GLOBAL_SYNCHRONIZER.clone();
+    // let mut synchronizer = _synchronizer.lock().unwrap();
+    let mut synchronizer = chan::Synchronizer::build();
+    synchronizer.register("app", entity_tx.clone());
+    synchronizer.register("index", entity_tx.clone());
+
+    // let _synchronizer: Arc<Mutex<chan::Synchronizer>> = Arc::new(Mutex::new(synchronizer));
+    // let _synchronizer2 = _synchronizer.clone();
+    tokio::spawn(async move {
+        chan::run_synchronizer(synchronizer, sync_rx).await;
+    });
+    
+    (conf_rep.clone(), sync_tx)
 }

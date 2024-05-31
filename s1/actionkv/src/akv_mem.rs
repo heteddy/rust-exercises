@@ -34,12 +34,12 @@ async fn main() {
     config::global_configure().await;
     let result = dao::init_indexes().await;
     //
-    
+
     warn!("start tracing subscriber");
     info!("start app");
     // build our application with a route
     
-    let (repo,tx) = cache::start_cacher().await;
+    let (repo, tx) = cache::start_cacher();
     warn!("cache started");
 
     let app = http::init_app(tx.clone());

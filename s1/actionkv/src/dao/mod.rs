@@ -35,3 +35,5 @@ pub async fn init_indexes() -> Result<(), ApiError> {
     });
     Ok(())
 }
+
+

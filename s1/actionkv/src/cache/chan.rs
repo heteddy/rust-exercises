@@ -15,13 +15,15 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::{Arc, Mutex, RwLock};
+use tokio::net::unix::pipe::Receiver;
 use tokio::{spawn, sync::mpsc, sync::OnceCell};
 use tracing::{info, instrument, trace};
 //  定义一个oncecell，然后初始化它
 // pub static GLOBAL_SYNCHRONIZER: OnceCell<Synchronizer> = OnceCell::const_new();
-lazy_static! {
-    // pub static ref GLOBAL_SYNCHRONIZER: Mutex<Synchronizer> = Mutex::new(Synchronizer::build());
-}
+// lazy_static! {
+//     pub static ref GLOBAL_SYNCHRONIZER: Arc<Mutex<Synchronizer>> =
+//         Arc::new(Mutex::new(Synchronizer::build()));
+// }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum SyncMsg {
@@ -69,6 +71,16 @@ impl SyncData {
     pub fn new(msg_type: String, body: Option<String>) -> SyncData {
         SyncData { msg_type, body }
     }
+
+    #[instrument]
+    pub fn build<E>(&self, msg_type: &str, e: &E) -> anyhow::Result<SyncData>
+    where
+        E: Serialize + Clone + Debug,
+    {
+        let body = serde_json::to_string(e).unwrap_or_default();
+        let m = SyncData::new(msg_type.to_owned(), Some(body));
+        anyhow::Ok(m)
+    }
 }
 
 impl Messager for SyncData {
@@ -86,8 +98,6 @@ pub struct Synchronizer
 // where
 //     T: Messager + 'static + Send + Sync + Clone,
 {
-    tx: mpsc::Sender<SyncData>,
-    rx: Option<mpsc::Receiver<SyncData>>,
     // 要给另外一个协程使用
     listeners: Arc<RwLock<HashMap<String, Vec<mpsc::Sender<SyncData>>>>>,
 }
@@ -95,36 +105,35 @@ pub struct Synchronizer
 impl Synchronizer {
     #[instrument]
     pub fn build() -> Synchronizer {
-        // 已经移动到Synchronizer
-        let (tx, rx) = mpsc::channel::<SyncData>(10);
         // 定义一个watch, 实现通知各个repo变化
         Synchronizer {
-            tx,
-            rx: Some(rx),
+            // tx,  // note: 包含tx不能send，因此这里不要再包含send了，也就不能move到新的协程
             listeners: Arc::new(RwLock::new(HashMap::with_capacity(10))),
         }
     }
     #[instrument]
-    pub fn register(&mut self, name: &str, l: mpsc::Sender<SyncData>) {
+    pub fn register(&mut self, name: impl AsRef<str> + Debug, sender: mpsc::Sender<SyncData>) {
         let mut t = self.listeners.write().unwrap();
-        let e = t.entry(name.to_string()).or_insert(Vec::with_capacity(1));
-        e.push(l);
+        let e = t
+            .entry(name.as_ref().to_string())
+            .or_insert(Vec::with_capacity(1));
+        e.push(sender);
     }
 
     // #[instrument]
     // pub fn get_tx(&self) -> mpsc::Sender<T> {
     //     self.tx.clone()
     // }
-    #[instrument]
-    pub async fn send<E>(&self, msg_type: &str, e: &E) -> anyhow::Result<()>
-    where
-        E: Serialize + Clone + Debug,
-    {
-        let body = serde_json::to_string(e).unwrap_or_default();
-        let m = SyncData::new(msg_type.to_owned(), Some(body));
-        self.tx.send(m).await?; // todo:判断是否发送成功
-        anyhow::Ok(())
-    }
+    // #[instrument]
+    // pub async fn send<E>(&self, msg_type: &str, e: &E) -> anyhow::Result<()>
+    // where
+    //     E: Serialize + Clone + Debug,
+    // {
+    //     let body = serde_json::to_string(e).unwrap_or_default();
+    //     let m = SyncData::new(msg_type.to_owned(), Some(body));
+    //     self.tx.send(m).await?; // todo:判断是否发送成功
+    //     anyhow::Ok(())
+    // }
 
     #[instrument]
     pub async fn handle_sync_data(&mut self, data: SyncData) {
@@ -134,7 +143,8 @@ impl Synchronizer {
         // 这里虽然没有解析
         match listener_senders {
             Some(s) => {
-                s.iter().map(|l| async { // todo 为什么不能用async move
+                s.iter().map(|l| async {
+                    // todo 为什么不能用async move
                     // let l2: mpsc::Sender<SyncData> = l.clone();
                     let _d2 = data.clone(); // todo 这里能不能用arc
                     l.send(_d2).await;
@@ -159,8 +169,14 @@ impl Synchronizer {
 }
 
 #[instrument]
-pub async fn run_synchronizer(mut synchronizer: Synchronizer) {
-    let mut _rx = synchronizer.rx.take().unwrap();
+pub async fn run_synchronizer(
+    mut synchronizer: Synchronizer,
+    mut _rx: mpsc::Receiver<SyncData>,
+) {
+    // 或者放到一个{}里面，
+    // let mut _s_lock: std::sync::MutexGuard<Synchronizer> = synchronizer.lock().unwrap();
+    // let mut _rx = _s_lock.rx.take().unwrap();
+    // drop(_s_lock);
 
     while let Some(res) = _rx.recv().await {
         // todo 收到了更新的通知，分发到指定的
