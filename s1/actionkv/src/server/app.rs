@@ -1,5 +1,5 @@
 // use crate::pb;
-use crate::cache::{repo,chan};
+use crate::cache::{repo,sync};
 use crate::config;
 use crate::dao::app::{AppEntity, AppRepo};
 use crate::pb::svr::{ApiError, ApiResponse};
@@ -16,11 +16,11 @@ use tracing::{event, info, instrument, Level};
 #[derive(Clone)]
 pub struct AppSvc {
     repo: AppRepo,
-    sender: mpsc::Sender<chan::SyncData>,
+    sender: mpsc::Sender<sync::SyncData>,
 }
 
 impl AppSvc {
-    pub fn new(tx: mpsc::Sender<chan::SyncData>) -> Self {
+    pub fn new(tx: mpsc::Sender<sync::SyncData>) -> Self {
         AppSvc {
             repo: AppRepo::new(),
             // 通过sender发送到

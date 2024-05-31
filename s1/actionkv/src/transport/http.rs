@@ -19,12 +19,12 @@ use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
 use tokio::sync::mpsc;
-use crate::cache::chan;
+use crate::cache::sync;
 
 #[derive(Clone)]
 struct State {}
 
-pub fn init_app(tx: mpsc::Sender<chan::SyncData>) -> Router {
+pub fn init_app(tx: mpsc::Sender<sync::SyncData>) -> Router {
     // 会move
     let mut app = Router::new();
     

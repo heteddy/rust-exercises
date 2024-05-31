@@ -3,8 +3,8 @@ use crate::dao::{
     server::ServerEntity,
 };
 // use chan::Synchronizer;
-use super::chan::{Messager, SyncData};
-use crate::cache::chan;
+use super::sync::{Messager, SyncData};
+use crate::cache::sync;
 use crate::pb;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -112,7 +112,7 @@ impl IndexConfigureRepository {
         false
     }
     /// 分发到对应的repo中
-    pub fn handle_data(&mut self, mut data: chan::SyncData) {
+    pub fn handle_data(&mut self, mut data: sync::SyncData) {
         let t: &str = data.get_type();
         match t {
             "app" => {
@@ -150,7 +150,7 @@ impl IndexConfigureRepository {
 
 pub async fn watch_configure_change(
     configure_repo: Arc<Mutex<IndexConfigureRepository>>,
-    mut rx: mpsc::Receiver<chan::SyncData>,
+    mut rx: mpsc::Receiver<sync::SyncData>,
 ) {
     while let Some(mut data) = rx.recv().await {
         configure_repo.lock().unwrap().handle_data(data);

@@ -1,4 +1,4 @@
-use crate::cache::chan;
+use crate::cache::sync;
 use crate::dao::bert::{BertEntity, BertRepo};
 use crate::pb::svr::{ApiError, ApiResponse};
 use tokio::sync::mpsc;
@@ -7,11 +7,11 @@ use tracing::{event, info, instrument, Level};
 #[derive(Clone)]
 pub struct BertSvc {
     repo: BertRepo,
-    sender: mpsc::Sender<chan::SyncData>,
+    sender: mpsc::Sender<sync::SyncData>,
 }
 
 impl BertSvc {
-    pub fn new(tx: mpsc::Sender<chan::SyncData>) -> Self {
+    pub fn new(tx: mpsc::Sender<sync::SyncData>) -> Self {
         BertSvc {
             repo: BertRepo::new(),
             sender: tx,

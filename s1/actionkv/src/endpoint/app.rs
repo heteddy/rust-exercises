@@ -1,4 +1,4 @@
-use crate::cache::chan;
+use crate::cache::sync;
 
 use crate::dao;
 use crate::dao::app::AppEntity;
@@ -107,7 +107,7 @@ pub async fn update_app(
     Ok(ApiResponse::from_result(result.into()))
 }
 
-pub fn register_route(tx: mpsc::Sender<chan::SyncData>) -> Router {
+pub fn register_route(tx: mpsc::Sender<sync::SyncData>) -> Router {
     let svc = server::app::AppSvc::new(tx);
     let mut app_route = Router::new();
     app_route = app_route.route("/apps", post(create_app).get(list_apps));

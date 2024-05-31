@@ -1,4 +1,4 @@
-use crate::cache::chan;
+use crate::cache::sync;
 use crate::dao;
 use crate::dao::bert::BertEntity;
 use crate::middleware::auth::auth_middleware;
@@ -100,7 +100,7 @@ async fn create(
 //     Ok(ApiResponse::from_result(result.into()))
 // }
 
-pub fn register_route(tx: mpsc::Sender<chan::SyncData>) -> Router {
+pub fn register_route(tx: mpsc::Sender<sync::SyncData>) -> Router {
     let svc = server::bert::BertSvc::new(tx);
     let mut _route = Router::new();
     let middle_svc = server::auth::TENANT_AUTH_SVC.clone();
