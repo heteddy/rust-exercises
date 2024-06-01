@@ -16,6 +16,7 @@ use tokio::sync::mpsc;
 use tracing::{event, info, info_span, instrument, span, warn, Level};
 lazy_static! {
     pub static ref CLI_ARGS: Cli = init_cli_args();
+    // 直接用，不需要传递到另外一个coroutine中，全局变量不需要arc
     pub static ref GLOBAL_CONFIG: Mutex<Configure> = Mutex::new(Configure::build());  // 全局共享不需要arc
 }
 
@@ -79,7 +80,7 @@ impl Configure {
         let yaml_str = fs::read_to_string(p).unwrap();
         let de = serde_yaml::Deserializer::from_str(&yaml_str);
         let value = Configure::deserialize(de).unwrap();
-        println!("{}", serde_json::to_string_pretty(&value).unwrap());
+        info!("{}", serde_json::to_string_pretty(&value).unwrap());
         value
     }
     /// 通过环境变量更新
@@ -119,15 +120,14 @@ pub fn init_configure_by_yaml() -> Configure {
 pub fn init_cli_args() -> Cli {
     let args = Cli::parse();
     for _ in 0..args.count {
-        // println!("Hello {:?}!", args.name.as_ref())
         let v = match &args.name {
             Some(n) => n,
             None => "",
         };
-        println!("hello {}!", v);
+        info!("hello {}!", v);
     }
     info!("args = {:?}", args);
-    println!(
+    info!(
         "This is {} in color, {} in color and {} in color",
         Colour::Red.paint("red"),
         Colour::Blue.paint("blue"),

@@ -230,6 +230,7 @@ impl AppRepo {
         app2.id = _oid;
         Ok(app2)
     }
+    
     pub async fn update_app_by_id(
         &self,
         id: impl AsRef<str>,
@@ -240,9 +241,7 @@ impl AppRepo {
             .build();
         let oid = ObjectId::parse_str(id)?;
         let seconds = Local::now().timestamp();
-
         let updated_at = Utc::now();
-
         let updating = doc! {
             "$set": doc! {
                 "app_id": &app.app_id,
@@ -273,6 +272,7 @@ impl AppRepo {
 
         Ok(updated.unwrap_or_default())
     }
+
     pub async fn list(
         &self,
         skip: u64,
@@ -305,6 +305,7 @@ impl AppRepo {
         // ret.ok().expect("");
         Ok(ret.unwrap_or_default())
     }
+
     pub async fn get_app_by_app_id(&self, app_id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
         let opt = options::FindOneOptions::builder()
             .show_record_id(true)

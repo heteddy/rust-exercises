@@ -1,13 +1,13 @@
 use lazy_static::lazy_static;
 use std::collections::HashMap;
-use std::sync::{Arc,Mutex};
+use std::sync::{Arc, Mutex};
 
 // use tokio::sync::Mutex;
 // use tokio::sync::RwLock;
 
 lazy_static! {
     // 要共享一个mut的state 就需要mutex; 在tokio中共享需要arc
-    pub static ref TENANT_AUTH_SVC: Arc<Mutex<TenantAuthSvc>> = Arc::new(Mutex::new(TenantAuthSvc::new()));
+    pub static ref TENANT_AUTH_SVC: Mutex<TenantAuthSvc> = Mutex::new(TenantAuthSvc::new());
 }
 
 pub trait AuthTrait {

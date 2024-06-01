@@ -19,12 +19,6 @@ use std::sync::{Arc, Mutex, RwLock};
 use tokio::net::unix::pipe::Receiver;
 use tokio::{spawn, sync::mpsc, sync::OnceCell};
 use tracing::{info, instrument, trace, warn};
-//  定义一个oncecell，然后初始化它
-// pub static GLOBAL_SYNCHRONIZER: OnceCell<Synchronizer> = OnceCell::const_new();
-// lazy_static! {
-//     pub static ref GLOBAL_SYNCHRONIZER: Arc<Mutex<Synchronizer>> =
-//         Arc::new(Mutex::new(Synchronizer::build()));
-// }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum SyncMsg {
