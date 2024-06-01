@@ -157,6 +157,7 @@ impl BertRepo {
             .build();
         col.create_indexes(indices, o).await?;
         Ok(())
+        
     }
 
     pub fn new() -> Self {

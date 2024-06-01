@@ -131,7 +131,7 @@ impl IndexConfigRepo {
         // 这里使用了 Arc 和 Mutex 来实现线程安全的单例
         // 只有第一次调用 get_instance 时会创建实例，之后都会返回已创建的实例
         static mut INSTANCE: Option<Arc<Mutex<IndexConfigRepo>>> = None;
-        unsafe {
+        unsafe { // 这里是需要在初始化时完成
             INSTANCE
                 .get_or_insert_with(|| {
                     Arc::new(Mutex::new(IndexConfigRepo {
@@ -149,7 +149,7 @@ impl IndexConfigRepo {
         name: impl AsRef<str>,
     ) -> bool {
         let mut _app_id = self.index.get_app_id(name);
-            
+
         if _app_id.eq(app_id.as_ref()) {
             self.app.auth(app_id, app_secret)
         } else {
