@@ -7,6 +7,7 @@ use axum::{
     routing::get,
     Router,
 };
+use crate::cache::repo;
 use std::sync::{Arc, Mutex};
 use tracing::{info, warn};
 /// 通过router
@@ -206,7 +207,7 @@ let app = Router::new()
 ///
 
 pub async fn auth_middleware(
-    State(svc): State<Arc<Mutex<auth_state::TenantAuthSvc>>>,
+    State(svc): State<Arc<Mutex<repo::IndexConfigRepo>>>,
     Path(name): Path<String>,
     headers: HeaderMap,
     request: Request,
@@ -229,8 +230,8 @@ pub async fn auth_middleware(
         request.uri()
     );
     if name.len() > 0 && app_id.len() > 0 && app_secret.len() > 0 {
-        let mut s: std::sync::MutexGuard<auth_state::TenantAuthSvc> = svc.lock().unwrap();
-        s.add_counter();
+        let s:std::sync::MutexGuard<repo::IndexConfigRepo> = svc.lock().unwrap();
+        
         if !s.auth(&app_id, &app_secret, &name) {
             return Err((
                 StatusCode::UNAUTHORIZED,

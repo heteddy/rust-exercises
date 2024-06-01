@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use std::collections::HashMap;
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc,Mutex};
+
 // use tokio::sync::Mutex;
 // use tokio::sync::RwLock;
 

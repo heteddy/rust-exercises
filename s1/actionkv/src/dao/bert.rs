@@ -36,9 +36,6 @@ use std::str::FromStr;
 use std::vec;
 use tracing::info;
 
-
-
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BertEntity {
     #[serde(
@@ -150,7 +147,7 @@ impl BertRepo {
         indices.push(
             IndexModel::builder()
                 .keys(doc! {
-                    "uniqueOpt":1,"deleted_at":-1,
+                    "name":1,"deleted_at":-1,
                 })
                 .options(uniqueOpt)
                 .build(),

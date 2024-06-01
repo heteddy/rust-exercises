@@ -14,6 +14,7 @@ use axum::{
     routing::{delete, get, on, post, put},
     Router,
 };
+use crate::cache::repo;
 use serde_derive::Deserialize;
 use std::convert::From;
 use tokio::sync::mpsc;
@@ -103,7 +104,8 @@ async fn create(
 pub fn register_route(tx: mpsc::Sender<sync::SyncData>) -> Router {
     let svc = server::bert::BertSvc::new(tx);
     let mut _route = Router::new();
-    let middle_svc = server::auth::TENANT_AUTH_SVC.clone();
+    // let middle_svc = server::auth::TENANT_AUTH_SVC.clone();
+    let middle_svc = repo::IndexConfigRepo::get_instance();
 
     // todo 新构建一个route然后使用route_layer 添加middleware
     _route = _route.route(
