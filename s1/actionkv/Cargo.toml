@@ -3,51 +3,51 @@ workspace = { members = ["dump"] }
 name = "actionkv"
 version = "0.1.0"
 edition = "2021"
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-byteorder = "1.5"
-crc = "3.2"
-clap = { version = "*", features = ["derive"] }
-serde = "1.0"
-serde_yaml = "0.9.34"
-serde_json = "1.0.114"
-time = "0.3.36"
-bincode = "1.3"
-serde_derive = "1.0"
 ansi_term = "0.12.1"
-lazy_static = "1.4.0"
-mongodb = { version = "2.8.2" }
-tokio = { version = "1.37.0", features = ["full"] }
-rdkafka = { version = "0.36", features = ["cmake-build"] }
-axum = { version = "0.7.5", features = ["ws", "tracing"] }
-log = "0.4.21"
-env_logger = "0.11.3"
-chrono = "0.4.38"
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["json", "env-filter"] }
-tower = { version = "0.4.13", features = ["full"] }
-tower-http = { version = "0.5.2", features = ["full"] }
-ctor = "0.2.8"
 anyhow = "*"
+axum = { version = "0.7.5", features = ["ws", "tracing"] }
+axum-valid = "0.18.0"
+bincode = "1.3"
 bson = { version = "2.10.0", features = [
     "chrono-0_4",
     "time-0_3",
     "serde_with",
 ] }
-features="0.10.0"
-validator = { version = "0.16.1", features = ["derive"] }
-axum-valid = "0.18.0"
+byteorder = "1.5"
+chrono = "0.4.38"
+clap = { version = "*", features = ["derive"] }
+crc = "3.2"
+ctor = "0.2.8"
+env_logger = "0.11.3"
+features = "0.10.0"
 futures = { version = "0.3", features = ["thread-pool"] }
-tinytemplate = "1.1" #这个不用了
 handlebars = "5.1.2"
+lazy_static = "1.4.0"
+log = "0.4.21"
+mongodb = { version = "2.8.2" }
+num_cpus = "*"
+rdkafka = { version = "0.36", features = ["cmake-build"] }
 redis = { version = "0.25.3", features = ["tokio-comp"] }
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0.114"
+serde_yaml = "0.9.34"
+thread-control = "*"
+time = "0.3.36"
+tinytemplate = "1.1" #这个不用了
+tokio = { version = "1.37.0", features = ["full"] }
+tower = { version = "0.4.13", features = ["full"] }
+tower-http = { version = "0.5.2", features = ["full"] }
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["json", "env-filter"] }
+validator = { version = "0.18.1", features = ["derive"] }
 
 [lib]
 name = "libakv"
 path = "src/lib.rs"
-
 
 [[bin]]
 name = "akv"
