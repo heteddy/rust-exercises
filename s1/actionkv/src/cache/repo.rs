@@ -27,19 +27,22 @@ pub struct App {
 }
 
 #[derive(Debug)]
-pub struct AppRepo {
-    table: Arc<RwLock<HashMap<String, String>>>,
+struct AppRepo {
+    // table: Arc<RwLock<HashMap<String, String>>>,
+    table: HashMap<String, String>,
 }
 
 impl AppRepo {
     pub fn new() -> Self {
         AppRepo {
-            table: Arc::new(RwLock::new(HashMap::with_capacity(10))),
+            // table: Arc::new(RwLock::new(HashMap::with_capacity(10))),
+            table: HashMap::with_capacity(10),
         }
     }
     pub fn auth(&self, app_id: impl AsRef<str>, app_secret: impl AsRef<str>) -> bool {
-        let map = self.table.read().unwrap();
-        let v = map.get(app_id.as_ref());
+        // let map = self.table.read().unwrap();
+        // let v = map.get(app_id.as_ref());
+        let v = self.table.get(app_id.as_ref());
         match v {
             Some(v) => v.eq(app_secret.as_ref()),
             None => false,
@@ -54,8 +57,9 @@ impl AppRepo {
             app_id, app_secret
         );
 
-        let mut auth_table = self.table.write().unwrap();
-        auth_table
+        // let mut auth_table = self.table.write().unwrap();
+        // auth_table
+        self.table
             .entry(app_id.to_string())
             .and_modify(|v| *v = app_secret.to_string())
             .or_insert(app_secret.to_string());
@@ -70,22 +74,20 @@ pub struct IndexConfigure {
 }
 
 #[derive(Debug)]
-pub struct IndexRepo {
-    table: Arc<RwLock<HashMap<String, IndexConfigure>>>, // app_id
+struct IndexRepo {
+    table: HashMap<String, IndexConfigure>, // app_id
 }
 
 impl IndexRepo {
     pub fn new() -> IndexRepo {
         //全局变量不能
         IndexRepo {
-            table: Arc::new(RwLock::new(HashMap::with_capacity(10))),
+            table: HashMap::with_capacity(10),
         }
     }
     // #[instrument(skip(self))] // 增加instrument，参数需要满足debug
     pub fn get_app_id(&self, name: impl AsRef<str>) -> String {
-        let map = self.table.read().unwrap();
-        let v = map.get(name.as_ref());
-        
+        let v = self.table.get(name.as_ref());
         match v {
             Some(v) => (&v.app_id).into(),
             None => "search-app2".into(), // todo 这里是验证
@@ -98,8 +100,8 @@ impl IndexRepo {
             "update index entity name={:?}, app_id={:?}",
             e.name, e.app_id
         );
-        let mut index_table = self.table.write().unwrap();
-        index_table
+
+        self.table
             .entry(e.name.clone())
             .and_modify(|configure| (*configure).index = Some(e.clone()))
             .or_insert(IndexConfigure {
@@ -111,9 +113,9 @@ impl IndexRepo {
 }
 
 pub struct IndexConfigRepo {
+    // 只在config repo中更新，还需要arc么
     app: AppRepo, // 会不会有运行时的问题, refcell 不能send
     index: IndexRepo,
-    // rx: mpsc::Receiver<chan::SyncData>,
 }
 
 impl IndexConfigRepo {
@@ -126,15 +128,15 @@ impl IndexConfigRepo {
         }
     }
 
-    pub fn get_instance() -> Arc<Mutex<IndexConfigRepo>> {
+    pub fn get_instance() -> Arc<RwLock<IndexConfigRepo>> {
         // 使用懒加载创建单例实例
         // 这里使用了 Arc 和 Mutex 来实现线程安全的单例
         // 只有第一次调用 get_instance 时会创建实例，之后都会返回已创建的实例
-        static mut INSTANCE: Option<Arc<Mutex<IndexConfigRepo>>> = None;
-        unsafe { // 这里是需要在初始化时完成
+        static mut INSTANCE: Option<Arc<RwLock<IndexConfigRepo>>> = None;
+        unsafe { // 这里是需要在初始化时完成；可以使用rwlock
             INSTANCE
                 .get_or_insert_with(|| {
-                    Arc::new(Mutex::new(IndexConfigRepo {
+                    Arc::new(RwLock::new(IndexConfigRepo {
                         app: AppRepo::new(),
                         index: IndexRepo::new(),
                     }))
@@ -199,11 +201,11 @@ impl IndexConfigRepo {
 }
 
 pub async fn watch_configure_change(
-    configure_repo: Arc<Mutex<IndexConfigRepo>>,
+    configure_repo: Arc<RwLock<IndexConfigRepo>>,
     mut rx: mpsc::Receiver<sync::SyncData>,
 ) {
     while let Some(mut data) = rx.recv().await {
-        configure_repo.lock().unwrap().handle_data(data);
+        configure_repo.write().unwrap().handle_data(data);
     }
 }
 

@@ -1,3 +1,4 @@
+use crate::cache::repo;
 use crate::server::auth::{self as auth_state, AuthTrait};
 use axum::{
     extract::{Path, Request, State},
@@ -7,8 +8,7 @@ use axum::{
     routing::get,
     Router,
 };
-use crate::cache::repo;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use tracing::{info, warn};
 /// 通过router
 /**
@@ -207,7 +207,7 @@ let app = Router::new()
 ///
 
 pub async fn auth_middleware(
-    State(svc): State<Arc<Mutex<repo::IndexConfigRepo>>>,
+    State(svc): State<Arc<RwLock<repo::IndexConfigRepo>>>,
     Path(name): Path<String>,
     headers: HeaderMap,
     request: Request,
@@ -230,8 +230,9 @@ pub async fn auth_middleware(
         request.uri()
     );
     if name.len() > 0 && app_id.len() > 0 && app_secret.len() > 0 {
-        let s:std::sync::MutexGuard<repo::IndexConfigRepo> = svc.lock().unwrap();
-        
+        // 读index config
+        let s: std::sync::RwLockReadGuard<repo::IndexConfigRepo> = svc.read().unwrap();
+
         if !s.auth(&app_id, &app_secret, &name) {
             return Err((
                 StatusCode::UNAUTHORIZED,
