@@ -109,8 +109,10 @@ pub struct Cli {
 pub fn init_configure_by_yaml() -> Configure {
     let p = CLI_ARGS.file.as_ref().unwrap().as_path();
     let yaml_str = fs::read_to_string(p).unwrap();
-    let de = serde_yaml::Deserializer::from_str(&yaml_str);
-    let value = Configure::deserialize(de).unwrap();
+    let value = serde_yaml::from_str::<Configure>(&yaml_str).unwrap();
+    // 等效下面的反序列化方式
+    // let de = serde_yaml::Deserializer::from_str(&yaml_str);
+    // let value = Configure::deserialize(de).unwrap();
     info!("configure={:?}", value);
     value
 }

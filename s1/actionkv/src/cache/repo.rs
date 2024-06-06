@@ -13,12 +13,12 @@ use std::any::Any;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::sync::Once;
 use std::sync::{Arc, Mutex, RwLock};
 use tokio::sync::mpsc;
 use tracing::{info, instrument, trace, warn};
-// pub trait TableContainer {
-//     fn msg_received<T: std::fmt::Debug>(&mut self, msg: T);
-// }
+
+// static mut GLOBAL_CONFIGURE_REPO = Option
 
 #[derive(Debug, Clone)]
 pub struct App {
@@ -112,6 +112,10 @@ impl IndexRepo {
     }
 }
 
+static INIT_CONFIG_REPO: Once = Once::new();
+// 因为需要2个函数使用，因此不能放到函数内部
+static mut REPO_INSTANCE: Option<Arc<RwLock<IndexConfigRepo>>> = None;
+
 pub struct IndexConfigRepo {
     // 只在config repo中更新，还需要arc么
     app: AppRepo, // 会不会有运行时的问题, refcell 不能send
@@ -128,12 +132,13 @@ impl IndexConfigRepo {
         }
     }
 
-    pub fn get_instance() -> Arc<RwLock<IndexConfigRepo>> {
+    pub fn get_instance1() -> Arc<RwLock<IndexConfigRepo>> {
         // 使用懒加载创建单例实例
         // 这里使用了 Arc 和 Mutex 来实现线程安全的单例
         // 只有第一次调用 get_instance 时会创建实例，之后都会返回已创建的实例
         static mut INSTANCE: Option<Arc<RwLock<IndexConfigRepo>>> = None;
-        unsafe { // 这里是需要在初始化时完成；可以使用rwlock
+        unsafe {
+            // 这里是需要在初始化时完成；可以使用rwlock
             INSTANCE
                 .get_or_insert_with(|| {
                     Arc::new(RwLock::new(IndexConfigRepo {
@@ -142,6 +147,24 @@ impl IndexConfigRepo {
                     }))
                 })
                 .clone()
+        }
+    }
+    fn new_instance() {
+        unsafe {
+            REPO_INSTANCE = Some(Arc::new(RwLock::new(IndexConfigRepo {
+                app: AppRepo::new(),
+                index: IndexRepo::new(),
+            })));
+        }
+    }
+
+    /// 另外一种实现使用onceCell.get_or_init
+    pub fn get_instance() -> Arc<RwLock<IndexConfigRepo>> {
+        // once 是线程安全的，因此只能被调用一次
+        INIT_CONFIG_REPO.call_once(|| IndexConfigRepo::new_instance());
+        unsafe {
+            // 多线程调用clone,arc是线程安全的
+            REPO_INSTANCE.as_ref().unwrap().clone()
         }
     }
     pub fn auth(

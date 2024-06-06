@@ -2,7 +2,6 @@
 //! actor只处理 接收到的信息，run方法独立到另外一个函数中，可以move actor
 //! handler是想actor发送消息方面；
 //!
-
 use crate::dao::{
     app::AppEntity, bert::BertEntity, index::IndexEntity, preprocess::PreprocessEntity,
     server::ServerEntity,
