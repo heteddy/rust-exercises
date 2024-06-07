@@ -3,6 +3,7 @@ pub mod bert;
 pub mod index;
 pub mod preprocess;
 pub mod server;
+pub mod template;
 
 use crate::pb::svr::{ApiError, ApiResponse};
 use tracing::{error, event, info, info_span, instrument, span, warn, Level};
