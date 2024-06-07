@@ -153,7 +153,7 @@ impl KakfaSource {
 
         KakfaSource { client }
     }
-
+    // 新创建的dispatch struct
     pub async fn start(&self, topics: &[&str], tx: mpsc::Sender<KafkaMsg>) {
         // 开始订阅
         self.client

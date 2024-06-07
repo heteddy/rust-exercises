@@ -38,8 +38,6 @@ use std::str::FromStr;
 use std::vec;
 use tracing::info;
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppEntity {
     // serialize a hex string as an ObjectId and deserialize a hex string from an ObjectId
@@ -136,7 +134,7 @@ impl PartialEq<AppEntity> for AppEntity {
     }
 }
 
-impl Eq for AppEntity {}
+// impl Eq for AppEntity {}
 
 // 可以作为set和map的key
 impl std::hash::Hash for AppEntity {
@@ -230,7 +228,7 @@ impl AppRepo {
         app2.id = _oid;
         Ok(app2)
     }
-    
+
     pub async fn update_app_by_id(
         &self,
         id: impl AsRef<str>,
@@ -294,13 +292,12 @@ impl AppRepo {
         Ok(v)
     }
 
-    pub async fn get_app_by_id(&self, id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
+    pub async fn get(&self, id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
         let opt = options::FindOneOptions::builder()
             .show_record_id(true)
             .build();
 
         let oid = ObjectId::parse_str(id)?;
-
         let ret = self.col.find_one(doc! {"_id": oid}, opt).await?;
         // ret.ok().expect("");
         Ok(ret.unwrap_or_default())

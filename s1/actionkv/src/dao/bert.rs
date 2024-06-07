@@ -87,6 +87,7 @@ impl From<BertReq> for BertEntity {
         }
     }
 }
+
 impl Into<BertResp> for BertEntity {
     fn into(self) -> BertResp {
         let id_str = match self.id {
@@ -157,7 +158,6 @@ impl BertRepo {
             .build();
         col.create_indexes(indices, o).await?;
         Ok(())
-        
     }
 
     pub fn new() -> Self {
@@ -184,5 +184,50 @@ impl BertRepo {
         let mut _bert2 = _bert.clone();
         _bert2.id = _oid;
         Ok(_bert2)
+    }
+
+    pub async fn get(&self, _id: impl AsRef<str>) -> Result<BertEntity, ApiError> {
+        let mongo_id = ObjectId::parse_str(_id)?;
+        let opt = options::FindOneOptions::builder()
+            .show_record_id(true)
+            .build();
+        let ret = self.col.find_one(doc! {"_id":mongo_id}, opt).await?;
+        Ok(ret.unwrap_or_default())
+    }
+
+    pub async fn get_by_name(&self, name: impl AsRef<str>) -> Result<BertEntity, ApiError> {
+        let opt = options::FindOneOptions::builder()
+            .show_record_id(true)
+            .build();
+
+        let ret = self
+            .col
+            .find_one(doc! {"name":name.as_ref(),"deleted_at":0}, opt)
+            .await?;
+        Ok(ret.unwrap_or_default())
+    }
+
+    pub async fn list(&self, skip: u64, limit: i64) -> Result<Vec<BertEntity>, ApiError> {
+        let opt = options::FindOptions::builder()
+            .sort(doc! {"updated_at":-1})
+            .skip(Some(skip))
+            .limit(Some(limit))
+            .build();
+
+        let mut cursor = self.col.find(doc! {"deleted_at":0}, opt).await?;
+        let mut v = Vec::new();
+        while let Some(doc) = cursor.next().await {
+            if doc.is_ok() {
+                v.push(doc.unwrap_or_default());
+            }
+        }
+        Ok(v)
+    }
+    pub async fn delete_app_by_id(&self, id: impl AsRef<str>) -> Result<BertEntity, ApiError> {
+        let opt = options::FindOneAndDeleteOptions::builder().build();
+        let oid = ObjectId::parse_str(id)?;
+        let ret = self.col.find_one_and_delete(doc! {"_id": oid}, opt).await?;
+        // ret.ok().expect("");
+        Ok(ret.unwrap_or_default())
     }
 }

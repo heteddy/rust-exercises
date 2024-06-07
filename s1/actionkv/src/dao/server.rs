@@ -57,3 +57,26 @@ impl pb::entity::Namer for ServerEntity {
         dao::ENTITY_SERVER
     }
 }
+
+impl Default for ServerEntity {
+    fn default() -> Self {
+        ServerEntity {
+            id: None,
+            name: "".to_owned(),
+            http_addr: "".to_owned(),
+            grpc_addr: "".to_owned(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            deleted_at: 0,
+        }
+    }
+}
+
+// 实现from和into接口
+
+#[derive(Clone)]
+pub struct ServerRepo {
+    pub col: Collection<ServerEntity>,
+}
+
+impl ServerRepo {}

@@ -64,7 +64,7 @@ impl AppSvc {
     #[instrument(skip_all)]
     pub async fn get_app_by_id(&self, _id: impl AsRef<str> + Debug) -> Result<AppEntity, ApiError> {
         info!("get_app_by_id apps :{:?}", _id);
-        let ret = self.repo.get_app_by_id(_id).await?;
+        let ret = self.repo.get(_id).await?;
         Ok(ret)
     }
     ///todo add 删除逻辑

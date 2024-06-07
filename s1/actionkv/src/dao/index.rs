@@ -18,7 +18,8 @@ use serde::{Deserialize, Serialize, Serializer};
 // 这个是derive 宏
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
-use crate::pb;
+use crate::pb::entity;
+use crate::pb::svr::index;
 use crate::pb::svr::index::MappingField;
 use crate::utils::mongo::{local_date_format, serialize_object_id_option_as_hex_string};
 use serde_json::to_string;
@@ -28,19 +29,19 @@ use std::str::FromStr;
 use std::vec;
 use tracing::info;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Setting {
-    pub replica: u32,
-    pub shards: u32,
-    pub vector_size: u32,
-}
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct Setting {
+//     pub replica: u32,
+//     pub shards: u32,
+//     pub vector_size: u32,
+// }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct IndexConfig {
-    pub bert: String,
-    pub server: String,
-    pub preprocess: String,
-}
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct IndexConfig {
+//     pub bert: String,
+//     pub server: String,
+//     pub preprocess: String,
+// }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IndexEntity {
@@ -49,9 +50,9 @@ pub struct IndexEntity {
     pub name: String, // 索引名称; 也是alias
     pub active: String,
     pub inactive: String,
-    pub setting: Setting,
-    pub mapping: Vec<MappingField>, // 设置字段以及类型
-    pub configure: IndexConfig,
+    pub setting: index::Setting,
+    pub mapping: Vec<index::MappingField>, // 设置字段以及类型
+    pub configure: index::Configure,
     #[serde(with = "chrono_datetime_as_bson_datetime")] //只能支持utc
     pub created_at: DateTime<Utc>,
     #[serde(with = "chrono_datetime_as_bson_datetime")]
@@ -66,8 +67,13 @@ impl PartialEq<IndexEntity> for IndexEntity {
     }
 }
 
-impl pb::entity::Namer for IndexEntity {
+impl entity::Namer for IndexEntity {
     fn name(&self) -> &'static str {
         dao::ENTITY_INDEX
     }
+}
+
+
+impl IndexEntity {
+    
 }
