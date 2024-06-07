@@ -22,7 +22,7 @@ pub struct PreprocessResp {
 }
 
 impl PartialEq<PreprocessResp> for PreprocessResp {
-    fn eq(&self, other: &AppResp) -> bool {
+    fn eq(&self, other: &PreprocessResp) -> bool {
         self.name == other.name
     }
 }

@@ -24,7 +24,7 @@ pub struct ServerResp {
 }
 
 impl PartialEq<ServerResp> for ServerResp {
-    fn eq(&self, other: &AppResp) -> bool {
+    fn eq(&self, other: &ServerResp) -> bool {
         self.name == other.name
     }
 }
