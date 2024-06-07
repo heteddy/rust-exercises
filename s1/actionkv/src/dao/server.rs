@@ -1,4 +1,5 @@
 // use chrono::{DateTime, Utc};
+use crate::utils;
 use chrono::prelude::*;
 use futures::stream::{StreamExt, TryStreamExt};
 use mongodb::bson::serde_helpers::{
@@ -19,7 +20,7 @@ use serde::{Deserialize, Serialize, Serializer};
 // 这个是derive 宏
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
-use crate::pb;
+use crate::pb::{self, svr::ApiError};
 use crate::utils::mongo::{local_date_format, serialize_object_id_option_as_hex_string};
 use serde_json::to_string;
 use std::hash::Hasher;
@@ -28,7 +29,7 @@ use std::str::FromStr;
 use std::vec;
 use tracing::info;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ServerEntity {
     #[serde(
         serialize_with = "serialize_object_id_option_as_hex_string",
@@ -58,20 +59,6 @@ impl pb::entity::Namer for ServerEntity {
     }
 }
 
-impl Default for ServerEntity {
-    fn default() -> Self {
-        ServerEntity {
-            id: None,
-            name: "".to_owned(),
-            http_addr: "".to_owned(),
-            grpc_addr: "".to_owned(),
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
-            deleted_at: 0,
-        }
-    }
-}
-
 // 实现from和into接口
 
 #[derive(Clone)]
@@ -79,4 +66,133 @@ pub struct ServerRepo {
     pub col: Collection<ServerEntity>,
 }
 
-impl ServerRepo {}
+impl ServerRepo {
+    pub async fn create_index() -> Result<(), ApiError> {
+        let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
+        let col = utils::mongo::get_collection::<ServerEntity>(
+            &MONGO_CLIENT,
+            &_configure.mongo.database,
+            &_configure.table.app,
+        );
+        let uniqueOpt = IndexOptions::builder()
+            .unique(true)
+            .background(true)
+            .build();
+        let opt = IndexOptions::builder()
+            .unique(false)
+            .background(true)
+            .build();
+
+        let mut indices = Vec::with_capacity(3);
+
+        indices.push(
+            IndexModel::builder()
+                .keys(doc! {
+                    "updated_at":-1,"deleted_at":-1,
+                })
+                .options(opt.clone())
+                .build(),
+        );
+        indices.push(
+            IndexModel::builder()
+                .keys(doc! {
+                    "name":-1,"deleted_at":-1,
+                })
+                .options(uniqueOpt)
+                .build(),
+        );
+        let o = options::CreateIndexOptions::builder()
+            .max_time(Duration::from_secs(60))
+            .build();
+        col.create_indexes(indices, o).await?;
+        Ok(())
+    }
+
+    pub fn new() -> Self {
+        let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
+        let col = utils::mongo::get_collection(
+            &MONGO_CLIENT,
+            &config_file.mongo.database,
+            &config_file.table.preprocess,
+        );
+        ServerRepo { col }
+    }
+
+    pub async fn list(&self, skip: u64, limit: i64) -> Result<Vec<ServerEntity>, ApiError> {
+        let opt = options::FindOptions::builder()
+            .sort(doc! {"updated_at":-1,"deleted_at":1})
+            .limit(Some(limit))
+            .skip(Some(skip))
+            .build();
+        let filters = doc! {"deleted_at":0};
+        let mut cursor = self.col.find(filters, opt).await?;
+        let mut v = Vec::new();
+        while let Some(doc) = cursor.next().await {
+            if doc.is_ok() {
+                v.push(doc.unwrap_or_default());
+            }
+        }
+        Ok(v)
+    }
+
+    pub async fn get_by_name(&self, name: impl AsRef<str>) -> Result<ServerEntity, ApiError> {
+        let opt = options::FindOneOptions::builder()
+            .show_record_id(true)
+            .build();
+
+        let ret = self.col.find_one(doc! {"name":name.as_ref()}, opt).await?;
+        Ok(ret.unwrap_or_default())
+    }
+
+    pub async fn get(&self, _id: impl AsRef<str>) -> Result<ServerEntity, ApiError> {
+        let opt = options::FindOneOptions::builder()
+            .show_record_id(true)
+            .build();
+        let _id = ObjectId::parse_str(_id.as_ref())?;
+
+        let ret = self.col.find_one(doc! {"name":_id}, opt).await?;
+        Ok(ret.unwrap_or_default())
+    }
+
+    pub async fn update(
+        &self,
+        _id: impl AsRef<str>,
+        mut e: ServerEntity,
+    ) -> Result<ServerEntity, ApiError> {
+        let opt = options::FindOneAndUpdateOptions::builder()
+            .upsert(false)
+            .build();
+        let _id = ObjectId::parse_str(_id.as_ref())?;
+        let ret = self
+            .col
+            .find_one_and_update(
+                doc! {
+                    "_id":_id,
+                },
+                doc! {
+                    "http_addr": e.http_addr.clone(),
+                    "grpc_addr": e.grpc_addr.clone(),
+                    "updated_at": Utc::now(),
+                },
+                opt,
+            )
+            .await?;
+        e.id = Some(_id);
+        Ok(e)
+    }
+
+    pub async fn delete(&self, _id: impl AsRef<str>) -> Result<ServerEntity, ApiError> {
+        let opt = options::FindOneAndDeleteOptions::builder().build();
+        let _id = ObjectId::parse_str(_id)?;
+        let ret = self
+            .col
+            .find_one_and_delete(
+                doc! {
+                    "_id":_id,
+                },
+                opt,
+            )
+            .await?;
+        Ok(ret.unwrap_or_default())
+    }
+}

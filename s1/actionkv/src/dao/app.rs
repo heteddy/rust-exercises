@@ -38,7 +38,7 @@ use std::str::FromStr;
 use std::vec;
 use tracing::info;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AppEntity {
     // serialize a hex string as an ObjectId and deserialize a hex string from an ObjectId
     #[serde(
@@ -71,23 +71,6 @@ pub struct AppEntity {
 impl pb::entity::Namer for AppEntity {
     fn name(&self) -> &'static str {
         dao::ENTITY_APP
-    }
-}
-
-impl Default for AppEntity {
-    fn default() -> Self {
-        // let local: DateTime<Local> = Local::now();
-        AppEntity {
-            id: None,
-            app_id: "".into(),
-            app_secret: "".into(),
-            tenant: "".into(),
-            liaison: "".to_owned(),
-            system: "".to_owned(), // 子系统编号
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
-            deleted_at: 0,
-        }
     }
 }
 
@@ -212,9 +195,8 @@ impl AppRepo {
         );
         AppRepo { col }
     }
-
-    pub async fn insert_app(&self, app: &AppEntity) -> Result<AppEntity, ApiError> //mongodb::error::Result<InsertOneResult>
-    {
+    //mongodb::error::Result<InsertOneResult>
+    pub async fn insert(&self, app: &AppEntity) -> Result<AppEntity, ApiError> {
         // let opt = options::InsertOneOptions::build();
         let ret = self.col.insert_one(app, None).await?;
         info!("dao insert app {:?}", app);
@@ -229,10 +211,10 @@ impl AppRepo {
         Ok(app2)
     }
 
-    pub async fn update_app_by_id(
+    pub async fn update_by_id(
         &self,
         id: impl AsRef<str>,
-        app: &AppEntity,
+        mut app: AppEntity,
     ) -> Result<AppEntity, ApiError> {
         let opt = options::FindOneAndUpdateOptions::builder()
             .upsert(false)
@@ -247,28 +229,19 @@ impl AppRepo {
                 "tenant": &app.tenant,
                 "liaison": &app.liaison,
                 "system": &app.system,
-                "updated_at": updated_at,//Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),//try_to_local_time_string(&bson::DateTime::now()).unwrap(), // todo: 时间的定义还是不对, 写入应该是bson::DateTime, 读出来是string
+                "updated_at": updated_at,
             }
         };
         let ret = self
             .col
             .find_one_and_update(doc! {"_id": oid}, updating, opt)
             .await?;
-        // ret.ok().expect("");
-        // let updated = if let Some(entity) = ret {
-        //     entity.clone()
-        // }
-        // let ret1 = ret.as_mut();
-        // ret1.map(|e|{});
-        let updated = ret.map(|mut e| {
-            e.app_secret = (&app).app_secret.clone();
-            e.tenant = (&app).tenant.clone();
-            e.liaison = (&app).liaison.clone();
-            e.updated_at = updated_at;
-            e
-        });
+       
 
-        Ok(updated.unwrap_or_default())
+        app.updated_at = updated_at;
+        app.id = Some(oid);
+
+        Ok(app)
     }
 
     pub async fn list(
@@ -303,7 +276,7 @@ impl AppRepo {
         Ok(ret.unwrap_or_default())
     }
 
-    pub async fn get_app_by_app_id(&self, app_id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
+    pub async fn get_by_app_id(&self, app_id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
         let opt = options::FindOneOptions::builder()
             .show_record_id(true)
             .build();
@@ -316,7 +289,7 @@ impl AppRepo {
         Ok(ret.unwrap_or_default())
     }
 
-    pub async fn delete_app_by_id(&self, id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
+    pub async fn delete_by_id(&self, id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
         let opt = options::FindOneAndDeleteOptions::builder()
             // .show_record_id(true)
             .build();
@@ -325,7 +298,8 @@ impl AppRepo {
         // ret.ok().expect("");
         Ok(ret.unwrap_or_default())
     }
-    pub async fn soft_delete_app_by_id(&self, id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
+
+    pub async fn soft_delete_by_id(&self, id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
         let opt = options::FindOneAndUpdateOptions::builder()
             .upsert(false)
             .build();

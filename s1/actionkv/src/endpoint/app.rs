@@ -2,7 +2,7 @@ use crate::cache::sync;
 
 use crate::dao;
 use crate::dao::app::AppEntity;
-use crate::pb::svr::{app::AppReq, app::AppResp, ApiError, ApiResponse};
+use crate::pb::svr::{app::AppReq, app::AppResp, ApiError, ApiResponse, Pagination};
 use crate::server;
 use axum::extract::{Json, Path, Query, State};
 use axum::http::{header::HeaderMap, StatusCode};
@@ -31,22 +31,8 @@ async fn create_app(
     Ok(ApiResponse::from_result(u.into()))
 }
 
-#[derive(Debug, Deserialize)]
-struct Pagination {
-    skip: u64,
-    limit: i64,
-}
-
-impl Pagination {}
-
-impl Default for Pagination {
-    fn default() -> Self {
-        Pagination { skip: 0, limit: 10 }
-    }
-}
-
 #[instrument(skip_all)]
-pub async fn list_apps(
+pub async fn list(
     State(svc): State<server::app::AppSvc>,
     headers: HeaderMap,
     page: Option<Query<Pagination>>,
@@ -65,19 +51,10 @@ pub async fn list_apps(
     let mut resp = Vec::with_capacity(results.len());
     results.into_iter().for_each(|e| resp.push(e.into()));
     Ok(ApiResponse::from_result(resp))
-
-    // match results {
-    //     Ok(entity) => Ok(pb::ApiResponse::from_result(&entity)),
-    //     Err(e) => Err((
-    //         StatusCode::INTERNAL_SERVER_ERROR,
-    //         pb::ApiResponse::from_error(e),
-    //     )),
-    // }
-    // Json<Vec<Result< crate::dao::app::AppEntity, mongodb::error::Error>>>
 }
 
 #[instrument(skip_all)]
-pub async fn get_app(
+pub async fn retrieve(
     State(svc): State<server::app::AppSvc>,
     Path(id): Path<String>,
 ) -> Result<ApiResponse<AppResp>, ApiError> {
@@ -87,7 +64,7 @@ pub async fn get_app(
 }
 
 #[instrument(skip_all)]
-pub async fn update_app(
+pub async fn update(
     State(svc): State<server::app::AppSvc>,
     headers: HeaderMap,
     Path(id): Path<String>,
@@ -110,7 +87,7 @@ pub async fn update_app(
 pub fn register_route(tx: mpsc::Sender<sync::SyncData>) -> Router {
     let svc = server::app::AppSvc::new(tx);
     let mut app_route = Router::new();
-    app_route = app_route.route("/apps", post(create_app).get(list_apps));
-    app_route = app_route.route("/apps/:id", get(get_app).put(update_app));
+    app_route = app_route.route("/apps", post(create_app).get(list));
+    app_route = app_route.route("/apps/:id", get(retrieve).put(update));
     Router::new().nest("/api", app_route).with_state(svc)
 }

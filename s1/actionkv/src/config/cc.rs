@@ -63,8 +63,7 @@ pub struct Table {
     pub bert: String,
     pub preprocess: String,
     pub server: String,
-    pub setting: String,
-    pub mapping: String,
+    pub index: String,
     pub template: String,
 }
 

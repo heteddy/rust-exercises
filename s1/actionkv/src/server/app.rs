@@ -27,7 +27,7 @@ impl AppSvc {
     #[instrument(skip_all)]
     pub async fn create_app(&self, app: AppEntity) -> Result<AppEntity, ApiError> {
         info!("insert app {:?}", app.app_id);
-        let _app = self.repo.insert_app(&app).await?;
+        let _app = self.repo.insert(&app).await?;
 
         self.sender
             .send(sync::SyncData::build::<AppEntity>("app", &_app))
@@ -42,7 +42,7 @@ impl AppSvc {
         app: AppEntity,
     ) -> Result<AppEntity, ApiError> {
         info!("update app {:?}", app.app_id);
-        let _app = self.repo.update_app_by_id(_id, &app).await?;
+        let _app = self.repo.update_by_id(_id, app).await?;
         self.sender
             .send(sync::SyncData::build::<AppEntity>("app", &_app))
             .await;
@@ -74,7 +74,7 @@ impl AppSvc {
         _id: impl AsRef<str> + Debug,
     ) -> Result<AppEntity, ApiError> {
         info!("delete_app_by_id apps :{:?}", _id);
-        let ret = self.repo.soft_delete_app_by_id(_id).await?;
+        let ret = self.repo.soft_delete_by_id(_id).await?;
         Ok(ret)
     }
 }

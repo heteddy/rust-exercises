@@ -14,6 +14,8 @@ pub mod bert;
 pub mod data;
 pub mod error;
 pub mod index;
+pub mod preprocess;
+pub mod server;
 
 pub const CODE_SUCCESS: StatusCode = StatusCode::OK;
 
@@ -37,22 +39,6 @@ where
             data: Some(arg), // 是不是可以改成arc
         }
     }
-
-    // pub fn from_error(err: error::ApiError) -> Self {
-    //     Self {
-    //         code: Some(CODE_INTERNAL_ERROR.as_u16()),
-    //         msg: Some(err.to_string()),
-    //         data: None,
-    //     }
-    // }
-
-    // pub fn from_error_info(code: StatusCode, info: &str) -> Self {
-    //     Self {
-    //         code: Some(code.as_u16()),
-    //         msg: Some(info.to_string()),
-    //         data: None,
-    //     }
-    // }
 }
 
 impl<T> IntoResponse for ApiResponse<T>
@@ -66,12 +52,6 @@ where
 
 #[derive(Debug)]
 pub struct InternalError(String);
-
-// impl IntoResponse for InternalError {
-//     fn into_response(self) -> Response {
-//         self.0.into_response()
-//     }
-// }
 
 impl Display for InternalError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
@@ -152,9 +132,8 @@ impl IntoResponse for ApiError {
             )
         );
         let msg = format!("{:?}", &self);
-
         let err_resp: ErrorResponse = ErrorResponse::new(&msg);
-
+        
         let status_code = match self {
             // Self::IOError(e) => Some(e),
             // Self::DBError(e) => Some(e),
@@ -182,3 +161,11 @@ impl<'a> ErrorResponse<'a> {
         }
     }
 }
+
+#[derive(Debug, Default, Deserialize)]
+pub struct Pagination {
+    pub skip: u64,
+    pub limit: i64,
+}
+
+impl Pagination {}

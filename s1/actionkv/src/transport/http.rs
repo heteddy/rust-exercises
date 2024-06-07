@@ -9,8 +9,10 @@ use axum::{
 
 use std::time::Duration;
 // use tokio::time::sleep;
+use crate::cache::sync;
 use crate::endpoint::app;
 use crate::endpoint::bert;
+use tokio::sync::mpsc;
 use tower::{self, ServiceBuilder};
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::{Any, CorsLayer};
@@ -18,8 +20,6 @@ use tower_http::request_id::{MakeRequestUuid, SetRequestIdLayer};
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
-use tokio::sync::mpsc;
-use crate::cache::sync;
 
 #[derive(Clone)]
 struct State {}
@@ -27,16 +27,17 @@ struct State {}
 pub fn init_app(tx: mpsc::Sender<sync::SyncData>) -> Router {
     // 会move
     let mut app = Router::new();
-    
     app = app
         .route("/", get(hello_world))
         .merge(app::register_route(tx.clone()))
         .merge(bert::register_route(tx))
         // .route_layer(layer)   // 仅命中路由才打印
         .fallback(fallback);
-    
+
     // 先添加的路由会被后面的middleware处理，后添加的不处理
     app = app.layer(
+        // 这里是按照从上到下的顺序执行
+        // todo 注意顺序
         ServiceBuilder::new()
             .layer(
                 TraceLayer::new_for_http()

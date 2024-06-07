@@ -36,7 +36,7 @@ use std::str::FromStr;
 use std::vec;
 use tracing::info;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BertEntity {
     #[serde(
         serialize_with = "serialize_object_id_option_as_hex_string",
@@ -58,20 +58,6 @@ pub struct BertEntity {
 impl entity::Namer for BertEntity {
     fn name(&self) -> &'static str {
         dao::ENTITY_BERT
-    }
-}
-
-impl Default for BertEntity {
-    fn default() -> Self {
-        // let local: DateTime<Local> = Local::now();
-        BertEntity {
-            id: None,
-            name: "".to_owned(),
-            url: "".to_owned(),
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
-            deleted_at: 0,
-        }
     }
 }
 
@@ -186,6 +172,35 @@ impl BertRepo {
         Ok(_bert2)
     }
 
+    pub async fn update(
+        &self,
+        _id: impl AsRef<str>,
+        mut _bert: BertEntity,
+    ) -> Result<BertEntity, ApiError> {
+        let opt = options::FindOneAndUpdateOptions::builder()
+            .upsert(false)
+            .build();
+
+        let _id = ObjectId::parse_str(_id)?;
+
+        let updated_at = Utc::now();
+
+        let ret = self
+            .col
+            .find_one_and_update(
+                doc! {"_id":_id},
+                doc! {
+                    "url": _bert.url.clone(),
+                    "updated_at": updated_at,
+                },
+                opt,
+            )
+            .await?;
+        _bert.id = Some(_id);
+        _bert.updated_at = updated_at;
+        Ok(_bert)
+    }
+
     pub async fn get(&self, _id: impl AsRef<str>) -> Result<BertEntity, ApiError> {
         let mongo_id = ObjectId::parse_str(_id)?;
         let opt = options::FindOneOptions::builder()
@@ -223,7 +238,7 @@ impl BertRepo {
         }
         Ok(v)
     }
-    pub async fn delete_app_by_id(&self, id: impl AsRef<str>) -> Result<BertEntity, ApiError> {
+    pub async fn delete_by_id(&self, id: impl AsRef<str>) -> Result<BertEntity, ApiError> {
         let opt = options::FindOneAndDeleteOptions::builder().build();
         let oid = ObjectId::parse_str(id)?;
         let ret = self.col.find_one_and_delete(doc! {"_id": oid}, opt).await?;
