@@ -1,4 +1,4 @@
-// use chrono::{DateTime, Utc};
+use crate::pb::svr::server::{ServerReq, ServerResp};
 use crate::utils;
 use chrono::prelude::*;
 use futures::stream::StreamExt;
@@ -17,6 +17,9 @@ use crate::dao;
 use crate::pb::{self, svr::ApiError};
 use crate::utils::mongo::serialize_object_id_option_as_hex_string;
 use std::result::Result;
+
+
+pub const ENTITY_SERVER: &'static str = "server_entity";
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ServerEntity {
@@ -44,7 +47,40 @@ impl PartialEq<ServerEntity> for ServerEntity {
 
 impl pb::entity::Namer for ServerEntity {
     fn name(&self) -> &'static str {
-        dao::ENTITY_SERVER
+        ENTITY_SERVER
+    }
+}
+
+impl From<ServerReq> for ServerEntity {
+    fn from(value: ServerReq) -> Self {
+        ServerEntity {
+            id: None,
+            name: value.name,
+            http_addr: value.http_addr,
+            grpc_addr: value.grpc_addr,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            deleted_at: 0,
+        }
+    }
+}
+
+impl Into<ServerResp> for ServerEntity {
+    fn into(self) -> ServerResp {
+        let id_str = match self.id {
+            Some(_id) => _id.to_hex(),
+            None => String::new(),
+        };
+
+        ServerResp {
+            id: id_str,
+            name: self.name,
+            http_addr: self.http_addr,
+            grpc_addr: self.grpc_addr,
+            created_at: utils::format_chrono_utc_to_local(&self.created_at),
+            updated_at: utils::format_chrono_utc_to_local(&self.updated_at),
+            deleted_at: self.deleted_at,
+        }
     }
 }
 

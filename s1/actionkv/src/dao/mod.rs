@@ -4,15 +4,13 @@ pub mod index;
 pub mod preprocess;
 pub mod server;
 pub mod template;
+pub mod base;
 
 use crate::pb::svr::ApiError;
 use tracing::error;
 
-pub const ENTITY_APP: &'static str = "app_entity";
-pub const ENTITY_BERT: &'static str = "bert_entity";
-pub const ENTITY_PREPROCESS: &'static str = "preprocess_entity";
-pub const ENTITY_SERVER: &'static str = "server_entity";
-pub const ENTITY_INDEX: &'static str = "index_entity";
+
+
 // use mongodb::bson::oid::ObjectId;
 // use serde::{Serialize, Serializer};
 
@@ -30,9 +28,10 @@ pub async fn init_indexes() -> Result<(), ApiError> {
         error!("init app repo index error {:?}", e);
         ()
     });
-    let _ = bert::BertRepo::create_index().await.map_err(|e| {
-        error!("init bert repo index error {:?}", e);
-        ()
-    });
+    // let _ = bert::BertRepo::create_index().await.map_err(|e| {
+    //     error!("init bert repo index error {:?}", e);
+    //     ()
+    // });
     Ok(())
 }
+

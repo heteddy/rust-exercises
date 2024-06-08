@@ -14,7 +14,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 // 这个是derive 宏
 use crate::config::{self, mongo::MONGO_CLIENT};
-use crate::dao;
+pub const ENTITY_APP: &'static str = "app_entity";
 use crate::pb;
 use crate::pb::svr::{
     app::{AppReq, AppResp},
@@ -58,7 +58,7 @@ pub struct AppEntity {
 
 impl pb::entity::Namer for AppEntity {
     fn name(&self) -> &'static str {
-        dao::ENTITY_APP
+        ENTITY_APP
     }
 }
 
@@ -71,8 +71,8 @@ impl Into<AppResp> for AppEntity {
         AppResp {
             id: id_str,
             app_id: self.app_id,
-            app_secret: self.app_secret.clone(),
-            tenant: self.tenant.clone(),
+            app_secret: self.app_secret,
+            tenant: self.tenant,
             liaison: self.liaison.clone(),
             system: self.system.clone(), // 子系统编号
             created_at: utils::format_chrono_utc_to_local(&self.created_at),

@@ -18,9 +18,9 @@ use crate::pb::svr::{
     index::{self, IndexReq, IndexResp},
     ApiError,
 };
-use crate::utils::{self};
-
+use crate::utils;
 use std::result::Result;
+pub const ENTITY_INDEX: &'static str = "index_entity";
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct IndexEntity {
@@ -87,7 +87,7 @@ impl PartialEq<IndexEntity> for IndexEntity {
 
 impl entity::Namer for IndexEntity {
     fn name(&self) -> &'static str {
-        dao::ENTITY_INDEX
+        ENTITY_INDEX
     }
 }
 

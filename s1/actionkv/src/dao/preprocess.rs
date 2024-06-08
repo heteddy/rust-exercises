@@ -19,6 +19,8 @@ use crate::utils::mongo::serialize_object_id_option_as_hex_string;
 use crate::{dao, utils};
 use std::result::Result;
 
+pub const ENTITY_PREPROCESS: &'static str = "preprocess_entity";
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PreprocessEntity {
     #[serde(
@@ -57,8 +59,8 @@ impl Into<PreprocessResp> for PreprocessEntity {
 
         PreprocessResp {
             id: id_str,
-            name: self.name.clone(),
-            url: self.url.clone(),
+            name: self.name,
+            url: self.url,
             created_at: utils::format_chrono_utc_to_local(&self.created_at),
             updated_at: utils::format_chrono_utc_to_local(&self.updated_at),
             deleted_at: self.deleted_at,
@@ -74,7 +76,7 @@ impl PartialEq<PreprocessEntity> for PreprocessEntity {
 
 impl pb::entity::Namer for PreprocessEntity {
     fn name(&self) -> &'static str {
-        dao::ENTITY_PREPROCESS
+        ENTITY_PREPROCESS
     }
 }
 

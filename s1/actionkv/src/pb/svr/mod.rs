@@ -16,6 +16,7 @@ pub mod error;
 pub mod index;
 pub mod preprocess;
 pub mod server;
+pub mod template;
 
 pub const CODE_SUCCESS: StatusCode = StatusCode::OK;
 

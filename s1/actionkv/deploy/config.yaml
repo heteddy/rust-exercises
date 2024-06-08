@@ -24,3 +24,4 @@ table:
   setting: tb_collection_setting
   mapping: tb_collection_mapping
   template: tb_collection_template
+  index: tb_collection_index
