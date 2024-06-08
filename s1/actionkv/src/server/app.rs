@@ -1,12 +1,11 @@
 // use crate::pb;
-use crate::cache::{repo, sync};
-use crate::config;
+use crate::cache::sync;
 use crate::dao::app::{AppEntity, AppRepo};
-use crate::pb::svr::{ApiError, ApiResponse};
+use crate::pb::svr::ApiError;
 use std::convert::AsRef;
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 use tokio::sync::mpsc;
-use tracing::{event, info, instrument, Level};
+use tracing::{info, instrument};
 
 // use tokio::sync::OnceCell;
 #[derive(Clone)]
@@ -29,7 +28,8 @@ impl AppSvc {
         info!("insert app {:?}", app.app_id);
         let _app = self.repo.insert(&app).await?;
 
-        self.sender
+        let _ = self
+            .sender
             .send(sync::SyncData::build::<AppEntity>("app", &_app))
             .await;
         Ok(_app)
@@ -43,7 +43,8 @@ impl AppSvc {
     ) -> Result<AppEntity, ApiError> {
         info!("update app {:?}", app.app_id);
         let _app = self.repo.update_by_id(_id, app).await?;
-        self.sender
+        let _ = self
+            .sender
             .send(sync::SyncData::build::<AppEntity>("app", &_app))
             .await;
         // match self.sender.send(repo::SyncMsg::App(_app.clone())).await {

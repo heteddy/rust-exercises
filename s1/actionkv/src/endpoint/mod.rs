@@ -1,6 +1,6 @@
 pub mod app;
 pub mod bert;
-pub mod server;
 pub mod index;
-pub mod template;
 pub mod preprocess;
+pub mod server;
+pub mod template;

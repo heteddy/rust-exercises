@@ -1,15 +1,12 @@
 pub mod cc;
 pub mod kafka;
+pub mod logger;
 pub mod mongo;
 pub mod qdrant;
 pub mod redis;
-pub mod logger;
 
-use serde_derive::{Deserialize, Serialize};
-use std::sync::Arc;
-use tokio::sync::mpsc;
-use tracing::{event, info, info_span, instrument, span, warn, Level};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use tracing::{info, Level};
+use tracing_subscriber;
 
 pub async fn global_configure() {
     tracing_subscriber::fmt()

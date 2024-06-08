@@ -1,13 +1,13 @@
 #![cfg_attr(
-debug_assertions,
-allow(
-unused,
-dead_code,
-unused_imports,
-unused_variables,
-unused_assignments,
-non_snake_case
-)
+    debug_assertions,
+    allow(
+        unused,
+        dead_code,
+        unused_imports,
+        unused_variables,
+        unused_assignments,
+        non_snake_case
+    )
 )]
 use std::hash::Hasher;
 
@@ -30,11 +30,10 @@ impl Default for App {
             app_secret: "".into(),
             tenant: "".into(),
             liaison: "".to_owned(),
-            system: "".to_owned(),// 子系统编号
+            system: "".to_owned(), // 子系统编号
         }
     }
 }
-
 
 impl PartialEq<App> for App {
     fn eq(&self, other: &App) -> bool {
@@ -46,12 +45,12 @@ impl Eq for App {}
 
 impl std::hash::Hash for App {
     fn hash<H: Hasher>(&self, state: &mut H)
-        where H: Hasher
+    where
+        H: Hasher,
     {
         self.app_id.hash(state)
     }
 }
-
 
 /**
 println!("{:?}",v.get("meeting_minutes").unwrap_or_default());
@@ -76,11 +75,9 @@ impl std::borrow::Borrow<str> for App {
     }
 }
 
-
 mod tests {
-    use std::collections::HashSet;
     use crate::App;
-
+    use std::collections::HashSet;
 
     // cargo test --test test_borrow
     #[test]
@@ -90,14 +87,14 @@ mod tests {
             app_secret: "meeting_secret_abc".into(),
             tenant: "快乐平安".into(),
             liaison: "hedetao909".to_owned(),
-            system: "subsystem code".to_owned(),// 子系统编号
+            system: "subsystem code".to_owned(), // 子系统编号
         };
         let app2 = App {
             app_id: "meeting_minutes2".into(),
             app_secret: "meeting_secret_abc".into(),
             tenant: "快乐平安".into(),
             liaison: "hedetao909".to_owned(),
-            system: "subsystem code".to_owned(),// 子系统编号
+            system: "subsystem code".to_owned(), // 子系统编号
         };
 
         let v = vec![app1, app2];
@@ -107,6 +104,9 @@ mod tests {
         });
         // 如果不定义borrow这里就不能使用&str
         println!("{:?}", app_set.get("meeting_minutes").unwrap());
-        println!("{:?}", app_set.get("meeting_minutes3").unwrap_or(&App::default()));
+        println!(
+            "{:?}",
+            app_set.get("meeting_minutes3").unwrap_or(&App::default())
+        );
     }
 }

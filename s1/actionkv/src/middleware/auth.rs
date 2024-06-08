@@ -1,14 +1,11 @@
 use crate::cache::repo;
-use crate::server::auth::{self as auth_state, AuthTrait};
 use axum::{
     extract::{Path, Request, State},
     http::{HeaderMap, HeaderValue, StatusCode},
-    middleware::{self, Next},
+    middleware::Next,
     response::Response,
-    routing::get,
-    Router,
 };
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 use tracing::{info, warn};
 /// 通过router
 /**

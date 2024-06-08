@@ -1,11 +1,8 @@
 use crate::config::cc;
-use lazy_static::lazy_static;
-use mongodb::error::Error as MongoError;
 use mongodb::{options::ClientOptions, Client};
 use serde_derive::{Deserialize, Serialize};
-use std::fmt::format;
 use tokio::sync::OnceCell;
-use tracing::{event, info, info_span, instrument, span, warn, Level};
+use tracing::info;
 // 异步初始化方式
 pub static MONGO_CLIENT: OnceCell<Client> = OnceCell::const_new();
 
@@ -66,7 +63,7 @@ mod tests {
             //     doc! { "title": "The Great Gatsby", "author": "F. Scott Fitzgerald" },
             // ];
             // db.collection("vector_search").insert_many(docs, None).await; // .unwrap().database("test")
-            let typed_collection = db.collection::<Book>("books");  // name是collection名
+            let typed_collection = db.collection::<Book>("books"); // name是collection名
 
             let books = vec![
                 Book {

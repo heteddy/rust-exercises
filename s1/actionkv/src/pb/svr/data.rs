@@ -1,4 +1,4 @@
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{LittleEndian, WriteBytesExt};
 use serde_derive::{Deserialize, Serialize};
 // use std::convert::TryInto;
 

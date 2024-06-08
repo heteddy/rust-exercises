@@ -1,19 +1,19 @@
 use serde::Serialize;
 
-use tinytemplate::TinyTemplate;
 use std::error::Error;
+use tinytemplate::TinyTemplate;
 
 #[derive(Serialize)]
 struct Context {
     name: String,
 }
 
-static TEMPLATE : &'static str = "Hello {name}!";
+static TEMPLATE: &'static str = "Hello {name}!";
 
 pub mod tests {
     use super::*;
     #[test]
-    fn test_template() -> Result<(), Box<dyn Error>>{
+    fn test_template() -> Result<(), Box<dyn Error>> {
         let mut tt = TinyTemplate::new();
         tt.add_template("hello", TEMPLATE)?;
 

@@ -44,7 +44,8 @@ mod tests {
             "salary".to_string(),
             serde_json::Value::Number(Number::from_f64(80.50_f64).unwrap()),
         );
-        bm2.0.insert("online".to_string(), serde_json::Value::Bool(true));
+        bm2.0
+            .insert("online".to_string(), serde_json::Value::Bool(true));
         bm2.0.insert(
             "title".to_string(),
             Value::Array(vec![
@@ -56,9 +57,9 @@ mod tests {
         Hello {{name}}  age={{ age }} salary={{ salary }}
         {{#if online }}
         online is true
-        {{/if}} 
+        {{/if}}
         {{#each title}}
-        {{this}} 
+        {{this}}
         {{/each}}
         */
         let tpl_str = r#"  Hello {{name}}  age={{ age }} salary={{ salary }}
@@ -69,13 +70,12 @@ mod tests {
         reg.register_template_string("tpl_1", tpl_str)?;
 
         let render_str = reg.render("tpl_1", &bm2)?;
-        println!("tpl_1={},",&render_str);
+        println!("tpl_1={},", &render_str);
         print_type_of(&render_str);
 
         Ok(())
     }
 }
-
 
 pub fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())

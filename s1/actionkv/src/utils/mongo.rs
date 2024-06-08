@@ -1,24 +1,20 @@
-use crate::pb;
-use chrono::{format, DateTime, Duration, FixedOffset, Local, NaiveDateTime, Utc};
+use chrono::{DateTime, Duration, FixedOffset, NaiveDateTime, Utc};
 use mongodb::bson::{self, oid::ObjectId};
-use mongodb::error::Error as MongoError;
 use mongodb::{
-    options::{self, IndexOptions}, //modify here
+    // options, //modify here
     Client,
     Collection,
-    IndexModel,
 };
 use serde::{
     de::{self, Deserialize},
     ser, Deserializer, Serialize, Serializer,
 };
-use std::fmt::{self, Display};
+use std::fmt;
 use std::result::Result;
-use time::macros::{datetime, offset};
-use time::OffsetDateTime;
+use time::macros::offset;
 use time::{self, macros::format_description};
 use tokio::sync::OnceCell;
-use tracing::{info, warn};
+use tracing::info;
 
 pub fn serialize_object_id_option_as_hex_string<S: Serializer>(
     val: &Option<ObjectId>,
@@ -30,7 +26,7 @@ pub fn serialize_object_id_option_as_hex_string<S: Serializer>(
     }
 }
 
-const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S";
+// const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S";
 
 pub mod bson_datetime_as_string {
     // 需要 use super::*; 才能用到外面的use;
@@ -142,9 +138,6 @@ pub mod local_date_format {
 
 // 支持返回值的泛化，每个子模块引用这个模块
 pub fn get_collection<T>(client: &OnceCell<Client>, db: &str, collection: &str) -> Collection<T> {
-    let col = client.get()
-        .unwrap()
-        .database(db)
-        .collection(collection);
+    let col = client.get().unwrap().database(db).collection(collection);
     col
 }

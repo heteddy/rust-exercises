@@ -2,10 +2,9 @@
     debug_assertions,
     allow(
         unused,
-        unused_imports,
-        dead_code,
+        // unused_imports,
+        // dead_code,
         unreachable_patterns,
-        unused_imports,
         unused_variables,
         unused_assignments,
         non_snake_case

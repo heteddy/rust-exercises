@@ -2,22 +2,21 @@ use anyhow::Result;
 use rdkafka::client::ClientContext;
 use rdkafka::config::{ClientConfig, RDKafkaLogLevel};
 use rdkafka::consumer::{
-    stream_consumer::StreamConsumer, BaseConsumer, CommitMode, Consumer, ConsumerContext, Rebalance,
+    stream_consumer::StreamConsumer, CommitMode, Consumer, ConsumerContext, Rebalance,
 };
 use rdkafka::error::{KafkaError, KafkaResult};
-use rdkafka::message::{Header, Headers, Message, OwnedHeaders};
+use rdkafka::message::{Headers, Message};
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::topic_partition_list::TopicPartitionList;
-use rdkafka::util::get_rdkafka_version;
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+
+use serde::Serialize;
+
 use std::time::Duration;
-use tokio::sync::{mpsc, Mutex};
-use tracing::{event, info, info_span, instrument, span, warn, Level};
+use tokio::sync::mpsc;
+use tracing::{info, warn};
 
 pub struct KafkaProducer {
     topic: String,
-    brokers: String,
     client: FutureProducer,
 }
 
@@ -31,11 +30,7 @@ impl KafkaProducer {
             .create()
             .unwrap();
 
-        KafkaProducer {
-            topic: t,
-            brokers: b,
-            client,
-        }
+        KafkaProducer { topic: t, client }
     }
 
     pub async fn send<T: Serialize>(&self, key: &str, msg: T) -> Result<(i32, i64)>
@@ -173,7 +168,7 @@ impl KakfaSource {
                         }
                     };
                     // todo 这里增加异步处理的逻辑；拿到topic，payload，key等信息然后序列化
-                    /**
+                    /*
                     &str -> String--| String::from(s) or s.to_string() or s.to_owned()
                     &str -> &[u8]---| s.as_bytes()
                     &str -> Vec<u8>-| s.as_bytes().to_vec() or s.as_bytes().to_owned()
@@ -214,7 +209,7 @@ impl KakfaSource {
                         .await; // 发送消息是异步的
 
                     let commit_result = self.client.commit_message(&m, CommitMode::Async);
-                    commit_result.map_err(|e| {
+                    let _ = commit_result.map_err(|e| {
                         warn!("commit message error :{}", e);
                         // e  还需要返回error么
                     });
@@ -240,7 +235,7 @@ impl KakfaSource {
 }
 
 mod tests {
-    use super::*;
+
     #[test]
     fn my_test() {
         tokio::runtime::Builder::new_multi_thread()

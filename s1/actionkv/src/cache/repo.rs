@@ -1,22 +1,15 @@
-use crate::dao::{
-    app::AppEntity, bert::BertEntity, index::IndexEntity, preprocess::PreprocessEntity,
-    server::ServerEntity,
-};
+use crate::dao::{app::AppEntity, index::IndexEntity};
 // use chan::Synchronizer;
-use super::sync::{Messager, SyncData};
+use super::sync::Messager;
 use crate::cache::sync;
-use crate::pb;
-use lazy_static::lazy_static;
-use serde::{Deserialize, Serialize};
+
 use serde_json;
-use std::any::Any;
-use std::borrow::Cow;
-use std::cell::RefCell;
+
 use std::collections::HashMap;
 use std::sync::Once;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc;
-use tracing::{info, instrument, trace, warn};
+use tracing::{info, instrument, warn};
 
 // static mut GLOBAL_CONFIGURE_REPO = Option
 
@@ -227,7 +220,8 @@ pub async fn watch_configure_change(
     configure_repo: Arc<RwLock<IndexConfigRepo>>,
     mut rx: mpsc::Receiver<sync::SyncData>,
 ) {
-    while let Some(mut data) = rx.recv().await {
+    while let Some(data) = rx.recv().await {
+        // some data被move所以不加mut也可以
         configure_repo.write().unwrap().handle_data(data);
     }
 }

@@ -5,8 +5,8 @@ pub mod preprocess;
 pub mod server;
 pub mod template;
 
-use crate::pb::svr::{ApiError, ApiResponse};
-use tracing::{error, event, info, info_span, instrument, span, warn, Level};
+use crate::pb::svr::ApiError;
+use tracing::error;
 
 pub const ENTITY_APP: &'static str = "app_entity";
 pub const ENTITY_BERT: &'static str = "bert_entity";
@@ -36,5 +36,3 @@ pub async fn init_indexes() -> Result<(), ApiError> {
     });
     Ok(())
 }
-
-

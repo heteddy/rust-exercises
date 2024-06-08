@@ -12,7 +12,6 @@
 use bincode::de;
 use bincode::deserialize as from_bincode;
 
-
 mod data;
 mod dump;
 

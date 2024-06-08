@@ -1,6 +1,6 @@
 use mongodb::bson;
-use serde::{Deserialize, Serialize, Serializer};
-use validator::Validate;
+use serde::{Deserialize, Serialize};
+// use validator::Validate;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MappingField {

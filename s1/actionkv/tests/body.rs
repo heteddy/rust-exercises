@@ -64,26 +64,32 @@ mod tests {
         println!("serde_result={}", ret);
 
         let mut bm2 = BodyMap2::new();
+        bm2.0
+            .insert("name".to_string(), Value::String("hedetao".to_string()));
         bm2.0.insert(
-            "name".to_string(),
-            Value::String("hedetao".to_string()),
+            "age".to_string(),
+            serde_json::Value::Number(Number::from(40)),
         );
-        bm2.0
-            .insert("age".to_string(), serde_json::Value::Number(Number::from(40)));
-        bm2.0
-            .insert("salary".to_string(), serde_json::Value::Number(Number::from_f64(80.50_f64).unwrap()));
+        bm2.0.insert(
+            "salary".to_string(),
+            serde_json::Value::Number(Number::from_f64(80.50_f64).unwrap()),
+        );
         bm2.0.insert(
             "title".to_string(),
-            Value::Array(vec![Value::String("高级经理".to_string()), Value::String("技术转件".to_string())]),
+            Value::Array(vec![
+                Value::String("高级经理".to_string()),
+                Value::String("技术转件".to_string()),
+            ]),
         );
-        
+
         let ret = serde_json::to_string_pretty(&bm2).unwrap_or_default();
         println!("serde_result2={}", ret);
 
-        let av  = Value::Array(vec![Value::String("高级经理".to_string()), Value::String("技术转件".to_string())]);
+        let av = Value::Array(vec![
+            Value::String("高级经理".to_string()),
+            Value::String("技术转件".to_string()),
+        ]);
         let av_ret = serde_json::to_string_pretty(&av).unwrap_or_default();
-
-        
 
         println!("av_ret2={}", av_ret);
         print_type_of(&av_ret);

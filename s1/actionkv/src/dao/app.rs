@@ -1,41 +1,29 @@
 // use crate::config::mongo;
 // use chrono::prelude::*;
-use chrono::{format, DateTime, Local, Utc};
-use futures::stream::{StreamExt, TryStreamExt};
+use chrono::{DateTime, Local, Utc};
+use futures::stream::StreamExt;
 //cursor 使用
-use mongodb::bson::serde_helpers::{
-    bson_datetime_as_rfc3339_string,
-    chrono_datetime_as_bson_datetime,
-    // hex_string_as_object_id,
-    // serialize_object_id_as_hex_string,
-};
+use mongodb::bson::serde_helpers::chrono_datetime_as_bson_datetime;
 use mongodb::{
     bson::{self, doc, oid::ObjectId, Bson},
     options::{self, IndexOptions},
-    results::{InsertOneResult, UpdateResult}, //modify here
-    Client,
-    Collection,
-    IndexModel,
+    Collection, IndexModel,
 };
 use std::time::Duration;
-use tokio::sync::OnceCell;
 // 需要引入这个trait
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 // 这个是derive 宏
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
 use crate::pb;
 use crate::pb::svr::{
     app::{AppReq, AppResp},
-    ApiError, ApiResponse,
+    ApiError,
 };
-use crate::utils::mongo::{local_date_format, serialize_object_id_option_as_hex_string};
-use crate::utils::{self, mongo::try_to_local_time_string};
-use serde_json::to_string;
+use crate::utils;
+use crate::utils::mongo::serialize_object_id_option_as_hex_string;
 use std::hash::Hasher;
 use std::result::Result;
-use std::str::FromStr;
-use std::vec;
 use tracing::info;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -220,7 +208,7 @@ impl AppRepo {
             .upsert(false)
             .build();
         let oid = ObjectId::parse_str(id)?;
-        let seconds = Local::now().timestamp();
+
         let updated_at = Utc::now();
         let updating = doc! {
             "$set": doc! {
@@ -236,7 +224,6 @@ impl AppRepo {
             .col
             .find_one_and_update(doc! {"_id": oid}, updating, opt)
             .await?;
-       
 
         app.updated_at = updated_at;
         app.id = Some(oid);
@@ -317,7 +304,6 @@ impl AppRepo {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     fn init() {
         tokio::runtime::Builder::new_multi_thread()

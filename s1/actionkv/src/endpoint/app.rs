@@ -1,21 +1,19 @@
 use crate::cache::sync;
 
-use crate::dao;
 use crate::dao::app::AppEntity;
 use crate::pb::svr::{app::AppReq, app::AppResp, ApiError, ApiResponse, Pagination};
 use crate::server;
 use axum::extract::{Json, Path, Query, State};
-use axum::http::{header::HeaderMap, StatusCode};
-use axum::response::IntoResponse;
+use axum::http::header::HeaderMap;
+
 use axum::{
-    routing::MethodFilter,
-    routing::{delete, get, on, post, put},
+    routing::{get, post},
     Router,
 };
-use serde_derive::Deserialize;
+
 use std::convert::From;
 use tokio::sync::mpsc;
-use tracing::{event, info, instrument, span, Level};
+use tracing::{event, instrument, span, Level};
 
 #[instrument(skip_all)]
 async fn create_app(

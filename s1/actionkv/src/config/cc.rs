@@ -1,19 +1,19 @@
 use ansi_term::Colour;
 use clap::builder::OsStr;
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use lazy_static::lazy_static;
-use mongodb::bson::{doc, Document};
+use mongodb::bson::doc;
 use serde::de::Deserialize;
 // 调用struct实例的deserialize 方法
 use serde_derive::{Deserialize, Serialize};
 use serde_json;
 use serde_yaml;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
-use std::{env, fs, thread};
-use tokio::sync::mpsc;
-use tracing::{event, info, info_span, instrument, span, warn, Level};
+use std::path::PathBuf;
+use std::sync::Mutex;
+
+use std::{env, fs};
+
+use tracing::{info, instrument, warn};
 lazy_static! {
     pub static ref CLI_ARGS: Cli = init_cli_args();
     // 直接用，不需要传递到另外一个coroutine中，全局变量不需要arc

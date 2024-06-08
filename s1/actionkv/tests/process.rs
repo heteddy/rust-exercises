@@ -10,13 +10,10 @@
     )
 )]
 
-use std::process::{Command, Stdio};
 use std::io::Write;
-
+use std::process::{Command, Stdio};
 
 mod tests {
     #[test]
-    fn test_process() {
-        
-    }
+    fn test_process() {}
 }

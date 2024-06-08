@@ -1,8 +1,8 @@
 use crate::cache::sync;
 use crate::dao::bert::{BertEntity, BertRepo};
-use crate::pb::svr::{ApiError, ApiResponse};
+use crate::pb::svr::ApiError;
 use tokio::sync::mpsc;
-use tracing::{event, info, instrument, Level};
+use tracing::{info, instrument};
 
 #[derive(Clone)]
 pub struct BertSvc {

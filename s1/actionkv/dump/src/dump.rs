@@ -6,7 +6,6 @@ use serde_json::{self, to_string as to_json};
 
 use crate::data;
 
-
 pub fn dump() {
     let c = data::City::new("成都", 21000000, 10.98, 123.99);
 

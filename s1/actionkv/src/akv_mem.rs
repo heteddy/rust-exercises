@@ -1,9 +1,9 @@
 #![cfg_attr(
     debug_assertions,
     allow(
-        unused,
+        // unused,
         dead_code,
-        unused_imports,
+        // unused_imports,
         unreachable_patterns,
         unused_variables,
         unused_assignments,
@@ -25,7 +25,7 @@
 // use chrono::Utc;
 use libakv::{cache, config, dao, transport::http};
 use tokio::net::TcpListener;
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 
 #[tokio::main]
 async fn main() {
@@ -38,7 +38,7 @@ async fn main() {
     warn!("start tracing subscriber");
     info!("start app");
     // build our application with a route
-    
+
     let tx = cache::start_cacher();
     info!("cache started......");
 

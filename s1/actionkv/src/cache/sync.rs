@@ -7,17 +7,14 @@ use crate::dao::{
     server::ServerEntity,
 };
 use crate::pb;
-use anyhow;
-use core::sync;
-use futures::future;
-use lazy_static::lazy_static;
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::sync::{Arc, Mutex, RwLock};
-use tokio::net::unix::pipe::Receiver;
-use tokio::{spawn, sync::mpsc, sync::OnceCell};
-use tracing::{info, instrument, trace, warn};
+use std::sync::{Arc, RwLock};
+
+use tokio::sync::mpsc;
+use tracing::{info, instrument, warn};
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum SyncMsg {

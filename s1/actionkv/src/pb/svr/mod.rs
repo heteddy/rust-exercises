@@ -133,7 +133,7 @@ impl IntoResponse for ApiError {
         );
         let msg = format!("{:?}", &self);
         let err_resp: ErrorResponse = ErrorResponse::new(&msg);
-        
+
         let status_code = match self {
             // Self::IOError(e) => Some(e),
             // Self::DBError(e) => Some(e),
