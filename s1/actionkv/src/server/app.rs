@@ -24,7 +24,7 @@ impl AppSvc {
         }
     }
     #[instrument(skip_all)]
-    pub async fn create_app(&self, app: AppEntity) -> Result<AppEntity, ApiError> {
+    pub async fn create(&self, app: AppEntity) -> Result<AppEntity, ApiError> {
         info!("insert app {:?}", app.app_id);
         let _app = self.repo.insert(&app).await?;
 
@@ -36,7 +36,7 @@ impl AppSvc {
     }
 
     #[instrument(skip_all)]
-    pub async fn update_app(
+    pub async fn update(
         &self,
         _id: impl AsRef<str> + Debug,
         app: AppEntity,
@@ -56,21 +56,21 @@ impl AppSvc {
     }
 
     #[instrument(skip_all)]
-    pub async fn list_all(&self, skip: u64, limit: i64) -> Result<Vec<AppEntity>, ApiError> {
+    pub async fn list(&self, skip: u64, limit: i64) -> Result<Vec<AppEntity>, ApiError> {
         info!("list_all apps");
         let ret = self.repo.list(skip, limit).await?;
         Ok(ret)
     }
 
     #[instrument(skip_all)]
-    pub async fn get_app_by_id(&self, _id: impl AsRef<str> + Debug) -> Result<AppEntity, ApiError> {
+    pub async fn get(&self, _id: impl AsRef<str> + Debug) -> Result<AppEntity, ApiError> {
         info!("get_app_by_id apps :{:?}", _id);
         let ret = self.repo.get(_id).await?;
         Ok(ret)
     }
     ///todo add 删除逻辑
     #[instrument(skip_all)]
-    pub async fn delete_app_by_id(
+    pub async fn delete(
         &self,
         _id: impl AsRef<str> + Debug,
     ) -> Result<AppEntity, ApiError> {

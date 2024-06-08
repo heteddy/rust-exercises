@@ -1,16 +1,13 @@
 use crate::cache::sync;
-
 use crate::dao::app::AppEntity;
 use crate::pb::svr::{app::AppReq, app::AppResp, ApiError, ApiResponse, Pagination};
 use crate::server;
 use axum::extract::{Json, Path, Query, State};
 use axum::http::header::HeaderMap;
-
 use axum::{
     routing::{get, post},
     Router,
 };
-
 use std::convert::From;
 use tokio::sync::mpsc;
 use tracing::{event, instrument, span, Level};
@@ -24,7 +21,7 @@ async fn create_app(
     let _enter = s.enter();
     event!(Level::INFO, "endpoint create app {:?}", payload);
     let app = AppEntity::from(payload);
-    let u = svc.create_app(app).await?;
+    let u = svc.create(app).await?;
     // Ok(Json(u))
     Ok(ApiResponse::from_result(u.into()))
 }
@@ -45,7 +42,7 @@ pub async fn list(
         );
     });
     let page = page.unwrap_or_default();
-    let results = svc.list_all(page.skip, page.limit).await?;
+    let results = svc.list(page.skip, page.limit).await?;
     let mut resp = Vec::with_capacity(results.len());
     results.into_iter().for_each(|e| resp.push(e.into()));
     Ok(ApiResponse::from_result(resp))
@@ -57,7 +54,7 @@ pub async fn retrieve(
     Path(id): Path<String>,
 ) -> Result<ApiResponse<AppResp>, ApiError> {
     event!(Level::INFO, "endpoint get path apps {:?}", id);
-    let result = svc.get_app_by_id(&id).await?;
+    let result = svc.get(&id).await?;
     Ok(ApiResponse::from_result(result.into()))
 }
 
@@ -78,7 +75,7 @@ pub async fn update(
     });
     event!(Level::INFO, "endpoint update path apps {:?}", id);
     // 这里实现了from，因此类型不匹配可以直接传
-    let result = svc.update_app(&id, payload.into()).await?;
+    let result = svc.update(&id, payload.into()).await?;
     Ok(ApiResponse::from_result(result.into()))
 }
 

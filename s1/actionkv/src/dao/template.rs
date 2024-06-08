@@ -3,7 +3,7 @@ use chrono::prelude::*;
 use futures::stream::StreamExt;
 use mongodb::bson::serde_helpers::chrono_datetime_as_bson_datetime;
 use mongodb::{
-    bson::{doc, oid::ObjectId},
+    bson::{doc, oid::ObjectId, Document},
     options::{self, IndexOptions},
     Collection, IndexModel,
 };
@@ -12,12 +12,16 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 // 这个是derive 宏
 use crate::config::{self, mongo::MONGO_CLIENT};
-use crate::dao;
-use crate::pb::svr::template::{TemplateReq, TemplateResp};
-use crate::pb::{self, svr::ApiError};
+use crate::dao::base::{Entity, EntityDao};
+use crate::pb::{
+    entity,
+    svr::{
+        template::{TemplateReq, TemplateResp},
+        ApiError,
+    },
+};
 use crate::utils::mongo::serialize_object_id_option_as_hex_string;
 use std::result::Result;
-
 
 pub const ENTITY_TEMPLATE: &'static str = "template_entity";
 
@@ -44,7 +48,7 @@ impl PartialEq<TemplateEntity> for TemplateEntity {
     }
 }
 
-impl pb::entity::Namer for TemplateEntity {
+impl entity::Namer for TemplateEntity {
     fn name(&self) -> &'static str {
         ENTITY_TEMPLATE
     }
@@ -63,11 +67,67 @@ impl From<TemplateReq> for TemplateEntity {
     }
 }
 
-
-
-
-pub struct TemplateDao {
-
+impl Entity for TemplateEntity {
+    fn update(&mut self, id: Option<ObjectId>, updated_at: DateTime<Utc>) {
+        self.id = id;
+        self.updated_at = updated_at;
+    }
+    fn updating_doc(&self, rhs: &Self) -> Document {
+        doc! {
+            "body": rhs.body.clone(),
+            "updated_at": rhs.updated_at.clone(),
+        }
+    }
 }
 
+pub struct TemplateDao {
+    collection: Collection<TemplateEntity>,
+}
 
+impl EntityDao<TemplateEntity> for TemplateDao {
+    fn col(&self) -> Collection<TemplateEntity> {
+        self.collection.clone()
+    }
+    fn indices(&self) -> Vec<IndexModel> {
+        let uniqueOpt = IndexOptions::builder()
+            // .name()
+            .unique(true)
+            .background(true)
+            .build();
+        let opt = IndexOptions::builder()
+            .unique(false)
+            .background(true)
+            .build();
+        let mut indices = Vec::with_capacity(3);
+
+        indices.push(
+            IndexModel::builder()
+                .keys(doc! {
+                    "updated_at":-1,"deleted_at":-1,
+                })
+                .options(opt.clone())
+                .build(),
+        );
+        indices.push(
+            IndexModel::builder()
+                .keys(doc! {
+                    "name":-1,"deleted_at":-1,
+                })
+                .options(uniqueOpt)
+                .build(),
+        );
+        indices
+    }
+}
+
+impl TemplateDao {
+    pub fn new() -> Self {
+        let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
+        let col = utils::mongo::get_collection(
+            &MONGO_CLIENT,
+            &config_file.mongo.database,
+            &config_file.table.template,
+        );
+        TemplateDao { collection: col }
+    }
+}
