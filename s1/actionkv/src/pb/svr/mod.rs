@@ -73,6 +73,7 @@ pub enum ApiError {
     DBError(mongodb::error::Error),
     InternalServerError(InternalError),
     BsonError(bson::oid::Error),
+    // todo 增加404 not found
 }
 
 // impl ApiErrorTrait for ApiError {}
@@ -163,7 +164,7 @@ impl<'a> ErrorResponse<'a> {
     }
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Copy, Clone, Default, Deserialize)]
 pub struct Pagination {
     pub skip: u64,
     pub limit: i64,

@@ -75,6 +75,7 @@ where
             .show_record_id(true)
             .build();
         let ret = self.col().find_one(doc! {"_id":mongo_id}, opt).await?;
+        info!("find ret :{:?}", ret);
         Ok(ret.unwrap_or_default())
     }
 
