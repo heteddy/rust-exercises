@@ -1,6 +1,7 @@
 // use crate::pb;
 use crate::cache::sync;
-use crate::dao::app::{AppEntity, AppRepo};
+use crate::dao::app::{AppEntity, AppDao};
+use crate::dao::base::EntityDao;
 use crate::pb::svr::ApiError;
 use std::convert::AsRef;
 use std::fmt::Debug;
@@ -10,14 +11,14 @@ use tracing::{info, instrument};
 // use tokio::sync::OnceCell;
 #[derive(Clone)]
 pub struct AppSvc {
-    repo: AppRepo,
+    repo: AppDao,
     sender: mpsc::Sender<sync::SyncData>,
 }
 
 impl AppSvc {
     pub fn new(tx: mpsc::Sender<sync::SyncData>) -> Self {
         AppSvc {
-            repo: AppRepo::new(),
+            repo: AppDao::new(),
             // 通过sender发送到
             sender: tx,
             // sender: repo::GLOBAL_SYNCHRONIZER.lock().unwrap().get_tx(),
@@ -26,7 +27,7 @@ impl AppSvc {
     #[instrument(skip_all)]
     pub async fn create(&self, app: AppEntity) -> Result<AppEntity, ApiError> {
         info!("insert app {:?}", app.app_id);
-        let _app = self.repo.insert(&app).await?;
+        let _app = self.repo.insert(app).await?;
 
         let _ = self
             .sender
@@ -42,7 +43,7 @@ impl AppSvc {
         app: AppEntity,
     ) -> Result<AppEntity, ApiError> {
         info!("update app {:?}", app.app_id);
-        let _app = self.repo.update_by_id(_id, app).await?;
+        let _app = self.repo.update(_id, app).await?;
         let _ = self
             .sender
             .send(sync::SyncData::build::<AppEntity>("app", &_app))
@@ -75,7 +76,7 @@ impl AppSvc {
         _id: impl AsRef<str> + Debug,
     ) -> Result<AppEntity, ApiError> {
         info!("delete_app_by_id apps :{:?}", _id);
-        let ret = self.repo.soft_delete_by_id(_id).await?;
+        let ret = self.repo.delete(_id).await?;
         Ok(ret)
     }
 }

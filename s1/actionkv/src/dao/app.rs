@@ -5,7 +5,7 @@ use futures::stream::StreamExt;
 //cursor 使用
 use mongodb::bson::serde_helpers::chrono_datetime_as_bson_datetime;
 use mongodb::{
-    bson::{self, doc, oid::ObjectId, Bson},
+    bson::{self, doc, oid::ObjectId, Bson, Document},
     options::{self, IndexOptions},
     Collection, IndexModel,
 };
@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 // 这个是derive 宏
 use crate::config::{self, mongo::MONGO_CLIENT};
 pub const ENTITY_APP: &'static str = "app_entity";
+use crate::dao::base::{Entity, EntityDao};
 use crate::pb;
 use crate::pb::svr::{
     app::{AppReq, AppResp},
@@ -106,7 +107,6 @@ impl PartialEq<AppEntity> for AppEntity {
 }
 
 // impl Eq for AppEntity {}
-
 // 可以作为set和map的key
 impl std::hash::Hash for AppEntity {
     fn hash<H: Hasher>(&self, state: &mut H)
@@ -117,20 +117,33 @@ impl std::hash::Hash for AppEntity {
     }
 }
 
-#[derive(Clone)]
-pub struct AppRepo {
-    pub col: Collection<AppEntity>,
+impl Entity for AppEntity {
+    fn update(&mut self, id: Option<ObjectId>, updated_at: DateTime<Utc>) {
+        self.id = id;
+        self.updated_at = updated_at;
+    }
+    fn updating_doc(&self, rhs: &Self) -> Document {
+        doc! {
+            "app_id": rhs.app_id.clone(),
+            "app_secret": rhs.app_secret.clone(),
+            "tenant": rhs.tenant.clone(),
+            "liaison": rhs.liaison.clone(),
+            "system": rhs.system.clone(),
+            "updated_at": rhs.updated_at,
+        }
+    }
 }
 
-impl AppRepo {
-    pub async fn create_index() -> Result<(), ApiError> {
-        let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
-        let col = utils::mongo::get_collection::<AppEntity>(
-            &MONGO_CLIENT,
-            &_configure.mongo.database,
-            &_configure.table.app,
-        );
+#[derive(Clone)]
+pub struct AppDao {
+    collection: Collection<AppEntity>,
+}
 
+impl EntityDao<AppEntity> for AppDao {
+    fn col(&self) -> Collection<AppEntity> {
+        self.collection.clone()
+    }
+    fn indices(&self) -> Vec<IndexModel> {
         let uniqueOpt = IndexOptions::builder()
             .unique(true)
             .background(true)
@@ -167,139 +180,137 @@ impl AppRepo {
                 .options(uniqueOpt)
                 .build(),
         );
-        let o = options::CreateIndexOptions::builder()
-            .max_time(Duration::from_secs(60))
-            .build();
-        col.create_indexes(indices, o).await?;
-        Ok(())
+        indices
     }
+}
 
-    pub fn new() -> AppRepo {
+impl AppDao {
+    pub fn new() -> AppDao {
         let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
         let col = utils::mongo::get_collection::<AppEntity>(
             &MONGO_CLIENT,
             &_configure.mongo.database,
             &_configure.table.app,
         );
-        AppRepo { col }
+        AppDao { collection: col }
     }
     //mongodb::error::Result<InsertOneResult>
-    pub async fn insert(&self, app: &AppEntity) -> Result<AppEntity, ApiError> {
-        // let opt = options::InsertOneOptions::build();
-        let ret = self.col.insert_one(app, None).await?;
-        info!("dao insert app {:?}", app);
-        info!("inserted id = {:?}", &ret.inserted_id);
-        // let mut entity = app.into();
-        let _oid = match ret.inserted_id {
-            Bson::ObjectId(_id) => Some(_id),
-            _ => None,
-        };
-        let mut app2 = app.clone();
-        app2.id = _oid;
-        Ok(app2)
-    }
+    // pub async fn insert(&self, app: &AppEntity) -> Result<AppEntity, ApiError> {
+    //     // let opt = options::InsertOneOptions::build();
+    //     let ret = self.col.insert_one(app, None).await?;
+    //     info!("dao insert app {:?}", app);
+    //     info!("inserted id = {:?}", &ret.inserted_id);
+    //     // let mut entity = app.into();
+    //     let _oid = match ret.inserted_id {
+    //         Bson::ObjectId(_id) => Some(_id),
+    //         _ => None,
+    //     };
+    //     let mut app2 = app.clone();
+    //     app2.id = _oid;
+    //     Ok(app2)
+    // }
 
-    pub async fn update_by_id(
-        &self,
-        id: impl AsRef<str>,
-        mut app: AppEntity,
-    ) -> Result<AppEntity, ApiError> {
-        let opt = options::FindOneAndUpdateOptions::builder()
-            .upsert(false)
-            .build();
-        let oid = ObjectId::parse_str(id)?;
+    // pub async fn update_by_id(
+    //     &self,
+    //     id: impl AsRef<str>,
+    //     mut app: AppEntity,
+    // ) -> Result<AppEntity, ApiError> {
+    //     let opt = options::FindOneAndUpdateOptions::builder()
+    //         .upsert(false)
+    //         .build();
+    //     let oid = ObjectId::parse_str(id)?;
 
-        let updated_at = Utc::now();
-        let updating = doc! {
-            "$set": doc! {
-                "app_id": &app.app_id,
-                "app_secret": &app.app_secret,
-                "tenant": &app.tenant,
-                "liaison": &app.liaison,
-                "system": &app.system,
-                "updated_at": updated_at,
-            }
-        };
-        let ret = self
-            .col
-            .find_one_and_update(doc! {"_id": oid}, updating, opt)
-            .await?;
+    //     let updated_at = Utc::now();
+    //     let updating = doc! {
+    //         "$set": doc! {
+    //             "app_id": &app.app_id,
+    //             "app_secret": &app.app_secret,
+    //             "tenant": &app.tenant,
+    //             "liaison": &app.liaison,
+    //             "system": &app.system,
+    //             "updated_at": updated_at,
+    //         }
+    //     };
+    //     let ret = self
+    //         .col
+    //         .find_one_and_update(doc! {"_id": oid}, updating, opt)
+    //         .await?;
 
-        app.updated_at = updated_at;
-        app.id = Some(oid);
+    //     app.updated_at = updated_at;
+    //     app.id = Some(oid);
 
-        Ok(app)
-    }
+    //     Ok(app)
+    // }
 
-    pub async fn list(
-        &self,
-        skip: u64,
-        limit: i64,
-    ) -> Result<Vec<AppEntity>, mongodb::error::Error> {
-        let opt = options::FindOptions::builder()
-            .sort(doc! {"updated_at":-1,"deleted_at":1})
-            .limit(Some(limit))
-            .skip(Some(skip))
-            .build();
-        let filters = doc! {"deleted_at":0};
-        let mut cursor = self.col.find(filters, opt).await?;
-        let mut v = Vec::new();
-        while let Some(doc) = cursor.next().await {
-            if doc.is_ok() {
-                v.push(doc.unwrap_or_default());
-            }
-        }
-        Ok(v)
-    }
+    // pub async fn list(
+    //     &self,
+    //     skip: u64,
+    //     limit: i64,
+    // ) -> Result<Vec<AppEntity>, mongodb::error::Error> {
+    //     let opt = options::FindOptions::builder()
+    //         .sort(doc! {"updated_at":-1,"deleted_at":1})
+    //         .limit(Some(limit))
+    //         .skip(Some(skip))
+    //         .build();
+    //     let filters = doc! {"deleted_at":0};
+    //     let mut cursor = self.col.find(filters, opt).await?;
+    //     let mut v = Vec::new();
+    //     while let Some(doc) = cursor.next().await {
+    //         if doc.is_ok() {
+    //             v.push(doc.unwrap_or_default());
+    //         }
+    //     }
+    //     Ok(v)
+    // }
 
-    pub async fn get(&self, id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
-        let opt = options::FindOneOptions::builder()
-            .show_record_id(true)
-            .build();
+    // pub async fn get(&self, id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
+    //     let opt = options::FindOneOptions::builder()
+    //         .show_record_id(true)
+    //         .build();
 
-        let oid = ObjectId::parse_str(id)?;
-        let ret = self.col.find_one(doc! {"_id": oid}, opt).await?;
-        // ret.ok().expect("");
-        Ok(ret.unwrap_or_default())
-    }
+    //     let oid = ObjectId::parse_str(id)?;
+    //     let ret = self.col.find_one(doc! {"_id": oid}, opt).await?;
+    //     // ret.ok().expect("");
+    //     Ok(ret.unwrap_or_default())
+    // }
 
-    pub async fn get_by_app_id(&self, app_id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
-        let opt = options::FindOneOptions::builder()
-            .show_record_id(true)
-            .build();
+    // pub async fn get_by_app_id(&self, app_id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
+    //     let opt = options::FindOneOptions::builder()
+    //         .show_record_id(true)
+    //         .build();
 
-        let ret = self
-            .col
-            .find_one(doc! {"app_id": app_id.as_ref()}, opt)
-            .await?;
-        // ret.ok().expect("");
-        Ok(ret.unwrap_or_default())
-    }
+    //     let ret = self
+    //         .col
+    //         .find_one(doc! {"app_id": app_id.as_ref()}, opt)
+    //         .await?;
+    //     // ret.ok().expect("");
+    //     Ok(ret.unwrap_or_default())
+    // }
 
-    pub async fn delete_by_id(&self, id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
-        let opt = options::FindOneAndDeleteOptions::builder()
-            // .show_record_id(true)
-            .build();
-        let oid = ObjectId::parse_str(id)?;
-        let ret = self.col.find_one_and_delete(doc! {"_id": oid}, opt).await?;
-        // ret.ok().expect("");
-        Ok(ret.unwrap_or_default())
-    }
+    // pub async fn delete_by_id(&self, id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
+    //     let opt = options::FindOneAndDeleteOptions::builder()
+    //         // .show_record_id(true)
+    //         .build();
+    //     let oid = ObjectId::parse_str(id)?;
+    //     let ret = self.col.find_one_and_delete(doc! {"_id": oid}, opt).await?;
+    //     // ret.ok().expect("");
+    //     Ok(ret.unwrap_or_default())
+    // }
 
-    pub async fn soft_delete_by_id(&self, id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
-        let opt = options::FindOneAndUpdateOptions::builder()
-            .upsert(false)
-            .build();
-        let oid = ObjectId::parse_str(id)?;
-        let seconds = Local::now().timestamp();
-        let update = doc! { "$set": doc! { "deleted_at": bson::Bson::from(seconds)  } };
-        let ret = self
-            .col
-            .find_one_and_update(doc! {"_id": oid}, update, opt)
-            .await?;
-        // ret.ok().expect("");
-        Ok(ret.unwrap_or_default())
-    }
+    // pub async fn soft_delete_by_id(&self, id: impl AsRef<str>) -> Result<AppEntity, ApiError> {
+    //     let opt = options::FindOneAndUpdateOptions::builder()
+    //         .upsert(false)
+    //         .build();
+    //     let oid = ObjectId::parse_str(id)?;
+    //     let seconds = Local::now().timestamp();
+    //     let update = doc! { "$set": doc! { "deleted_at": bson::Bson::from(seconds)  } };
+    //     let ret = self
+    //         .col
+    //         .find_one_and_update(doc! {"_id": oid}, update, opt)
+    //         .await?;
+    //     // ret.ok().expect("");
+    //     Ok(ret.unwrap_or_default())
+    // }
 }
 
 #[cfg(test)]
@@ -314,43 +325,4 @@ mod tests {
                 // config::global_configure().await;
             })
     }
-
-    // #[tokio::test]
-    // async fn test_app() {
-    //     // 使用if let 避免使用unwrap
-    //     let app_repo = AppRepo::init("test","vector_app");
-    //
-    //     let entity = AppEntity{
-    //         id: None,
-    //         app_id: "new_app1".into(),
-    //         app_secret: "1234".to_string(),
-    //         tenant: "pib_core".into(),
-    //         liaison: "hedetao909".to_owned(),
-    //         system: "pib_core".to_owned(), // 子系统编号
-    //         created_at: Utc::now(),
-    //         updated_at: Utc::now(),
-    //         deleted_at: 0,
-    //     };
-    //     let ret = app_repo.insert_app(&entity).await;
-    //     println!("app_repo insert = {:?}",ret.unwrap().inserted_id);
-    // }
-
-    // #[tokio::test]
-    // async fn test_find_app() {
-    //     // 使用if let 避免使用unwrap
-    //     let app_repo = AppRepo::init("test","vector_app");
-    //
-    //     let entity = AppEntity{
-    //         id: None,
-    //         app_id: "new_app1".into(),
-    //         app_secret: "1234".to_string(),
-    //         tenant: "pib_core".into(),
-    //         liaison: "hedetao909".to_owned(),
-    //         system: "pib_core".to_owned(), // 子系统编号
-    //         created_at: Utc::now(),
-    //         updated_at: Utc::now(),
-    //         deleted_at: 0,
-    //     };
-    //     let ret = app_repo.insert_app(&entity).await;
-    // }
 }

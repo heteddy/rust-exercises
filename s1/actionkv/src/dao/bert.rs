@@ -97,11 +97,11 @@ impl Entity for BertEntity {
 }
 
 #[derive(Clone)]
-pub struct BertRepo {
+pub struct BertDao {
     pub collection: Collection<BertEntity>,
 }
 
-impl EntityDao<BertEntity> for BertRepo {
+impl EntityDao<BertEntity> for BertDao {
     fn col(&self) -> Collection<BertEntity> {
         self.collection.clone()
     }
@@ -138,7 +138,7 @@ impl EntityDao<BertEntity> for BertRepo {
     }
 }
 
-impl BertRepo {
+impl BertDao {
     pub fn new() -> Self {
         let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
         let col = utils::mongo::get_collection::<BertEntity>(
@@ -146,7 +146,7 @@ impl BertRepo {
             &_configure.mongo.database,
             &_configure.table.bert,
         );
-        BertRepo { collection: col }
+        BertDao { collection: col }
     }
 }
 

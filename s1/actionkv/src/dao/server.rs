@@ -104,11 +104,11 @@ impl Entity for ServerEntity {
 // 实现from和into接口
 
 #[derive(Clone)]
-pub struct ServerRepo {
+pub struct ServerDao {
     collection: Collection<ServerEntity>,
 }
 
-impl EntityDao<ServerEntity> for ServerRepo {
+impl EntityDao<ServerEntity> for ServerDao {
     fn col(&self) -> Collection<ServerEntity> {
         self.collection.clone()
     }
@@ -144,48 +144,7 @@ impl EntityDao<ServerEntity> for ServerRepo {
     }
 }
 
-impl ServerRepo {
-    // pub async fn create_index() -> Result<(), ApiError> {
-    //     let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
-    //     let col = utils::mongo::get_collection::<ServerEntity>(
-    //         &MONGO_CLIENT,
-    //         &_configure.mongo.database,
-    //         &_configure.table.app,
-    //     );
-    //     let uniqueOpt = IndexOptions::builder()
-    //         .unique(true)
-    //         .background(true)
-    //         .build();
-    //     let opt = IndexOptions::builder()
-    //         .unique(false)
-    //         .background(true)
-    //         .build();
-
-    //     let mut indices = Vec::with_capacity(3);
-
-    //     indices.push(
-    //         IndexModel::builder()
-    //             .keys(doc! {
-    //                 "updated_at":-1,"deleted_at":-1,
-    //             })
-    //             .options(opt.clone())
-    //             .build(),
-    //     );
-    //     indices.push(
-    //         IndexModel::builder()
-    //             .keys(doc! {
-    //                 "name":-1,"deleted_at":-1,
-    //             })
-    //             .options(uniqueOpt)
-    //             .build(),
-    //     );
-    //     let o = options::CreateIndexOptions::builder()
-    //         .max_time(Duration::from_secs(60))
-    //         .build();
-    //     col.create_indexes(indices, o).await?;
-    //     Ok(())
-    // }
-
+impl ServerDao {
     pub fn new() -> Self {
         let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
         let col = utils::mongo::get_collection(
@@ -193,7 +152,7 @@ impl ServerRepo {
             &config_file.mongo.database,
             &config_file.table.server,
         );
-        ServerRepo { collection: col }
+        ServerDao { collection: col }
     }
 
     // pub async fn list(&self, skip: u64, limit: i64) -> Result<Vec<ServerEntity>, ApiError> {

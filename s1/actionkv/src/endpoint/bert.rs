@@ -85,7 +85,7 @@ pub fn register_route(tx: mpsc::Sender<sync::SyncData>) -> Router {
 
     // let middle_svc = repo::IndexConfigRepo::get_instance();
 
-    // todo 新构建一个route然后使用route_layer 添加middleware
+    // todo 这里不要删除！！！新构建一个route然后使用route_layer 添加middleware
     // _route = _route.route(
     //     "/berts/:name",
     //     // handler middleware的方法
