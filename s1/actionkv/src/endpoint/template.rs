@@ -13,7 +13,7 @@ use axum::{
 use std::convert::From;
 use tokio::sync::mpsc;
 use tracing::{event, instrument, span, Level};
-
+#[instrument(skip_all)]
 async fn create(
     State(svc): State<server::template::TemplateSvc>,
     Json(payload): Json<TemplateReq>,
@@ -21,6 +21,7 @@ async fn create(
     let e = svc.create(TemplateEntity::from(payload)).await?;
     Ok(ApiResponse::from_result(e.into()))
 }
+#[instrument(skip_all)]
 async fn retrieve(
     State(svc): State<server::template::TemplateSvc>,
     Path(id): Path<String>,
@@ -28,6 +29,7 @@ async fn retrieve(
     let e = svc.get(id).await?;
     Ok(ApiResponse::from_result(e.into()))
 }
+#[instrument(skip_all)]
 async fn update(
     State(svc): State<server::template::TemplateSvc>,
     Path(id): Path<String>,
@@ -36,6 +38,7 @@ async fn update(
     let e = svc.update(id, TemplateEntity::from(payload)).await?;
     Ok(ApiResponse::from_result(e.into()))
 }
+#[instrument(skip_all)]
 async fn list(
     State(svc): State<server::template::TemplateSvc>,
     Query(p): Query<Pagination>,
@@ -44,6 +47,7 @@ async fn list(
     let ret = list.into_iter().map(|e| e.into()).collect();
     Ok(ApiResponse::from_result(ret))
 }
+#[instrument(skip_all)]
 async fn del(
     State(svc): State<server::template::TemplateSvc>,
     Path(id): Path<String>,

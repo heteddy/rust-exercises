@@ -14,6 +14,7 @@ use std::convert::From;
 use tokio::sync::mpsc;
 use tracing::{event, instrument, span, Level};
 
+#[instrument(skip_all)]
 async fn create(
     State(svc): State<server::server::ServerSvc>,
     Json(payload): Json<ServerReq>,
@@ -21,6 +22,7 @@ async fn create(
     let e = svc.create(ServerEntity::from(payload)).await?;
     Ok(ApiResponse::from_result(e.into()))
 }
+#[instrument(skip_all)]
 async fn retrieve(
     State(svc): State<server::server::ServerSvc>,
     Path(id): Path<String>,
@@ -28,6 +30,7 @@ async fn retrieve(
     let e = svc.get(id).await?;
     Ok(ApiResponse::from_result(e.into()))
 }
+#[instrument(skip_all)]
 async fn update(
     State(svc): State<server::server::ServerSvc>,
     Path(id): Path<String>,
@@ -36,6 +39,7 @@ async fn update(
     let e = svc.update(id, ServerEntity::from(payload)).await?;
     Ok(ApiResponse::from_result(e.into()))
 }
+#[instrument(skip_all)]
 async fn list(
     State(svc): State<server::server::ServerSvc>,
     Query(p): Query<Pagination>,
@@ -44,6 +48,7 @@ async fn list(
     let ret = list.into_iter().map(|e| e.into()).collect();
     Ok(ApiResponse::from_result(ret))
 }
+#[instrument(skip_all)]
 async fn del(
     State(svc): State<server::server::ServerSvc>,
     Path(id): Path<String>,
