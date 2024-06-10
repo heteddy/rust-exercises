@@ -103,6 +103,15 @@ pub struct TemplateDao {
 }
 
 impl EntityDao<TemplateEntity> for TemplateDao {
+    fn new() -> Self {
+        let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
+        let col = utils::mongo::get_collection(
+            &MONGO_CLIENT,
+            &config_file.mongo.database,
+            &config_file.table.template,
+        );
+        TemplateDao { collection: col }
+    }
     fn col(&self) -> Collection<TemplateEntity> {
         self.collection.clone()
     }
@@ -138,14 +147,14 @@ impl EntityDao<TemplateEntity> for TemplateDao {
     }
 }
 
-impl TemplateDao {
-    pub fn new() -> Self {
-        let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
-        let col = utils::mongo::get_collection(
-            &MONGO_CLIENT,
-            &config_file.mongo.database,
-            &config_file.table.template,
-        );
-        TemplateDao { collection: col }
-    }
-}
+// impl TemplateDao {
+//     pub fn new() -> Self {
+//         let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
+//         let col = utils::mongo::get_collection(
+//             &MONGO_CLIENT,
+//             &config_file.mongo.database,
+//             &config_file.table.template,
+//         );
+//         TemplateDao { collection: col }
+//     }
+// }

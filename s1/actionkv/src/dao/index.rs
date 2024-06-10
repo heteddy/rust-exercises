@@ -116,6 +116,15 @@ pub struct IndexDao {
 }
 
 impl EntityDao<IndexEntity> for IndexDao {
+    fn new() -> Self {
+        let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
+        let col = utils::mongo::get_collection(
+            &MONGO_CLIENT,
+            &config_file.mongo.database,
+            &config_file.table.index,
+        );
+        IndexDao { collection: col }
+    }
     fn col(&self) -> Collection<IndexEntity> {
         self.collection.clone()
     }
@@ -159,15 +168,15 @@ impl EntityDao<IndexEntity> for IndexDao {
     }
 }
 
-impl IndexDao {
-    pub fn new() -> Self {
-        let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
-        let col = utils::mongo::get_collection(
-            &MONGO_CLIENT,
-            &config_file.mongo.database,
-            &config_file.table.index,
-        );
-        IndexDao { collection: col }
-    }
+// impl IndexDao {
+//     pub fn new() -> Self {
+//         let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
+//         let col = utils::mongo::get_collection(
+//             &MONGO_CLIENT,
+//             &config_file.mongo.database,
+//             &config_file.table.index,
+//         );
+//         IndexDao { collection: col }
+//     }
 
-}
+// }

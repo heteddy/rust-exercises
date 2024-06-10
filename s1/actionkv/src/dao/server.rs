@@ -109,6 +109,16 @@ pub struct ServerDao {
 }
 
 impl EntityDao<ServerEntity> for ServerDao {
+    fn new() -> Self {
+        let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
+        let col = utils::mongo::get_collection(
+            &MONGO_CLIENT,
+            &config_file.mongo.database,
+            &config_file.table.server,
+        );
+        ServerDao { collection: col }
+    }
+
     fn col(&self) -> Collection<ServerEntity> {
         self.collection.clone()
     }
@@ -144,14 +154,14 @@ impl EntityDao<ServerEntity> for ServerDao {
     }
 }
 
-impl ServerDao {
-    pub fn new() -> Self {
-        let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
-        let col = utils::mongo::get_collection(
-            &MONGO_CLIENT,
-            &config_file.mongo.database,
-            &config_file.table.server,
-        );
-        ServerDao { collection: col }
-    }
-}
+// impl ServerDao {
+//     pub fn new() -> Self {
+//         let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
+//         let col = utils::mongo::get_collection(
+//             &MONGO_CLIENT,
+//             &config_file.mongo.database,
+//             &config_file.table.server,
+//         );
+//         ServerDao { collection: col }
+//     }
+// }

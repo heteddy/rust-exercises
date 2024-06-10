@@ -30,7 +30,7 @@ where
     // type Entity;
     fn col(&self) -> Collection<T>;
     fn indices(&self) -> Vec<IndexModel>;
-
+    fn new() -> Self;
     async fn create_index(&self) -> Result<(), ApiError> {
         let o = options::CreateIndexOptions::builder()
             .max_time(Duration::from_secs(60))

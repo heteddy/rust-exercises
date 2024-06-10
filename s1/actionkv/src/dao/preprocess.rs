@@ -98,6 +98,15 @@ pub struct PreprocessDao {
 }
 
 impl EntityDao<PreprocessEntity> for PreprocessDao {
+    fn new() -> Self {
+        let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
+        let col = utils::mongo::get_collection(
+            &MONGO_CLIENT,
+            &config_file.mongo.database,
+            &config_file.table.preprocess,
+        );
+        PreprocessDao { collection: col }
+    }
     fn col(&self) -> Collection<PreprocessEntity> {
         self.collection.clone()
     }
@@ -133,14 +142,14 @@ impl EntityDao<PreprocessEntity> for PreprocessDao {
     }
 }
 
-impl PreprocessDao {
-    pub fn new() -> Self {
-        let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
-        let col = utils::mongo::get_collection(
-            &MONGO_CLIENT,
-            &config_file.mongo.database,
-            &config_file.table.preprocess,
-        );
-        PreprocessDao { collection: col }
-    }
-}
+// impl PreprocessDao {
+//     pub fn new() -> Self {
+//         let config_file = config::cc::GLOBAL_CONFIG.lock().unwrap();
+//         let col = utils::mongo::get_collection(
+//             &MONGO_CLIENT,
+//             &config_file.mongo.database,
+//             &config_file.table.preprocess,
+//         );
+//         PreprocessDao { collection: col }
+//     }
+// }

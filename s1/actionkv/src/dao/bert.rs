@@ -102,6 +102,15 @@ pub struct BertDao {
 }
 
 impl EntityDao<BertEntity> for BertDao {
+    fn new() -> Self {
+        let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
+        let col = utils::mongo::get_collection::<BertEntity>(
+            &MONGO_CLIENT,
+            &_configure.mongo.database,
+            &_configure.table.bert,
+        );
+        BertDao { collection: col }
+    }
     fn col(&self) -> Collection<BertEntity> {
         self.collection.clone()
     }
@@ -138,14 +147,14 @@ impl EntityDao<BertEntity> for BertDao {
     }
 }
 
-impl BertDao {
-    pub fn new() -> Self {
-        let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
-        let col = utils::mongo::get_collection::<BertEntity>(
-            &MONGO_CLIENT,
-            &_configure.mongo.database,
-            &_configure.table.bert,
-        );
-        BertDao { collection: col }
-    }
-}
+// impl BertDao {
+//     pub fn new() -> Self {
+//         let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
+//         let col = utils::mongo::get_collection::<BertEntity>(
+//             &MONGO_CLIENT,
+//             &_configure.mongo.database,
+//             &_configure.table.bert,
+//         );
+//         BertDao { collection: col }
+//     }
+// }

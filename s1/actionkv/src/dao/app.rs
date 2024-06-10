@@ -140,6 +140,17 @@ pub struct AppDao {
 }
 
 impl EntityDao<AppEntity> for AppDao {
+
+    fn new() -> AppDao {
+        let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
+        let col = utils::mongo::get_collection::<AppEntity>(
+            &MONGO_CLIENT,
+            &_configure.mongo.database,
+            &_configure.table.app,
+        );
+        AppDao { collection: col }
+    }
+
     fn col(&self) -> Collection<AppEntity> {
         self.collection.clone()
     }
@@ -184,17 +195,17 @@ impl EntityDao<AppEntity> for AppDao {
     }
 }
 
-impl AppDao {
-    pub fn new() -> AppDao {
-        let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
-        let col = utils::mongo::get_collection::<AppEntity>(
-            &MONGO_CLIENT,
-            &_configure.mongo.database,
-            &_configure.table.app,
-        );
-        AppDao { collection: col }
-    }
-}
+// impl AppDao {
+//     pub fn new() -> AppDao {
+//         let _configure = &config::cc::GLOBAL_CONFIG.lock().unwrap();
+//         let col = utils::mongo::get_collection::<AppEntity>(
+//             &MONGO_CLIENT,
+//             &_configure.mongo.database,
+//             &_configure.table.app,
+//         );
+//         AppDao { collection: col }
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
