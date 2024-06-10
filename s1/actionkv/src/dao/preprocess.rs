@@ -92,7 +92,7 @@ impl Entity for PreprocessEntity {
         }
     }
 }
-
+#[derive(Clone)]
 pub struct PreprocessDao {
     collection: Collection<PreprocessEntity>,
 }

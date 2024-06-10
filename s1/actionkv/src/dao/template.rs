@@ -79,7 +79,7 @@ impl Entity for TemplateEntity {
         }
     }
 }
-
+#[derive(Clone)]
 pub struct TemplateDao {
     collection: Collection<TemplateEntity>,
 }

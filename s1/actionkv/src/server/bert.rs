@@ -1,6 +1,6 @@
 use crate::cache::sync;
 use crate::dao::base::EntityDao;
-use crate::dao::bert::{BertEntity, BertDao};
+use crate::dao::bert::{BertDao, BertEntity};
 use crate::pb::svr::ApiError;
 use std::fmt;
 use tokio::sync::mpsc;
@@ -22,10 +22,15 @@ impl BertSvc {
     #[instrument(skip_all)]
     pub async fn create(&self, _bert: BertEntity) -> Result<BertEntity, ApiError> {
         info!("insert bert {:?}", _bert.name);
-        let _app = self.repo.insert(_bert).await?;
-        Ok(_app)
-    }
 
+        let _e = self.repo.insert(_bert).await?;
+        let _ = self
+            .sender
+            .send(sync::SyncData::build::<BertEntity>("bert", &_e))
+            .await;
+        Ok(_e)
+    }
+    
     #[instrument(skip_all)]
     pub async fn update(
         &self,
@@ -33,12 +38,13 @@ impl BertSvc {
         e: BertEntity,
     ) -> Result<BertEntity, ApiError> {
         info!("update app {:?}", e.name);
-        let _app = self.repo.update(_id, e).await?;
+
+        let _e = self.repo.update(_id, e).await?;
         let _ = self
             .sender
-            .send(sync::SyncData::build::<BertEntity>("app", &_app))
+            .send(sync::SyncData::build::<BertEntity>("bert", &_e))
             .await;
-        Ok(_app)
+        Ok(_e)
     }
     #[instrument(skip_all)]
     pub async fn list(&self, skip: u64, limit: i64) -> Result<Vec<BertEntity>, ApiError> {
@@ -49,7 +55,7 @@ impl BertSvc {
 
     #[instrument(skip_all)]
     pub async fn get(&self, _id: impl AsRef<str> + fmt::Debug) -> Result<BertEntity, ApiError> {
-        info!("get_app_by_id apps :{:?}", _id);
+        info!("get_id  :{:?}", _id);
         let ret = self.repo.get(_id).await?;
         Ok(ret)
     }

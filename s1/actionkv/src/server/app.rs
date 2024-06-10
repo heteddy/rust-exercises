@@ -48,11 +48,6 @@ impl AppSvc {
             .sender
             .send(sync::SyncData::build::<AppEntity>("app", &_app))
             .await;
-        // match self.sender.send(repo::SyncMsg::App(_app.clone())).await {
-        //     _ => {
-
-        //     }
-        // }
         Ok(_app)
     }
 
@@ -69,6 +64,7 @@ impl AppSvc {
         let ret = self.repo.get(_id).await?;
         Ok(ret)
     }
+    
     ///todo add 删除逻辑
     #[instrument(skip_all)]
     pub async fn delete(

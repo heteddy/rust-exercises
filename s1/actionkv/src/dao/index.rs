@@ -110,7 +110,7 @@ impl Entity for IndexEntity {
 }
 
 impl IndexEntity {}
-
+#[derive(Clone)]
 pub struct IndexDao {
     collection: Collection<IndexEntity>,
 }

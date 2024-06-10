@@ -25,7 +25,6 @@ async fn create(
     event!(Level::INFO, "endpoint create bert {:?}", payload);
     let b = BertEntity::from(payload);
     let u = svc.create(b).await?;
-    // Ok(Json(u))
     Ok(ApiResponse::from_result(u.into()))
 }
 #[instrument(skip_all)]
@@ -82,17 +81,18 @@ async fn del(
 pub fn register_route(tx: mpsc::Sender<sync::SyncData>) -> Router {
     let svc = server::bert::BertSvc::new(tx);
     let mut _route = Router::new();
-
-    // let middle_svc = repo::IndexConfigRepo::get_instance();
-
-    // todo 这里不要删除！！！新构建一个route然后使用route_layer 添加middleware
-    // _route = _route.route(
-    //     "/berts/:name",
-    //     // handler middleware的方法
-    //     post(create.layer(from_fn_with_state(middle_svc, auth_middleware))),
-    // );
-    // https://docs.rs/axum/latest/axum/middleware/index.html#passing-state-from-middleware-to-handlers
-    //.route_layer(from_fn_with_state(middle_svc, auth_middleware));
+    //todo 这里不要删除！！！新构建一个route然后使用route_layer 添加middleware
+    //https://docs.rs/axum/latest/axum/middleware/index.html#passing-state-from-middleware-to-handlers
+    /*
+    // 获取全局的state
+    let middle_svc = repo::IndexConfigRepo::get_instance(); 
+    _route = _route.route(
+        "/berts/:name",
+        // handler middleware的方法
+        post(create.layer(from_fn_with_state(middle_svc, auth_middleware))),
+    );
+    .route_layer(from_fn_with_state(middle_svc, auth_middleware));
+    */
     _route = _route.route("/berts", get(list).post(create));
     _route = _route.route("/berts/:id", get(retrieve).put(update).delete(del));
     Router::new().nest("/api", _route).with_state(svc)
