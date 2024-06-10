@@ -4,3 +4,4 @@ pub mod bert;
 pub mod index;
 pub mod template;
 pub mod preprocess;
+pub mod server;

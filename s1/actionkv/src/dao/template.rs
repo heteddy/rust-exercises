@@ -20,6 +20,7 @@ use crate::pb::{
         ApiError,
     },
 };
+use crate::utils::format_chrono_utc_to_local;
 use crate::utils::mongo::serialize_object_id_option_as_hex_string;
 use std::result::Result;
 
@@ -63,6 +64,23 @@ impl From<TemplateReq> for TemplateEntity {
             created_at: Utc::now(),
             updated_at: Utc::now(),
             deleted_at: 0,
+        }
+    }
+}
+
+impl Into<TemplateResp> for TemplateEntity {
+    fn into(self) -> TemplateResp {
+        let id_str = match self.id {
+            Some(id) => id.to_hex(),
+            None => String::new(),
+        };
+        TemplateResp {
+            id: id_str,
+            name: self.name,
+            body: self.body,
+            created_at: utils::format_chrono_utc_to_local(&self.created_at),
+            updated_at: utils::format_chrono_utc_to_local(&self.updated_at),
+            deleted_at: self.deleted_at,
         }
     }
 }
