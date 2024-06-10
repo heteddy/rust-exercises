@@ -1,4 +1,11 @@
-use crate::dao::{app::AppEntity, index::IndexEntity};
+use crate::dao::{
+    app::{AppDao, AppEntity},
+    bert::{BertDao, BertEntity},
+    index::{IndexDao, IndexEntity},
+    preprocess::{PreprocessDao, PreprocessEntity},
+    server::{ServerDao, ServerEntity},
+    template::{TemplateDao, TemplateEntity},
+};
 // use chan::Synchronizer;
 use super::sync::Messager;
 use crate::cache::sync;
@@ -59,13 +66,32 @@ impl AppRepo {
     }
 }
 
+#[derive(Debug)]
+pub struct BertRepo {
+    table: HashMap<String, BertEntity>,
+}
+
+#[derive(Debug)]
+pub struct ServerRepo {
+    table: HashMap<String, ServerEntity>,
+}
+
+#[derive(Debug)]
+pub struct TemplateRepo {
+    table: HashMap<String, TemplateEntity>,
+}
+
+#[derive(Debug)]
+pub struct PreprocessRepo {
+    table: HashMap<String, PreprocessEntity>,
+}
+
 #[derive(Debug, Clone)]
 pub struct IndexConfigure {
     name: String,
     app_id: String,
     index: Option<IndexEntity>,
 }
-
 #[derive(Debug)]
 struct IndexRepo {
     table: HashMap<String, IndexConfigure>, // app_id
