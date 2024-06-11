@@ -209,7 +209,6 @@ impl EntityDao<AppEntity> for AppDao {
 
 #[cfg(test)]
 mod tests {
-
     fn init() {
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()

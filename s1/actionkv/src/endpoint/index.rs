@@ -2,9 +2,9 @@
 use crate::cache::repo;
 use crate::cache::sync::SyncData;
 use crate::dao::index::IndexEntity;
-use crate::middleware::auth::auth_middleware;
 use crate::pb::svr::{index::IndexReq, index::IndexResp, ApiError, ApiResponse, Pagination};
 use crate::server;
+use crate::transport::middleware::auth::auth_middleware;
 use axum::extract::{Json, Path, Query, State};
 use axum::handler::Handler;
 use axum::middleware::from_fn_with_state;
@@ -66,6 +66,5 @@ pub fn register_route(tx: mpsc::Sender<SyncData>) -> Router {
     _router = _router.route("/indices", get(list).post(create));
     Router::new().nest("/api", _router).with_state(svc)
 }
-
 
 // 实现配置索引信息

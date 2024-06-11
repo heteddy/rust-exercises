@@ -1,9 +1,9 @@
 use crate::cache::repo;
 use crate::cache::sync;
 use crate::dao::bert::BertEntity;
-use crate::middleware::auth::auth_middleware;
 use crate::pb::svr::{bert::BertReq, bert::BertResp, ApiError, ApiResponse, Pagination};
 use crate::server;
+use crate::transport::middleware::auth::auth_middleware;
 use axum::extract::{Json, Path, Query, State};
 use axum::handler::Handler;
 use axum::middleware::from_fn_with_state;
@@ -85,7 +85,7 @@ pub fn register_route(tx: mpsc::Sender<sync::SyncData>) -> Router {
     //https://docs.rs/axum/latest/axum/middleware/index.html#passing-state-from-middleware-to-handlers
     /*
     // 获取全局的state
-    let middle_svc = repo::IndexConfigRepo::get_instance(); 
+    let middle_svc = repo::IndexConfigRepo::get_instance();
     _route = _route.route(
         "/berts/:name",
         // handler middleware的方法

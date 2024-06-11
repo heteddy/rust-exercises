@@ -2,10 +2,10 @@
 use crate::cache::repo;
 use crate::cache::sync;
 use crate::dao::bert::BertEntity;
-use crate::middleware::auth::auth_middleware;
 use crate::pb::search::data::{InboundDataReq, SearchReq, SearchRet};
 use crate::pb::svr::{ApiError, ApiResponse, Pagination};
 use crate::server;
+use crate::transport::middleware::auth::auth_middleware;
 use axum::extract::{Json, Path, Query, State};
 use axum::handler::Handler;
 use axum::http::header::HeaderMap;
@@ -19,11 +19,12 @@ use tokio::sync::mpsc;
 use tracing::{event, info, instrument, span, Level};
 
 #[instrument(skip_all)]
-async fn insert(
+async fn upsert(
     headers: HeaderMap,
     Path(name): Path<String>,
     Json(body): Json<InboundDataReq>,
-) -> Result<(), ApiError> {
+) -> Result<ApiResponse<String>, ApiError> {
+    let id = body.id.clone();
     headers
         .iter()
         .for_each(|(k, v)| info!("received header k= {:?} v={:?}", k, v));
@@ -34,14 +35,33 @@ async fn insert(
 
     info!("received body_str = {:?}", body_str);
     info!("received body:{:?}", body);
-    Ok(())
+    Ok(ApiResponse::from_result(id))
 }
 
+#[instrument(skip_all)]
+async fn list(
+    headers: HeaderMap,
+    Query(id): Query<String>,
+    Path(name): Path<String>,
+    Json(body): Json<InboundDataReq>,
+) -> Result<(), ApiError> {
+    headers
+        .iter()
+        .for_each(|(k, v)| info!("received header k= {:?} v={:?}", k, v));
+
+    info!("received name:{:?}", name);
+
+    let body_str = serde_json::to_string(&body).unwrap_or_default();
+    
+    info!("received body_str = {:?}", body_str);
+    info!("received body:{:?}", body);
+    Ok(())
+}
 
 pub fn register_route() -> Router {
     let mut _router = Router::new();
     // let svc: server::index::IndexSvc = server::index::IndexSvc::new(tx);
-    _router = _router.route("/index/data/:name", post(insert));
+    _router = _router.route("/index-data/:name", post(upsert).put(upsert));
     // _router = _router.route("/data", get(list).post(create));
     Router::new().nest("/api", _router)
 }

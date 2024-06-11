@@ -40,6 +40,7 @@ pub struct BertEntity {
     pub updated_at: DateTime<Utc>,
     pub deleted_at: i64,
 }
+
 pub const ENTITY_BERT: &'static str = "bert_entity";
 impl entity::Namer for BertEntity {
     fn name(&self) -> &'static str {

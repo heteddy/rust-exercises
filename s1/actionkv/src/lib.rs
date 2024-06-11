@@ -22,7 +22,6 @@ pub mod cache;
 pub mod config;
 pub mod dao;
 pub mod endpoint;
-pub mod middleware;
 pub mod pb;
 pub mod search;
 pub mod server;
