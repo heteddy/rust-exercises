@@ -15,3 +15,7 @@ use axum::{
 use std::convert::From;
 use tokio::sync::mpsc;
 use tracing::{event, instrument, span, Level};
+
+async fn insert() -> Result<(),ApiError> {
+
+}

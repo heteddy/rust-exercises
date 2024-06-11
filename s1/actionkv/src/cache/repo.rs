@@ -64,6 +64,19 @@ impl AppRepo {
             .and_modify(|v| *v = app_secret.to_string())
             .or_insert(app_secret.to_string());
     }
+    #[instrument(skip(self))]
+    pub fn handle_body(&mut self, mut data: sync::SyncData) {
+        if let Some(ref body) = data.get_body() {
+            let ret = serde_json::from_str::<AppEntity>(body);
+            match ret {
+                Ok(e) => {
+                    // let name = e.name;
+                    self.handle_entity(e);
+                }
+                Err(e) => warn!("json decode error:{:?}", e),
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -71,9 +84,72 @@ pub struct BertRepo {
     table: HashMap<String, BertEntity>,
 }
 
+impl BertRepo {
+    pub fn new() -> Self {
+        Self {
+            // table: Arc::new(RwLock::new(HashMap::with_capacity(10))),
+            table: HashMap::with_capacity(10),
+        }
+    }
+    #[instrument(skip(self))]
+    pub fn handle_entity(&mut self, e: BertEntity) {
+        // let mut auth_table = self.table.write().unwrap();
+        // auth_table
+        self.table
+            .entry(e.name.clone())
+            .and_modify(|v| *v = e.clone())
+            .or_insert(e);
+    }
+
+    #[instrument(skip(self))]
+    pub fn handle_body(&mut self, mut data: sync::SyncData) {
+        if let Some(ref body) = data.get_body() {
+            let ret = serde_json::from_str::<BertEntity>(body);
+            match ret {
+                Ok(e) => {
+                    // let name = e.name;
+                    self.handle_entity(e);
+                }
+                Err(e) => warn!("json decode error:{:?}", e),
+            }
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct ServerRepo {
     table: HashMap<String, ServerEntity>,
+}
+
+impl ServerRepo {
+    pub fn new() -> Self {
+        Self {
+            table: HashMap::with_capacity(10),
+        }
+    }
+    #[instrument(skip(self))]
+    pub fn handle_entity(&mut self, e: ServerEntity) {
+        // let mut auth_table = self.table.write().unwrap();
+        // auth_table
+        self.table
+            .entry(e.name.clone())
+            .and_modify(|v| *v = e.clone())
+            .or_insert(e);
+    }
+
+    #[instrument(skip(self))]
+    pub fn handle_body(&mut self, mut data: sync::SyncData) {
+        if let Some(ref body) = data.get_body() {
+            let ret = serde_json::from_str::<ServerEntity>(body);
+            match ret {
+                Ok(e) => {
+                    // let name = e.name;
+                    self.handle_entity(e);
+                }
+                Err(e) => warn!("json decode error:{:?}", e),
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -81,9 +157,69 @@ pub struct TemplateRepo {
     table: HashMap<String, TemplateEntity>,
 }
 
+impl TemplateRepo {
+    pub fn new() -> Self {
+        Self {
+            table: HashMap::with_capacity(10),
+        }
+    }
+    #[instrument(skip(self))]
+    pub fn handle_entity(&mut self, e: TemplateEntity) {
+        // let mut auth_table = self.table.write().unwrap();
+        // auth_table
+        self.table
+            .entry(e.name.clone())
+            .and_modify(|v| *v = e.clone())
+            .or_insert(e);
+    }
+    #[instrument(skip(self))]
+    pub fn handle_body(&mut self, mut data: sync::SyncData) {
+        if let Some(ref body) = data.get_body() {
+            let ret = serde_json::from_str::<TemplateEntity>(body);
+            match ret {
+                Ok(e) => {
+                    // let name = e.name;
+                    self.handle_entity(e);
+                }
+                Err(e) => warn!("json decode error:{:?}", e),
+            }
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct PreprocessRepo {
     table: HashMap<String, PreprocessEntity>,
+}
+
+impl PreprocessRepo {
+    pub fn new() -> Self {
+        PreprocessRepo {
+            table: HashMap::with_capacity(10),
+        }
+    }
+    #[instrument(skip(self))]
+    pub fn handle_entity(&mut self, e: PreprocessEntity) {
+        // let mut auth_table = self.table.write().unwrap();
+        // auth_table
+        self.table
+            .entry(e.name.clone())
+            .and_modify(|v| *v = e.clone())
+            .or_insert(e);
+    }
+    #[instrument(skip(self))]
+    pub fn handle_body(&mut self, mut data: sync::SyncData) {
+        if let Some(ref body) = data.get_body() {
+            let ret = serde_json::from_str::<PreprocessEntity>(body);
+            match ret {
+                Ok(e) => {
+                    // let name = e.name;
+                    self.handle_entity(e);
+                }
+                Err(e) => warn!("json decode error:{:?}", e),
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -110,6 +246,19 @@ impl IndexRepo {
         match v {
             Some(v) => (&v.app_id).into(),
             None => "search-app2".into(), // todo 这里是验证
+        }
+    }
+    #[instrument(skip(self))]
+    pub fn handle_body(&mut self, mut data: sync::SyncData) {
+        if let Some(ref body) = data.get_body() {
+            let ret = serde_json::from_str::<IndexEntity>(&body);
+            match ret {
+                Ok(e) => {
+                    // let name = e.name;
+                    self.handle_entity(e);
+                }
+                Err(e) => warn!("json decode error:{:?}", e),
+            }
         }
     }
 
@@ -139,6 +288,10 @@ pub struct IndexConfigRepo {
     // 只在config repo中更新，还需要arc么
     app: AppRepo, // 会不会有运行时的问题, refcell 不能send
     index: IndexRepo,
+    bert: BertRepo,
+    server: ServerRepo,
+    preprocess: PreprocessRepo,
+    template: TemplateRepo,
 }
 
 impl IndexConfigRepo {
@@ -147,7 +300,10 @@ impl IndexConfigRepo {
         Self {
             app: AppRepo::new(),
             index: IndexRepo::new(),
-            // rx,
+            bert: BertRepo::new(),
+            server: ServerRepo::new(),
+            preprocess: PreprocessRepo::new(),
+            template: TemplateRepo::new(),
         }
     }
 
@@ -163,6 +319,10 @@ impl IndexConfigRepo {
                     Arc::new(RwLock::new(IndexConfigRepo {
                         app: AppRepo::new(),
                         index: IndexRepo::new(),
+                        bert: BertRepo::new(),
+                        server: ServerRepo::new(),
+                        preprocess: PreprocessRepo::new(),
+                        template: TemplateRepo::new(),
                     }))
                 })
                 .clone()
@@ -173,6 +333,10 @@ impl IndexConfigRepo {
             REPO_INSTANCE = Some(Arc::new(RwLock::new(IndexConfigRepo {
                 app: AppRepo::new(),
                 index: IndexRepo::new(),
+                bert: BertRepo::new(),
+                server: ServerRepo::new(),
+                preprocess: PreprocessRepo::new(),
+                template: TemplateRepo::new(),
             })));
         }
     }
@@ -210,33 +374,23 @@ impl IndexConfigRepo {
         );
         match t {
             "app" => {
-                if let Some(ref body) = data.get_body() {
-                    let ret = serde_json::from_str::<AppEntity>(&body);
-                    match ret {
-                        Ok(e) => {
-                            // let name = e.name;
-                            self.app.handle_entity(e);
-                        }
-                        Err(e) => warn!("json decode error:{:?}", e),
-                    }
-                }
+                self.app.handle_body(data);
             }
             "index" => {
-                if let Some(ref body) = data.get_body() {
-                    let ret = serde_json::from_str::<IndexEntity>(&body);
-                    match ret {
-                        Ok(e) => {
-                            // let name = e.name;
-                            self.index.handle_entity(e);
-                        }
-                        Err(e) => warn!("json decode error:{:?}", e),
-                    }
-                }
+                self.index.handle_body(data);
             }
-            "bert" => {}
-            "preprocess" => {}
-            "server" => {}
-            "template" => {}
+            "bert" => {
+                self.bert.handle_body(data);
+            }
+            "preprocess" => {
+                self.preprocess.handle_body(data);
+            }
+            "server" => {
+                self.server.handle_body(data);
+            }
+            "template" => {
+                self.template.handle_body(data);
+            }
             _ => {}
         }
     }
