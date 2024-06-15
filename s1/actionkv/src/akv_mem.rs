@@ -39,7 +39,7 @@ async fn main() {
     info!("start app");
     // build our application with a route
 
-    let tx = cache::start_cacher();
+    let tx = cache::start_cacher().await;
     info!("cache started......");
 
     let app = http::init_app(tx.clone());

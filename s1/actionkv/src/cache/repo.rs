@@ -1,20 +1,20 @@
+use super::sync::Messager;
+use crate::cache::sync;
 use crate::dao::{
     app::{AppDao, AppEntity},
+    base::{Entity, EntityDao},
     bert::{BertDao, BertEntity},
     index::{IndexDao, IndexEntity},
     preprocess::{PreprocessDao, PreprocessEntity},
     server::{ServerDao, ServerEntity},
     template::{TemplateDao, TemplateEntity},
 };
-// use chan::Synchronizer;
-use super::sync::Messager;
-use crate::cache::sync;
-
+use futures::{FutureExt, TryFutureExt};
 use serde_json;
-
 use std::collections::HashMap;
 use std::sync::Once;
 use std::sync::{Arc, RwLock};
+use std::vec;
 use tokio::sync::mpsc;
 use tracing::{info, instrument, warn};
 
@@ -35,10 +35,20 @@ struct AppRepo {
 impl AppRepo {
     pub fn new() -> Self {
         AppRepo {
-            // table: Arc::new(RwLock::new(HashMap::with_capacity(10))),
             table: HashMap::with_capacity(10),
         }
+        // table: Arc::new(RwLock::new(HashMap::with_capacity(10))),
     }
+
+    pub async fn init(&mut self) {
+        let d = AppDao::new();
+        let result = d.list(0, 100).await;
+        let entities = result.unwrap_or_else(|_| Vec::new());
+        entities.into_iter().for_each(|e| {
+            self.table.insert(e.app_id, e.app_secret);
+        })
+    }
+
     pub fn auth(&self, app_id: impl AsRef<str>, app_secret: impl AsRef<str>) -> bool {
         // let map = self.table.read().unwrap();
         // let v = map.get(app_id.as_ref());
@@ -48,8 +58,15 @@ impl AppRepo {
             None => false,
         }
     }
+    pub fn get(&self, app_id: impl AsRef<str>) -> Option<String> {
+        let o = self.table.get(app_id.as_ref());
+        match o {
+            Some(e) => Some(e.clone()),
+            None => None,
+        }
+    }
     #[instrument(skip(self))]
-    pub fn handle_entity(&mut self, e: AppEntity) {
+    pub fn update_entity(&mut self, e: AppEntity) {
         let app_id = &e.app_id;
         let app_secret = &e.app_secret;
         info!(
@@ -71,7 +88,7 @@ impl AppRepo {
             match ret {
                 Ok(e) => {
                     // let name = e.name;
-                    self.handle_entity(e);
+                    self.update_entity(e);
                 }
                 Err(e) => warn!("json decode error:{:?}", e),
             }
@@ -91,8 +108,23 @@ impl BertRepo {
             table: HashMap::with_capacity(10),
         }
     }
+    pub async fn init(&mut self) {
+        let d = BertDao::new();
+        let result = d.list(0, 100).await;
+        let entities = result.unwrap_or_else(|_| Vec::new());
+        entities.into_iter().for_each(|e| {
+            self.table.insert(e.name.clone(), e);
+        })
+    }
+    pub fn get(&self, name: impl AsRef<str>) -> Option<BertEntity> {
+        let o = self.table.get(name.as_ref());
+        match o {
+            Some(e) => Some(e.clone()),
+            None => None,
+        }
+    }
     #[instrument(skip(self))]
-    pub fn handle_entity(&mut self, e: BertEntity) {
+    pub fn update_entity(&mut self, e: BertEntity) {
         // let mut auth_table = self.table.write().unwrap();
         // auth_table
         self.table
@@ -108,7 +140,7 @@ impl BertRepo {
             match ret {
                 Ok(e) => {
                     // let name = e.name;
-                    self.handle_entity(e);
+                    self.update_entity(e);
                 }
                 Err(e) => warn!("json decode error:{:?}", e),
             }
@@ -127,8 +159,23 @@ impl ServerRepo {
             table: HashMap::with_capacity(10),
         }
     }
+    pub fn get(&self, name: impl AsRef<str>) -> Option<ServerEntity> {
+        let o = self.table.get(name.as_ref());
+        match o {
+            Some(e) => Some(e.clone()),
+            None => None,
+        }
+    }
+    pub async fn init(&mut self) {
+        let d = ServerDao::new();
+        let result = d.list(0, 100).await;
+        let entities = result.unwrap_or_else(|_| Vec::new());
+        entities.into_iter().for_each(|e| {
+            self.table.insert(e.name.clone(), e);
+        })
+    }
     #[instrument(skip(self))]
-    pub fn handle_entity(&mut self, e: ServerEntity) {
+    pub fn update_entity(&mut self, e: ServerEntity) {
         // let mut auth_table = self.table.write().unwrap();
         // auth_table
         self.table
@@ -144,7 +191,7 @@ impl ServerRepo {
             match ret {
                 Ok(e) => {
                     // let name = e.name;
-                    self.handle_entity(e);
+                    self.update_entity(e);
                 }
                 Err(e) => warn!("json decode error:{:?}", e),
             }
@@ -163,8 +210,23 @@ impl TemplateRepo {
             table: HashMap::with_capacity(10),
         }
     }
+    pub async fn init(&mut self) {
+        let d = TemplateDao::new();
+        let result = d.list(0, 100).await;
+        let entities = result.unwrap_or_else(|_| Vec::new());
+        entities.into_iter().for_each(|e| {
+            self.table.insert(e.name.clone(), e);
+        })
+    }
+    pub fn get(&self, name: impl AsRef<str>) -> Option<TemplateEntity> {
+        let o = self.table.get(name.as_ref());
+        match o {
+            Some(e) => Some(e.clone()),
+            None => None,
+        }
+    }
     #[instrument(skip(self))]
-    pub fn handle_entity(&mut self, e: TemplateEntity) {
+    pub fn update_entity(&mut self, e: TemplateEntity) {
         // let mut auth_table = self.table.write().unwrap();
         // auth_table
         self.table
@@ -179,7 +241,7 @@ impl TemplateRepo {
             match ret {
                 Ok(e) => {
                     // let name = e.name;
-                    self.handle_entity(e);
+                    self.update_entity(e);
                 }
                 Err(e) => warn!("json decode error:{:?}", e),
             }
@@ -198,8 +260,23 @@ impl PreprocessRepo {
             table: HashMap::with_capacity(10),
         }
     }
+    pub async fn init(&mut self) {
+        let d = PreprocessDao::new();
+        let result = d.list(0, 100).await;
+        let entities = result.unwrap_or_else(|_| Vec::new());
+        entities.into_iter().for_each(|e| {
+            self.table.insert(e.name.clone(), e);
+        })
+    }
+    pub fn get(&self, name: impl AsRef<str>) -> Option<PreprocessEntity> {
+        let o = self.table.get(name.as_ref());
+        match o {
+            Some(e) => Some(e.clone()),
+            None => None,
+        }
+    }
     #[instrument(skip(self))]
-    pub fn handle_entity(&mut self, e: PreprocessEntity) {
+    pub fn update_entity(&mut self, e: PreprocessEntity) {
         // let mut auth_table = self.table.write().unwrap();
         // auth_table
         self.table
@@ -214,7 +291,7 @@ impl PreprocessRepo {
             match ret {
                 Ok(e) => {
                     // let name = e.name;
-                    self.handle_entity(e);
+                    self.update_entity(e);
                 }
                 Err(e) => warn!("json decode error:{:?}", e),
             }
@@ -240,6 +317,21 @@ impl IndexRepo {
             table: HashMap::with_capacity(10),
         }
     }
+    pub async fn init(&mut self) {
+        let d = IndexDao::new();
+        let result = d.list(0, 100).await;
+        let entities = result.unwrap_or_else(|_| Vec::new());
+        entities.into_iter().for_each(|e| {
+            self.table.insert(
+                e.name.clone(),
+                IndexConfigure {
+                    name: e.name.clone(),
+                    app_id: e.app_id.clone(),
+                    index: Some(e),
+                },
+            );
+        })
+    }
     // #[instrument(skip(self))] // 增加instrument，参数需要满足debug
     pub fn get_app_id(&self, name: impl AsRef<str>) -> String {
         let v = self.table.get(name.as_ref());
@@ -255,15 +347,23 @@ impl IndexRepo {
             match ret {
                 Ok(e) => {
                     // let name = e.name;
-                    self.handle_entity(e);
+                    self.update_entity(e);
                 }
                 Err(e) => warn!("json decode error:{:?}", e),
             }
         }
     }
 
+    pub fn get(&self, name: impl AsRef<str>) -> Option<IndexEntity> {
+        let o = self.table.get(name.as_ref());
+        match o {
+            Some(e) => e.index.clone(),
+            None => None,
+        }
+    }
+
     #[instrument(skip(self))]
-    pub fn handle_entity(&mut self, e: IndexEntity) {
+    pub fn update_entity(&mut self, e: IndexEntity) {
         info!(
             "update index entity name={:?}, app_id={:?}",
             e.name, e.app_id
@@ -286,12 +386,12 @@ static mut REPO_INSTANCE: Option<Arc<RwLock<IndexConfigRepo>>> = None;
 
 pub struct IndexConfigRepo {
     // 只在config repo中更新，还需要arc么
-    app: AppRepo, // 会不会有运行时的问题, refcell 不能send
-    index: IndexRepo,
-    bert: BertRepo,
-    server: ServerRepo,
-    preprocess: PreprocessRepo,
-    template: TemplateRepo,
+    app: AppRepo,     // 会不会有运行时的问题, refcell 不能send
+    index: IndexRepo, // index configure 没有设置为pub
+    pub bert: BertRepo,
+    pub server: ServerRepo,
+    pub preprocess: PreprocessRepo,
+    pub template: TemplateRepo,
 }
 
 impl IndexConfigRepo {
@@ -305,6 +405,19 @@ impl IndexConfigRepo {
             preprocess: PreprocessRepo::new(),
             template: TemplateRepo::new(),
         }
+    }
+
+    pub fn get_index(&self, name: impl AsRef<str>) -> Option<IndexEntity> {
+        self.index.get(name)
+    }
+
+    pub async fn init(&mut self) {
+        self.app.init().await;
+        self.index.init().await;
+        self.bert.init().await;
+        self.server.init().await;
+        self.preprocess.init().await;
+        self.template.init().await;
     }
 
     pub fn get_instance1() -> Arc<RwLock<IndexConfigRepo>> {
@@ -350,6 +463,7 @@ impl IndexConfigRepo {
             REPO_INSTANCE.as_ref().unwrap().clone()
         }
     }
+
     pub fn auth(
         &self,
         app_id: impl AsRef<str>,
