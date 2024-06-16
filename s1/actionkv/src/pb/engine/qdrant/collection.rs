@@ -500,9 +500,7 @@ pub mod alias_operations {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum Action {
         CreateAlias(super::CreateAlias),
-
         RenameAlias(super::RenameAlias),
-
         DeleteAlias(super::DeleteAlias),
     }
 }
