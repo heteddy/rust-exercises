@@ -1,5 +1,2 @@
-pub mod data;
+pub mod qdrant;
 pub mod search;
-
-
-

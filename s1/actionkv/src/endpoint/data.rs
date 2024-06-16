@@ -2,7 +2,7 @@
 use crate::cache::repo;
 use crate::cache::sync;
 use crate::dao::bert::BertEntity;
-use crate::pb::engine::data::{InboundDataReq, SearchReq, SearchRet};
+use crate::pb::engine::qdrant::data::{InboundDataReq, SearchReq, SearchRet};
 use crate::pb::svr::{ApiError, ApiResponse, Pagination};
 use crate::server;
 use crate::transport::middleware::auth::auth_middleware;
