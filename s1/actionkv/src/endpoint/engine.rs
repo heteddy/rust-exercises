@@ -16,3 +16,12 @@ use axum::{
 use std::convert::From;
 use tokio::sync::mpsc;
 use tracing::{event, instrument, span, Level};
+
+// 创建qdrant 索引
+fn create_engine() {}
+// 修改alias
+fn alias() {}
+// 获取collections
+fn list_collections() {}
+// 获取单个collection
+fn get_collection() {}
