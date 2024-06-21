@@ -29,6 +29,7 @@ pub struct IndexEntity {
     pub name: String, // 索引名称; 也是alias
     pub active: Option<String>,
     pub inactive: Option<String>,
+    
     pub setting: index::Setting,
     pub mapping: Vec<index::MappingField>, // 设置字段以及类型
     pub configure: index::Configure,

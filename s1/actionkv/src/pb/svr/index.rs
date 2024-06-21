@@ -17,9 +17,9 @@ impl Into<bson::Bson> for MappingField {
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Setting {
-    pub bert: String,
-    pub server: String,
-    pub preprocess: String,
+    pub replicas: i32,
+    pub shards: i32,
+    pub vector_size: i32,
 }
 
 impl Into<bson::Bson> for Setting {
