@@ -1378,7 +1378,6 @@ pub mod vectors {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum VectorsOptions {
         Vector(super::Vector),
-
         Vectors(super::NamedVectors),
     }
 }

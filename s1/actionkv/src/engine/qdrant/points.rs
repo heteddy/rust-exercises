@@ -1,4 +1,4 @@
-use crate::pb::engine::qdrant::collection;
+use crate::pb::engine::qdrant::points;
 use anyhow;
 use anyhow::Ok;
 use http::Method;
@@ -29,10 +29,7 @@ OverwritePayload(context.Context, *SetPayloadPoints) (*PointsOperationResponse, 
 DeletePayload(context.Context, *DeletePayloadPoints) (*PointsOperationResponse, error)
 // Remove all payload for specified points
 ClearPayload(context.Context, *ClearPayloadPoints) (*PointsOperationResponse, error)
-// Create index for field in collection
-CreateFieldIndex(context.Context, *CreateFieldIndexCollection) (*PointsOperationResponse, error)
-// Delete field index for collection
-DeleteFieldIndex(context.Context, *DeleteFieldIndexCollection) (*PointsOperationResponse, error)
+
 SearchBatch(context.Context, *SearchBatchPoints) (*SearchBatchResponse, error)
 // Retrieve closest points based on vector similarity and given filtering conditions
 Search(context.Context, *SearchPoints) (*SearchResponse, error)
@@ -52,3 +49,6 @@ Count(context.Context, *CountPoints) (*CountResponse, error)
 // Perform multiple update operations in one request
 UpdateBatch(context.Context, *UpdateBatchPoints) (*UpdateBatchResponse, error)
 */
+
+
+pub async fn upsert(host: impl AsRef<str>) {}
