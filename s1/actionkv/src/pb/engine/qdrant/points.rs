@@ -46,7 +46,6 @@ pub mod vectors_config {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum Config {
         Params(super::VectorParams),
-
         ParamsMap(super::VectorParamsMap),
     }
 }
@@ -61,7 +60,6 @@ pub mod vectors_config_diff {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum Config {
         Params(super::VectorParamsDiff),
-
         ParamsMap(super::VectorParamsDiffMap),
     }
 }
@@ -126,7 +124,6 @@ pub struct ListCollectionsResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptimizerStatus {
     pub ok: bool,
-
     pub error: String,
 }
 
@@ -269,9 +266,7 @@ pub mod quantization_config {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum Quantization {
         Scalar(super::ScalarQuantization),
-
         Product(super::ProductQuantization),
-
         Binary(super::BinaryQuantization),
     }
 }
@@ -599,9 +594,7 @@ pub struct RemoteShardInfo {
 pub struct ShardTransferInfo {
     /// Local shard id
     pub shard_id: u32,
-
     pub from: u64,
-
     pub to: u64,
     /// If `true` transfer is a synchronization of a replicas; If `false` transfer is a moving of a shard from one peer to another
     pub sync: bool,
@@ -647,18 +640,14 @@ pub struct AbortShardTransfer {
 pub struct RestartTransfer {
     /// Local shard id
     pub shard_id: u32,
-
     pub from_peer_id: u64,
-
     pub to_peer_id: u64,
-
     pub method: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Replica {
     pub shard_id: u32,
-
     pub peer_id: u64,
 }
 
@@ -694,17 +683,11 @@ pub mod update_collection_cluster_setup_request {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum Operation {
         MoveShard(super::MoveShard),
-
         ReplicateShard(super::MoveShard),
-
         AbortTransfer(super::AbortShardTransfer),
-
         DropReplica(super::Replica),
-
         CreateShardKey(super::CreateShardKey),
-
         DeleteShardKey(super::DeleteShardKey),
-
         RestartTransfer(super::RestartTransfer),
     }
 }
@@ -1752,9 +1735,7 @@ pub struct PointsIdsList {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PointStruct {
     pub id: Option<PointId>,
-
     pub payload: ::std::collections::HashMap<String, Value>,
-
     pub vectors: Option<Vectors>,
 }
 
