@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 // 这个是derive 宏
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
+use crate::pb::engine::qdrant::collection;
 use crate::pb::entity;
 use crate::pb::svr::{
     index::{self, IndexReq, IndexResp},
@@ -29,7 +30,7 @@ pub struct IndexEntity {
     pub name: String, // 索引名称; 也是alias
     pub active: Option<String>,
     pub inactive: Option<String>,
-    
+
     pub setting: index::Setting,
     pub mapping: Vec<index::MappingField>, // 设置字段以及类型
     pub configure: index::Configure,
@@ -76,6 +77,15 @@ impl Into<IndexResp> for IndexEntity {
             created_at: utils::format_chrono_utc_to_local(&self.created_at),
             updated_at: utils::format_chrono_utc_to_local(&self.updated_at),
             deleted_at: self.deleted_at,
+        }
+    }
+}
+
+impl Into<collection::CreateCollection> for IndexEntity {
+    fn into(self) -> collection::CreateCollection {
+        collection::CreateCollection {
+            collection_name: self.inactive.take(),
+            
         }
     }
 }

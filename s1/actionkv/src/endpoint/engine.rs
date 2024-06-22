@@ -25,3 +25,12 @@ fn alias() {}
 fn list_collections() {}
 // 获取单个collection
 fn get_collection() {}
+
+
+pub fn register_route() -> Router {
+    let mut _router = Router::new();
+    // let svc: server::index::IndexSvc = server::index::IndexSvc::new(tx);
+    // _router = _router.route("/indices/:id", get(retrieve).put(update).delete(del));
+    // _router = _router.route("/indices", get(list).post(create));
+    Router::new().nest("/api", _router).with_state(svc)
+}

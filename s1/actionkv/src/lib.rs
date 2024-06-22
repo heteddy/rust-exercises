@@ -23,7 +23,6 @@ pub mod config;
 pub mod dao;
 pub mod endpoint;
 pub mod pb;
-pub mod search;
 pub mod server;
 pub mod transport;
 pub mod utils;

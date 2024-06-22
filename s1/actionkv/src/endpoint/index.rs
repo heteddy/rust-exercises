@@ -19,8 +19,9 @@ use tracing::{event, instrument, span, Level};
 #[instrument(skip_all)]
 async fn create(
     State(svc): State<server::index::IndexSvc>,
-    Json(payload): Json<IndexReq>,
+    Json(mut payload): Json<IndexReq>,
 ) -> Result<ApiResponse<IndexResp>, ApiError> {
+
     let e = svc.create(IndexEntity::from(payload)).await?;
     Ok(ApiResponse::from_result(e.into()))
 }
@@ -58,6 +59,7 @@ async fn del(
     let e = svc.delete(id).await?;
     Ok(ApiResponse::from_result(e.into()))
 }
+
 
 pub fn register_route(tx: mpsc::Sender<SyncData>) -> Router {
     let mut _router = Router::new();
