@@ -1,4 +1,3 @@
-
 use crate::pb::engine::qdrant::collection;
 use anyhow;
 use anyhow::Ok;
@@ -12,8 +11,7 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::time::Duration;
 
-
-/* 
+/*
 Upsert(context.Context, *UpsertPoints) (*PointsOperationResponse, error)
 // Delete points
 Delete(context.Context, *DeletePoints) (*PointsOperationResponse, error)
@@ -35,4 +33,22 @@ ClearPayload(context.Context, *ClearPayloadPoints) (*PointsOperationResponse, er
 CreateFieldIndex(context.Context, *CreateFieldIndexCollection) (*PointsOperationResponse, error)
 // Delete field index for collection
 DeleteFieldIndex(context.Context, *DeleteFieldIndexCollection) (*PointsOperationResponse, error)
+SearchBatch(context.Context, *SearchBatchPoints) (*SearchBatchResponse, error)
+// Retrieve closest points based on vector similarity and given filtering conditions
+Search(context.Context, *SearchPoints) (*SearchResponse, error)
+// Retrieve closest points based on vector similarity and given filtering conditions, grouped by a given field
+SearchGroups(context.Context, *SearchPointGroups) (*SearchGroupsResponse, error)
+Recommend(context.Context, *RecommendPoints) (*RecommendResponse, error)
+Scroll(context.Context, *ScrollPoints) (*ScrollResponse, error)
+// Look for the points which are closer to stored positive examples and at the same time further to negative examples.
+RecommendBatch(context.Context, *RecommendBatchPoints) (*RecommendBatchResponse, error)
+// Look for the points which are closer to stored positive examples and at the same time further to negative examples, grouped by a given field
+RecommendGroups(context.Context, *RecommendPointGroups) (*RecommendGroupsResponse, error)
+Discover(context.Context, *DiscoverPoints) (*DiscoverResponse, error)
+// Batch request points based on { positive, negative } pairs of examples, and/or a target
+DiscoverBatch(context.Context, *DiscoverBatchPoints) (*DiscoverBatchResponse, error)
+// Count points in collection with given filtering conditions
+Count(context.Context, *CountPoints) (*CountResponse, error)
+// Perform multiple update operations in one request
+UpdateBatch(context.Context, *UpdateBatchPoints) (*UpdateBatchResponse, error)
 */

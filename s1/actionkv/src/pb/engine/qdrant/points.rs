@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VectorParams {
@@ -1229,7 +1230,6 @@ pub struct UpsertPoints {
     pub collection_name: String,
     /// Wait until the changes have been applied?
     pub wait: Option<bool>,
-
     pub points: Vec<PointStruct>,
     /// Write ordering guarantees
     pub ordering: Option<WriteOrdering>,
@@ -1315,6 +1315,24 @@ pub struct DeleteFieldIndexCollection {
     pub field_name: String,
     /// Write ordering guarantees
     pub ordering: Option<WriteOrdering>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SetPayloadPoints {
+    /// name of the collection
+    pub collection_name: String,
+    /// Wait until the changes have been applied?
+    pub wait: Option<bool>,
+    /// New payload values
+    pub payload: ::std::collections::HashMap<String, Value>,
+    /// Affected points
+    // pub points_selector: Option<PointsSelector>,
+    /// Write ordering guarantees
+    pub ordering: Option<WriteOrdering>,
+    /// Option for custom sharding to specify used shard keys
+    pub shard_key_selector: Option<ShardKeySelector>,
+    /// Option for indicate property of payload
+    pub key: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
