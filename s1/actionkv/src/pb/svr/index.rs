@@ -17,10 +17,18 @@ impl Into<bson::Bson> for MappingField {
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Setting {
-    pub replicas: i32,
-    pub shards: i32,
+    pub replicas: u32,
+    pub shards: u32,
     pub vector_size: i32,
+    pub distance: String, //
 }
+
+/*
+Distance::Cosine => "Cosine",
+Distance::Euclid => "Euclid",
+Distance::Dot => "Dot",
+Distance::Manhattan => "Manhattan",
+*/
 
 impl Into<bson::Bson> for Setting {
     fn into(self) -> bson::Bson {

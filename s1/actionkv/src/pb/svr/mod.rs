@@ -54,6 +54,12 @@ where
 #[derive(Debug)]
 pub struct InternalError(String);
 
+impl From<String> for InternalError{
+    fn from(value: String) -> Self {
+        InternalError(value)
+    }
+}
+
 impl Display for InternalError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         write!(f, "{}", self)
@@ -73,6 +79,7 @@ pub enum ApiError {
     DBError(mongodb::error::Error),
     InternalServerError(InternalError),
     BsonError(bson::oid::Error),
+    // Any(anyhow::Error)
     // todo 增加404 not found
 }
 

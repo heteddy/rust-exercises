@@ -1,4 +1,7 @@
+use axum::response::{IntoResponse, Response};
+use axum::Json;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CollectionDescription {
@@ -16,13 +19,18 @@ pub struct ListCollectionsResponse {
     pub status: String,
     pub time: f64,
 }
+impl IntoResponse for ListCollectionsResponse {
+    fn into_response(self) -> Response {
+        Json(self).into_response()
+    }
+}
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct VectorParams {
     /// Size of the vectors
     pub size: u64,
     /// Distance function used for comparing vectors
-    pub distance: i32,
+    pub distance: String,
     /// Configuration of vector HNSW graph. If omitted - the collection configuration will be used
     pub hnsw_config: Option<HnswConfigDiff>,
     /// Configuration of vector quantization config. If omitted - the collection configuration will be used
@@ -30,7 +38,7 @@ pub struct VectorParams {
     /// If true - serve vectors from disk. If set to false, the vectors will be loaded in RAM.
     pub on_disk: Option<bool>,
     /// Data type of the vectors
-    pub datatype: Option<i32>,
+    pub datatype: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,7 +61,7 @@ pub struct VectorParamsDiffMap {
     pub map: ::std::collections::HashMap<String, VectorParamsDiff>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct VectorsConfig {
     pub config: Option<vectors_config::Config>,
 }
@@ -63,7 +71,6 @@ pub mod vectors_config {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum Config {
         Params(super::VectorParams),
-
         ParamsMap(super::VectorParamsMap),
     }
 }
@@ -116,6 +123,11 @@ pub struct CollectionExistsResponse {
     /// Time spent to process
     pub time: f64,
 }
+impl IntoResponse for CollectionExistsResponse {
+    fn into_response(self) -> Response {
+        Json(self).into_response()
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListCollectionsRequest {}
@@ -125,6 +137,11 @@ pub struct GetCollectionInfoResponse {
     pub result: Option<CollectionInfo>,
     /// Time spent to process
     pub time: f64,
+}
+impl IntoResponse for GetCollectionInfoResponse {
+    fn into_response(self) -> Response {
+        Json(self).into_response()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -181,7 +198,7 @@ pub struct WalConfigDiff {
     pub wal_segments_ahead: Option<u64>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct OptimizersConfigDiff {
     ///
     /// The minimal fraction of deleted vectors in a segment, required to perform segment optimization
@@ -302,7 +319,7 @@ pub mod quantization_config_diff {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CreateCollection {
     /// Name of the collection
     pub collection_name: String,
@@ -319,7 +336,7 @@ pub struct CreateCollection {
     /// Wait timeout for operation commit in seconds, if not specified - default value will be supplied
     pub timeout: Option<u64>,
     /// Configuration for vectors
-    pub vectors_config: Option<VectorsConfig>,
+    pub vectors: Option<VectorParams>, //teddy 修改成json需要的格式
     /// Number of replicas of each shard that network tries to maintain, default = 1
     pub replication_factor: Option<u32>,
     /// How many replicas should apply the operation for us to consider it successful, default = 1
@@ -368,6 +385,12 @@ pub struct CollectionOperationResponse {
     pub result: bool,
     /// Time spent to process
     pub time: f64,
+}
+
+impl IntoResponse for CollectionOperationResponse {
+    fn into_response(self) -> Response {
+        Json(self).into_response()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -550,6 +573,11 @@ pub struct ListAliasesResponse {
     /// Time spent to process
     pub time: f64,
 }
+impl IntoResponse for ListAliasesResponse {
+    fn into_response(self) -> Response {
+        Json(self).into_response()
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CollectionClusterInfoRequest {
@@ -621,6 +649,12 @@ pub struct CollectionClusterInfoResponse {
     pub remote_shards: Vec<RemoteShardInfo>,
     /// Shard transfers
     pub shard_transfers: Vec<ShardTransferInfo>,
+}
+
+impl IntoResponse for CollectionClusterInfoResponse {
+    fn into_response(self) -> Response {
+        Json(self).into_response()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -712,6 +746,12 @@ pub struct UpdateCollectionClusterSetupResponse {
     pub result: bool,
 }
 
+impl IntoResponse for UpdateCollectionClusterSetupResponse {
+    fn into_response(self) -> Response {
+        Json(self).into_response()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateShardKeyRequest {
     /// Name of the collection
@@ -737,10 +777,23 @@ pub struct CreateShardKeyResponse {
     pub result: bool,
 }
 
+impl IntoResponse for CreateShardKeyResponse {
+    fn into_response(self) -> Response {
+        Json(self).into_response()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeleteShardKeyResponse {
     pub result: bool,
 }
+
+impl IntoResponse for DeleteShardKeyResponse {
+    fn into_response(self) -> Response {
+        Json(self).into_response()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[repr(i32)]
 pub enum Datatype {

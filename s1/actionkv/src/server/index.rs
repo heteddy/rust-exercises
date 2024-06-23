@@ -25,12 +25,12 @@ impl IndexSvc {
     #[instrument(skip_all)]
     pub async fn create(&self, mut e: IndexEntity) -> Result<IndexEntity, ApiError> {
         // 如果参数中未设置inactive则创建一个
-        if None == e.inactive {
+        if e.inactive.is_none() {
             let local_time = chrono::Local::now();
             let time_str = local_time.format("%Y%m%d%H%M%S").to_string();
             e.inactive = Some(format!("{name}_{tm}", name = e.name, tm = time_str));
         }
-        
+
         let _e = self.repo.insert(e).await?;
         let _ = self
             .sender

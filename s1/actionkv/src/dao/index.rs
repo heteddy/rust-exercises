@@ -83,10 +83,29 @@ impl Into<IndexResp> for IndexEntity {
 
 impl Into<collection::CreateCollection> for IndexEntity {
     fn into(self) -> collection::CreateCollection {
-        collection::CreateCollection {
-            collection_name: self.inactive.take(),
-            
-        }
+       
+        let oc = collection::OptimizersConfigDiff {
+            indexing_threshold: Some(1000),
+            ..Default::default()
+        };
+        let vc = collection::VectorParams {
+            size: self.setting.vector_size as u64,
+            distance: collection::Distance::Euclid.as_str_name().to_owned(),
+            on_disk: Some(true),
+            ..Default::default()
+        };
+
+        let cc = collection::CreateCollection{
+            collection_name: self.inactive.unwrap(),
+            on_disk_payload: Some(true),
+            optimizers_config: Some(oc),
+            vectors:Some(vc),
+            shard_number: Some(self.setting.shards),
+            replication_factor: Some(self.setting.replicas),
+            ..Default::default()
+        };
+        // cc.optimizers_config =
+        cc
     }
 }
 
