@@ -24,6 +24,7 @@ pub async fn create_collection(
     State(svc): State<CollectionSvc>,
     Json(payload): Json<CollectionReq>,
 ) -> Result<ApiResponse<CollectionOperationResponse>, ApiError> {
+    // 创建collection; 设置
     match svc.create(payload).await {
         Ok(resp) => Ok(ApiResponse::from_result(resp)),
         Err(e) => Err(InternalError::from(e.to_string()).into()),

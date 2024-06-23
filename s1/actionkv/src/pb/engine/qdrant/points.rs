@@ -438,12 +438,14 @@ pub struct IntegerIndexParams {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PayloadIndexParams {
+    #[serde(flatten)]
     pub index_params: Option<payload_index_params::IndexParams>,
 }
 /// Nested message and enum types in `PayloadIndexParams`.
 pub mod payload_index_params {
     use super::*;
     #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[serde(tag = "type")]
     pub enum IndexParams {
         /// Parameters for text index
         TextIndexParams(super::TextIndexParams),
@@ -1201,7 +1203,7 @@ pub struct PointVectors {
     pub vectors: Option<Vectors>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CreateFieldIndexCollection {
     /// name of the collection
     pub collection_name: String,
@@ -1210,11 +1212,87 @@ pub struct CreateFieldIndexCollection {
     /// Field name to index
     pub field_name: String,
     /// Field type.
-    pub field_type: Option<i32>,
+    pub field_type: Option<String>, // teddy 修改为
+    /// field schema； teddy added
+    pub field_schema: Option<FieldSchema>,
     /// Payload index params.
     pub field_index_params: Option<PayloadIndexParams>,
     /// Write ordering guarantees
     pub ordering: Option<WriteOrdering>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "t")]
+pub enum FieldSchema {
+    //todo: teddy defined
+    Keyword(KeywordIndex),
+    Text(TextIndex),
+    Integer(IntegerIndex),
+    Float(FloatIndex),
+    Bool(BoolIndex),
+    Datetime(DatetimeIndex),
+    Geo(GeoIndex),
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KeywordIndex {
+    #[serde(rename = "type")]
+    pub field_type: String,
+}
+/*
+Available tokenizers are:
+
+word - splits the string into words, separated by spaces, punctuation marks, and special characters.
+whitespace - splits the string into words, separated by spaces.
+prefix - splits the string into words, separated by spaces, punctuation marks, and special characters, and then creates a prefix index for each word. For example: hello will be indexed as h, he, hel, hell, hello.
+multilingual - special type of tokenizer based on charabia package.
+It allows proper tokenization and lemmatization for multiple languages,
+including those with non-latin alphabets and non-space delimiters.
+See charabia documentation for full list of supported languages supported normalization options.
+In the default build configuration, qdrant does not include support for all languages, due to the increasing size of the resulting binary. Chinese, Japanese and Korean languages are not enabled by default,
+but can be enabled by building qdrant from source with --features multiling-chinese,multiling-japanese,multiling-korean flags.
+*/
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TextIndex {
+    #[serde(rename = "type")]
+    pub field_type: String,
+    pub tokenizer: String,
+    pub min_token_len: i32,
+    pub max_token_len: i32,
+    pub lowercase: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IntegerIndex {
+    #[serde(rename = "type")]
+    pub field_type: String, //integer
+    pub lookup: bool, // 支持完全匹配
+    pub range: bool,  // 支持范围查找
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FloatIndex {
+    #[serde(rename = "type")]
+    pub field_type: String, //float
+    pub lookup: bool, // 支持完全匹配
+    pub range: bool,  // 支持范围查找
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BoolIndex {
+    #[serde(rename = "type")]
+    pub field_type: String, //bool
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GeoIndex {
+    #[serde(rename = "type")]
+    pub field_type: String, //geo
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatetimeIndex {
+    #[serde(rename = "type")]
+    pub field_type: String, //geo
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1531,7 +1609,6 @@ impl IntoResponse for GetResponse {
         Json(self).into_response()
     }
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RecommendResponse {
@@ -2001,7 +2078,6 @@ pub struct ListSnapshotsResponse {
     /// Time spent to process
     pub time: f64,
 }
-
 
 impl IntoResponse for ListSnapshotsResponse {
     fn into_response(self) -> Response {
