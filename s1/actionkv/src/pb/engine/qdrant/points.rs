@@ -1212,11 +1212,11 @@ pub struct CreateFieldIndexCollection {
     /// Field name to index
     pub field_name: String,
     /// Field type.
-    pub field_type: Option<String>, // teddy 修改为
+    // pub field_type: Option<String>, // teddy 修改为
     /// field schema； teddy added
     pub field_schema: Option<FieldSchema>,
     /// Payload index params.
-    pub field_index_params: Option<PayloadIndexParams>,
+    // pub field_index_params: Option<PayloadIndexParams>,
     /// Write ordering guarantees
     pub ordering: Option<WriteOrdering>,
 }

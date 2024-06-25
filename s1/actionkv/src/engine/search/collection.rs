@@ -2,6 +2,7 @@ use crate::cache::repo;
 use crate::dao::base::EntityDao;
 use crate::dao::index::{IndexDao, IndexEntity};
 use crate::engine::qdrant::collection::{create, delete, list, list_alias, update, update_alias};
+use crate::engine::qdrant::index;
 use crate::pb::engine::qdrant::collection::{CollectionOperationResponse, CreateCollection};
 use crate::pb::engine::search;
 use crate::pb::svr::ApiError;
@@ -43,9 +44,17 @@ impl CollectionSvc {
             } else {
                 let s = serde_json::to_string_pretty(&req).unwrap();
                 info!("collection req={:?}", s);
-                create(svr_host, req).await // 创建collection；
-
-                // 创建index
+                // 并非关键路径，可以拷贝
+                let ret = create(svr_host.clone(), req).await?; // 创建collection；
+                                                                // 创建index
+                let indexes = e.to_field_index_collection();
+                // indexes.into_iter().map(|_req|{
+                //     index::create_field_index(svr_host, _req).await
+                // });
+                for _req in indexes.into_iter() {
+                    let ret = index::create_field_index(svr_host.clone(), _req).await?;
+                }
+                anyhow::Ok(ret)
             }
         } else {
             anyhow::Result::Err(anyhow::anyhow!("not found index entity {:?}", req.name))

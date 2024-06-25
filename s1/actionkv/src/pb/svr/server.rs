@@ -7,6 +7,7 @@ pub struct ServerReq {
     pub name: String,
     pub http_addr: String,
     pub grpc_addr: String,
+    pub api_key: String,
 }
 
 // 使用默认的default实现
@@ -18,6 +19,7 @@ pub struct ServerResp {
     pub name: String,
     pub http_addr: String,
     pub grpc_addr: String,
+    pub api_key: String,
     pub created_at: String,
     pub updated_at: String,
     pub deleted_at: i64,

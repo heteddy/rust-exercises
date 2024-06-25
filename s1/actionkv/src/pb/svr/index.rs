@@ -5,7 +5,7 @@ use crate::pb::engine::qdrant::points;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MappingField {
     pub name: String,
-    pub field_type: String, //支持的类型
+    // pub field_type: String, //支持的类型
     pub field_schema: points::FieldSchema,
     pub is_vector: bool,
     pub is_index: bool,
@@ -16,6 +16,7 @@ impl Into<bson::Bson> for MappingField {
         bson::to_bson(&self).unwrap()
     }
 }
+
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Setting {

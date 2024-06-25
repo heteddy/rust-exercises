@@ -8,12 +8,13 @@ use mongodb::{
     Collection, IndexModel,
 };
 use std::time::Duration;
+// use std::collections::Vec
 // 需要引入这个trait
 use serde::{Deserialize, Serialize};
 // 这个是derive 宏
 use crate::config::{self, mongo::MONGO_CLIENT};
 use crate::dao;
-use crate::pb::engine::qdrant::collection;
+use crate::pb::engine::qdrant::{collection, points};
 use crate::pb::entity;
 use crate::pb::svr::{
     index::{self, IndexReq, IndexResp},
@@ -30,7 +31,6 @@ pub struct IndexEntity {
     pub name: String, // 索引名称; 也是alias
     pub active: Option<String>,
     pub inactive: Option<String>,
-
     pub setting: index::Setting,
     pub mapping: Vec<index::MappingField>, // 设置字段以及类型
     pub configure: index::Configure,
@@ -83,7 +83,6 @@ impl Into<IndexResp> for IndexEntity {
 
 impl Into<collection::CreateCollection> for IndexEntity {
     fn into(self) -> collection::CreateCollection {
-       
         let oc = collection::OptimizersConfigDiff {
             indexing_threshold: Some(1000),
             ..Default::default()
@@ -95,11 +94,11 @@ impl Into<collection::CreateCollection> for IndexEntity {
             ..Default::default()
         };
 
-        let cc = collection::CreateCollection{
+        let cc = collection::CreateCollection {
             collection_name: self.inactive.unwrap(),
             on_disk_payload: Some(true),
             optimizers_config: Some(oc),
-            vectors:Some(vc),
+            vectors: Some(vc),
             shard_number: Some(self.setting.shards),
             replication_factor: Some(self.setting.replicas),
             ..Default::default()
@@ -139,7 +138,31 @@ impl Entity for IndexEntity {
     }
 }
 
-impl IndexEntity {}
+impl IndexEntity {
+    // pub struct MappingField {
+    //     pub name: String,
+    //     pub field_schema: points::FieldSchema,
+    //     pub is_vector: bool,
+    //     pub is_index: bool,
+    // }
+    pub fn to_field_index_collection(&self) -> Vec<points::CreateFieldIndexCollection> {
+        let mut rets = Vec::with_capacity(self.mapping.len());
+        
+        self.mapping.iter().map(|f| {
+            let inactive = self.inactive.clone();
+            if f.is_index {
+                rets.push(points::CreateFieldIndexCollection {
+                    collection_name: inactive.unwrap(),
+                    wait: Some(false),
+                    field_name: f.name.clone(),
+                    field_schema: Some(f.field_schema.clone()),
+                    ..Default::default()
+                });
+            }
+        });
+        rets
+    }
+}
 #[derive(Clone)]
 pub struct IndexDao {
     collection: Collection<IndexEntity>,

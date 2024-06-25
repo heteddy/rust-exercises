@@ -36,6 +36,7 @@ pub struct ServerEntity {
     pub name: String,
     pub http_addr: String,
     pub grpc_addr: String,
+    pub api_key: String,
     #[serde(with = "chrono_datetime_as_bson_datetime")] //只能支持utc
     pub created_at: DateTime<Utc>,
     #[serde(with = "chrono_datetime_as_bson_datetime")]
@@ -62,6 +63,7 @@ impl From<ServerReq> for ServerEntity {
             name: value.name,
             http_addr: value.http_addr,
             grpc_addr: value.grpc_addr,
+            api_key: value.api_key,
             created_at: Utc::now(),
             updated_at: Utc::now(),
             deleted_at: 0,
@@ -81,6 +83,7 @@ impl Into<ServerResp> for ServerEntity {
             name: self.name,
             http_addr: self.http_addr,
             grpc_addr: self.grpc_addr,
+            api_key: self.api_key,
             created_at: utils::format_chrono_utc_to_local(&self.created_at),
             updated_at: utils::format_chrono_utc_to_local(&self.updated_at),
             deleted_at: self.deleted_at,
