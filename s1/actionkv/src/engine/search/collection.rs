@@ -29,6 +29,7 @@ impl CollectionSvc {
         if let Some(ref e) = i {
             // 构造创建index的配置参数
             info!("create index {:?}", e.name);
+            // 转换成req
             let req: CreateCollection = e.clone().into();
             let svr_name = e.configure.server.clone();
             let svr_entity = r.read().unwrap().server.get(svr_name);
@@ -36,10 +37,15 @@ impl CollectionSvc {
                 Some(host) => host.http_addr.clone(),
                 None => String::new(),
             };
+
             if svr_host.len() == 0 {
                 anyhow::Result::Err(anyhow::anyhow!("not found server {:?}", svr_host))
-            }else{
-                create(svr_host, req).await
+            } else {
+                let s = serde_json::to_string_pretty(&req).unwrap();
+                info!("collection req={:?}", s);
+                create(svr_host, req).await // 创建collection；
+
+                // 创建index
             }
         } else {
             anyhow::Result::Err(anyhow::anyhow!("not found index entity {:?}", req.name))

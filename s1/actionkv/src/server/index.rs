@@ -30,7 +30,7 @@ impl IndexSvc {
             let time_str = local_time.format("%Y%m%d%H%M%S").to_string();
             e.inactive = Some(format!("{name}_{tm}", name = e.name, tm = time_str));
         }
-
+        
         let _e = self.repo.insert(e).await?;
         let _ = self
             .sender

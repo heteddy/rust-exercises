@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{from_str, json, to_value};
 use std::collections::HashMap;
 use std::time::Duration;
+use tracing::{info, instrument, warn};
 
 /*
     Get(ctx context.Context, in *GetCollectionInfoRequest, opts ...grpc.CallOption) (*GetCollectionInfoResponse, error)
@@ -49,7 +50,8 @@ pub async fn get(
     );
     let response = client.get(url).send().await?;
     let status_code = response.status().as_u16();
-    if status_code == 200 {
+    info!("create response status={:?}", status_code);
+    if status_code < 400 {
         let body = response.text().await?;
         let resp = serde_json::from_str::<collection::GetCollectionInfoResponse>(&body)?;
         anyhow::Ok(resp)
@@ -66,15 +68,21 @@ pub async fn create(
     req: collection::CreateCollection,
     // body: serde_json::Value, // 这里是通过配置生成的json value
 ) -> anyhow::Result<collection::CollectionOperationResponse> {
+    info!("qdrant create collection");
     let client = Client::new();
-    let url = format!("http://{host}/collections", host = host.as_ref());
+    let url = format!(
+        "http://{host}/collections/{name}",
+        host = host.as_ref(),
+        name = &(req.collection_name)
+    );
+    info!("url={:?}", url);
     // let data = json!({   //直接序列化后的value
     //     "name": "Alice",
     //     "age": 20
     // });
     // 通过构造好的value
     let response = client
-        .post(url)
+        .put(url)
         // .header("Content-Type", "application/json")
         .json(&req) //enable features json
         .send()
@@ -82,7 +90,8 @@ pub async fn create(
     // serde_json::to_value(value)
 
     let code = response.status().as_u16();
-    if code == 200 {
+    info!("create response status={:?}", code);
+    if code < 400 {
         let body = response.text().await?;
         let resp = serde_json::from_str::<collection::CollectionOperationResponse>(&body)?;
         println!("response received {:?}", resp);
@@ -102,7 +111,7 @@ pub async fn list(host: impl AsRef<str>) -> anyhow::Result<collection::ListColle
     let response = client.get(&url).send().await?;
     let code = response.status().as_u16();
 
-    if code == 200 {
+    if code < 400 {
         let body = response.text().await?; // moved here
         let resp = serde_json::from_str::<collection::ListCollectionsResponse>(&body)?;
         println!("response received {:?}", resp);
@@ -138,7 +147,7 @@ pub async fn update(
     let response = client.patch(&url).json(&req).send().await?;
     let code = response.status().as_u16();
 
-    if code == 200 {
+    if code < 400 {
         let body = response.text().await?; // moved here
         let resp = serde_json::from_str::<collection::CollectionOperationResponse>(&body)?;
         println!("response received {:?}", resp);
@@ -203,7 +212,7 @@ pub async fn update_alias(
     let client = Client::new();
     let response = client.post(&url).json(&req).send().await?;
     let code = response.status().as_u16();
-    if code == 200 {
+    if code < 400 {
         let body = response.text().await?;
         let resp = serde_json::from_str(&body)?;
         anyhow::Ok(resp)
@@ -230,7 +239,7 @@ pub async fn list_alias(
     let client = Client::new();
     let response = client.get(&url).send().await?;
     let code = response.status().as_u16();
-    if code == 200 {
+    if code < 400 {
         let body = response.text().await?;
         let resp = serde_json::from_str(&body)?;
         anyhow::Ok(resp)
@@ -255,7 +264,7 @@ pub async fn delete(
     let client = Client::new();
     let response = client.delete(url).send().await?;
     let code = response.status().as_u16();
-    if code == 200 {
+    if code < 400 {
         let body = response.text().await?;
         let resp = serde_json::from_str(&body)?;
         anyhow::Ok(resp)

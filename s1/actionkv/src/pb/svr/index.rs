@@ -21,7 +21,7 @@ impl Into<bson::Bson> for MappingField {
 pub struct Setting {
     pub replicas: u32,
     pub shards: u32,
-    pub vector_size: i32,
+    pub vector_size: i32, // Euclid,Cosine
     pub distance: String, //
 }
 
