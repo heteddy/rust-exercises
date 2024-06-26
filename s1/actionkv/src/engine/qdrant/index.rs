@@ -58,7 +58,7 @@ pub async fn create_field_index(
     let url = format!(
         "http://{host}/collections/{name}/index",
         host = host.as_ref(),
-        name = req.collection_name.clone(),
+        name = &req.collection_name,
     );
     info!(
         "create_field_index url={:?}, req={:?}",

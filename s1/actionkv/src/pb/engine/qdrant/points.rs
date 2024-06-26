@@ -1214,7 +1214,7 @@ pub struct CreateFieldIndexCollection {
     /// Field type.
     // pub field_type: Option<String>, // teddy 修改为
     /// field schema； teddy added
-    #[serde(flatten)]
+    #[serde(flatten)] // 定义成flatten；参数名就没什么用了
     pub field_schema: Option<FieldSchema>,
     /// Payload index params.
     // pub field_index_params: Option<PayloadIndexParams>,

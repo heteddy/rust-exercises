@@ -49,7 +49,7 @@ impl CollectionSvc {
                 let s = serde_json::to_string_pretty(&req).unwrap();
                 info!("collection req={:?}", s);
                 // 并非关键路径，可以拷贝
-                let ret = create(svr_host.clone(), req).await?; // 创建collection；
+                let ret = create(&svr_host, req).await?; // 创建collection；
                                                                 // 创建index
                 let indexes = e.to_field_index_collection();
                 // indexes.into_iter().map(|_req|{
@@ -57,7 +57,7 @@ impl CollectionSvc {
                 // });
                 info!("start to create index len={:?}", indexes.len());
                 for _req in indexes.into_iter() {
-                    let ret = index::create_field_index(svr_host.clone(), _req).await?;
+                    let ret = index::create_field_index(&svr_host, _req).await?;
                 }
                 anyhow::Ok(ret)
             }
