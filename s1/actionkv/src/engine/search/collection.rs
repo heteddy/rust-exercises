@@ -33,14 +33,18 @@ impl CollectionSvc {
             // 转换成req
             let req: CreateCollection = e.clone().into();
             let svr_name = e.configure.server.clone();
-            let svr_entity = r.read().unwrap().server.get(svr_name);
+            let svr_entity = r.read().unwrap().server.get(&svr_name);
             let svr_host = match svr_entity {
                 Some(host) => host.http_addr.clone(),
                 None => String::new(),
             };
 
             if svr_host.len() == 0 {
-                anyhow::Result::Err(anyhow::anyhow!("not found server {:?}", svr_host))
+                anyhow::Result::Err(anyhow::anyhow!(
+                    "not found server svr_name={:?},host={:?}",
+                    svr_name,
+                    svr_host
+                ))
             } else {
                 let s = serde_json::to_string_pretty(&req).unwrap();
                 info!("collection req={:?}", s);
@@ -51,6 +55,7 @@ impl CollectionSvc {
                 // indexes.into_iter().map(|_req|{
                 //     index::create_field_index(svr_host, _req).await
                 // });
+                info!("start to create index len={:?}", indexes.len());
                 for _req in indexes.into_iter() {
                     let ret = index::create_field_index(svr_host.clone(), _req).await?;
                 }

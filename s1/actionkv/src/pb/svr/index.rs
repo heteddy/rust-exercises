@@ -6,7 +6,8 @@ use crate::pb::engine::qdrant::points;
 pub struct MappingField {
     pub name: String,
     // pub field_type: String, //支持的类型
-    pub field_schema: points::FieldSchema,
+    #[serde(flatten)]
+    pub schema: points::FieldSchema,
     pub is_vector: bool,
     pub is_index: bool,
 }

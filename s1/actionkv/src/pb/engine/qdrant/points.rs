@@ -1214,6 +1214,7 @@ pub struct CreateFieldIndexCollection {
     /// Field type.
     // pub field_type: Option<String>, // teddy 修改为
     /// field schema； teddy added
+    #[serde(flatten)]
     pub field_schema: Option<FieldSchema>,
     /// Payload index params.
     // pub field_index_params: Option<PayloadIndexParams>,
@@ -1235,8 +1236,7 @@ pub enum FieldSchema {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KeywordIndex {
-    #[serde(rename = "type")]
-    pub field_type: String,
+    pub field_schema: String,
 }
 /*
 Available tokenizers are:
@@ -1254,6 +1254,10 @@ but can be enabled by building qdrant from source with --features multiling-chin
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TextIndex {
+    pub fleld_schema: TextIndexSchema,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TextIndexSchema {
     #[serde(rename = "type")]
     pub field_type: String,
     pub tokenizer: String,
@@ -1264,6 +1268,10 @@ pub struct TextIndex {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IntegerIndex {
+    pub field_schema: IntegerSchema,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IntegerSchema {
     #[serde(rename = "type")]
     pub field_type: String, //integer
     pub lookup: bool, // 支持完全匹配
@@ -1272,27 +1280,23 @@ pub struct IntegerIndex {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FloatIndex {
-    #[serde(rename = "type")]
-    pub field_type: String, //float
-    pub lookup: bool, // 支持完全匹配
-    pub range: bool,  // 支持范围查找
+    pub field_schema: String, //float
+    pub lookup: bool,         // 支持完全匹配
+    pub range: bool,          // 支持范围查找
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BoolIndex {
-    #[serde(rename = "type")]
-    pub field_type: String, //bool
+    pub field_schema: String, //bool
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeoIndex {
-    #[serde(rename = "type")]
-    pub field_type: String, //geo
+    pub field_schema: String, //geo
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DatetimeIndex {
-    #[serde(rename = "type")]
-    pub field_type: String, //geo
+    pub field_schema: String, //geo
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1459,7 +1463,7 @@ pub struct UpdateResult {
     /// Number of operation
     pub operation_id: Option<u64>,
     /// Operation status
-    pub status: i32,
+    pub status: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

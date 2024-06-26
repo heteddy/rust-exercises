@@ -488,7 +488,7 @@ pub struct PayloadSchemaInfo {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CollectionInfo {
     /// operating condition of the collection
-    pub status: i32,
+    pub status: String,
     /// status of collection optimizers
     pub optimizer_status: Option<OptimizerStatus>,
     /// Approximate number of vectors in the collection

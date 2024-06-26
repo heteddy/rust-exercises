@@ -60,16 +60,19 @@ pub async fn create_field_index(
         host = host.as_ref(),
         name = req.collection_name.clone(),
     );
-    // for req in reqs {
-    
-    // }
+    info!(
+        "create_field_index url={:?}, req={:?}",
+        url,
+        serde_json::to_string_pretty(&req).unwrap()
+    );
+
     let response = Client::new().put(url).json(&req).send().await?;
     let code = response.status().as_u16();
     info!("create_field_index status code = {:?}", code);
     if code < 400 {
         let body = response.text().await?; // moved here
         let resp = serde_json::from_str::<points::PointsOperationResponse>(&body)?;
-        println!("response received {:?}", resp);
+        info!("create_field_index response received {:?}", resp);
         anyhow::Ok(resp)
     } else {
         anyhow::Result::Err(anyhow::anyhow!(
@@ -77,7 +80,6 @@ pub async fn create_field_index(
             code
         ))
     }
-    
 }
 #[instrument(skip_all)]
 pub async fn delete_field_index(

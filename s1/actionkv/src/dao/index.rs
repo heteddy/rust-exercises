@@ -21,11 +21,18 @@ use crate::pb::svr::{
     ApiError,
 };
 use crate::utils;
+use crate::utils::mongo::serialize_object_id_option_as_hex_string;
 use std::result::Result;
+use tracing::{info, instrument};
 pub const ENTITY_INDEX: &'static str = "index_entity";
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct IndexEntity {
+    #[serde(
+        serialize_with = "serialize_object_id_option_as_hex_string",
+        rename = "_id",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub id: Option<ObjectId>,
     pub app_id: String,
     pub name: String, // 索引名称; 也是alias
@@ -147,19 +154,19 @@ impl IndexEntity {
     // }
     pub fn to_field_index_collection(&self) -> Vec<points::CreateFieldIndexCollection> {
         let mut rets = Vec::with_capacity(self.mapping.len());
-        
-        self.mapping.iter().map(|f| {
-            let inactive = self.inactive.clone();
+
+        for f in &self.mapping {
             if f.is_index {
+                let inactive = self.inactive.clone();
                 rets.push(points::CreateFieldIndexCollection {
                     collection_name: inactive.unwrap(),
                     wait: Some(false),
                     field_name: f.name.clone(),
-                    field_schema: Some(f.field_schema.clone()),
+                    field_schema: Some(f.schema.clone()),
                     ..Default::default()
                 });
             }
-        });
+        }
         rets
     }
 }
