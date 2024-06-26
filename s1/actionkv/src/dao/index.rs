@@ -162,7 +162,7 @@ impl IndexEntity {
                     collection_name: inactive.unwrap(),
                     wait: Some(false),
                     field_name: f.name.clone(),
-                    field_schema: Some(f.schema.clone()),
+                    schema: Some(f.schema.clone()),
                     ..Default::default()
                 });
             }

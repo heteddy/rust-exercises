@@ -32,8 +32,8 @@ impl CollectionSvc {
             info!("create index {:?}", e.name);
             // 转换成req
             let req: CreateCollection = e.clone().into();
-            let svr_name = e.configure.server.clone();
-            let svr_entity = r.read().unwrap().server.get(&svr_name);
+            let svr_name = &e.configure.server;
+            let svr_entity = r.read().unwrap().server.get(svr_name);
             let svr_host = match svr_entity {
                 Some(host) => host.http_addr.clone(),
                 None => String::new(),

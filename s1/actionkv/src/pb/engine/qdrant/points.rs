@@ -1225,7 +1225,7 @@ pub struct CreateFieldIndexCollection {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "t")]
 pub enum FieldSchema {
-    //todo: teddy defined
+    //TODO: teddy defined ,  简化keyword float bool 等
     Keyword(KeywordIndex),
     Text(TextIndex),
     Integer(IntegerIndex),
