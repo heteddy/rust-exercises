@@ -26,7 +26,7 @@ impl ServerSvc {
         let _e = self.repo.insert(e).await?;
         let _ = self
             .sender
-            .send(sync::SyncData::build::<ServerEntity>("tempalte", &_e))
+            .send(sync::SyncData::build::<ServerEntity>("server", &_e))
             .await;
         Ok(_e)
     }
