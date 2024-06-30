@@ -38,7 +38,7 @@ use tracing::{info, instrument, warn};
     DeleteShardKey(ctx context.Context, in *DeleteShardKeyRequest, opts ...grpc.CallOption) (*DeleteShardKeyResponse, error)
 */
 
-pub async fn get(
+pub async fn get_collection(
     host: impl AsRef<str>,
     collection_name: impl AsRef<str>,
 ) -> anyhow::Result<collection::GetCollectionInfoResponse> {
@@ -63,7 +63,7 @@ pub async fn get(
     }
 }
 
-pub async fn create(
+pub async fn create_collection(
     host: impl AsRef<str>,
     req: collection::CreateCollection,
     // body: serde_json::Value, // 这里是通过配置生成的json value
@@ -104,7 +104,7 @@ pub async fn create(
     }
 }
 
-pub async fn list(host: impl AsRef<str>) -> anyhow::Result<collection::ListCollectionsResponse> {
+pub async fn list_collections(host: impl AsRef<str>) -> anyhow::Result<collection::ListCollectionsResponse> {
     let url = format!("http://{host}/collections", host = host.as_ref());
     let client = Client::new();
 
@@ -132,7 +132,7 @@ PATCH /collections/{collection_name}
     }
 }
 */
-pub async fn update(
+pub async fn update_collection(
     host: impl AsRef<str>,
     collection_name: impl AsRef<str>,
     req: collection::UpdateCollection,
@@ -252,7 +252,7 @@ pub async fn list_alias(
 }
 
 // DELETE http://localhost:6333/collections/{collection_name}
-pub async fn delete(
+pub async fn delete_collection(
     host: impl AsRef<str>,
     collection_name: impl AsRef<str>,
 ) -> anyhow::Result<collection::CollectionOperationResponse> {
@@ -287,7 +287,7 @@ mod tests {
         rt.block_on(async {
             println!("Hello from tokio!");
             rt.spawn(async {
-                list("localhost:6333").await;
+                list_collections("localhost:6333").await;
             })
             .await
             .unwrap();

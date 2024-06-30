@@ -411,6 +411,18 @@ impl IndexConfigRepo {
         self.index.get(name)
     }
 
+    pub fn get_svr_http_address(&self, name: impl AsRef<str>) -> Option<String> {
+        let i = self.index.get(name);
+        if let Some(ref e) = i {
+            let server_name = &e.configure.server;
+            let svr_entity = self.server.get(server_name);
+            let addr = svr_entity.map(|e| e.http_addr);
+            addr
+        } else {
+            None
+        }
+    }
+
     pub async fn init(&mut self) {
         self.app.init().await;
         self.index.init().await;

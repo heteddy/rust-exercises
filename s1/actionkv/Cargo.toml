@@ -33,7 +33,7 @@ rdkafka = { version = "0.36", features = ["cmake-build"] }
 redis = { version = "0.25.3", features = ["tokio-comp"] }
 serde = "1.0"
 serde_derive = "1.0"
-serde_json = "1.0.114"
+serde_json = "1.0.118"
 serde_yaml = "0.9.34"
 thread-control = "*"
 time = "0.3.36"

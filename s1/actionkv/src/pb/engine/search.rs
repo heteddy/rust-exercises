@@ -26,8 +26,23 @@ pub struct SearchRet {
     Data: Vec<HashMap<String, value::Value>>,
 }
 
+// 创建一个collection
 #[derive(Debug, Clone, Default, Validate, Deserialize, Serialize)]
 pub struct CollectionReq {
     pub request_id: String,
     pub name: String,
 }
+
+// 列出所有的collection
+#[derive(Debug, Clone, Default, Validate, Deserialize, Serialize)]
+pub struct ListCollectionReq {
+    pub request_id: String,
+    pub server: String, // 服务器名称
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct CollectionInfoReq {
+    pub request_id: String,
+    pub server: String, // 服务器名称
+}
+
