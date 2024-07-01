@@ -34,9 +34,9 @@ pub fn init_app(tx: mpsc::Sender<sync::SyncData>) -> Router {
         .merge(server::register_route(tx.clone()))
         .merge(preprocess::register_route(tx.clone()))
         .merge(index::register_route(tx.clone()))
-        .merge(template::register_route(tx))
+        .merge(template::register_route(tx.clone()))
         .merge(data::register_route())
-        .merge(engine::register_route())
+        .merge(engine::register_route(tx))
         // .route_layer(layer)   // 仅命中路由才打印
         .fallback(fallback);
 

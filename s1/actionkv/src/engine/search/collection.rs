@@ -1,4 +1,5 @@
 use crate::cache::repo;
+use crate::cache::sync;
 use crate::dao::base::EntityDao;
 use crate::dao::index::{IndexDao, IndexEntity};
 use crate::engine::qdrant::collection::{
@@ -12,6 +13,7 @@ use crate::pb::engine::qdrant::collection::{
 };
 use crate::pb::engine::search;
 use crate::pb::svr::ApiError;
+use crate::server::index::IndexSvc;
 use chrono::prelude::*;
 use std::convert::AsRef;
 use std::fmt::Debug;
@@ -19,11 +21,13 @@ use tokio::sync::mpsc;
 use tracing::{event, info, instrument, span, Level};
 
 #[derive(Clone)]
-pub struct CollectionSvc {}
+pub struct CollectionSvc {
+    sender: mpsc::Sender<sync::SyncData>,
+}
 
 impl CollectionSvc {
-    pub fn new() -> Self {
-        CollectionSvc {}
+    pub fn new(tx: mpsc::Sender<sync::SyncData>) -> Self {
+        CollectionSvc { sender: tx }
     }
     // #[instrument(skip_all)]
     // pub fn get_host_address(
@@ -77,6 +81,15 @@ impl CollectionSvc {
                 for _req in indexes.into_iter() {
                     let ret = index::create_field_index(&svr_host, _req).await?;
                 }
+                // TODO: 更新alias，删除原alias，增加inactive到和active
+
+                let mut e2 = e.clone();
+                e2.active = e2.inactive.clone();
+                collection
+                // 1. delete alias
+
+
+                // 2. create alias
                 anyhow::Ok(ret)
             }
         } else {
@@ -91,7 +104,10 @@ impl CollectionSvc {
         // 获取collection的server地址
 
         let r = repo::IndexConfigRepo::get_instance();
-        let addr = r.read().unwrap().get_svr_http_address(collection_name.as_ref());
+        let addr = r
+            .read()
+            .unwrap()
+            .get_svr_http_address(collection_name.as_ref());
 
         if let Some(ref svr_host) = addr {
             if svr_host.len() == 0 {
@@ -105,7 +121,7 @@ impl CollectionSvc {
                 let ret = get_collection(svr_host, collection_name).await?;
                 anyhow::Ok(ret)
             }
-        }else {
+        } else {
             anyhow::Result::Err(anyhow::anyhow!(
                 "not found index entity {:?}",
                 collection_name.as_ref()
@@ -122,7 +138,7 @@ impl CollectionSvc {
             Some(host) => host.http_addr.clone(),
             None => String::new(),
         };
-        
+
         if svr_host.len() == 0 {
             anyhow::Result::Err(anyhow::anyhow!("not found server host={:?}", svr_host))
         } else {

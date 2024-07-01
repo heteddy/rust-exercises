@@ -202,6 +202,29 @@ POST /collections/aliases
     ]
 }
 */
+
+/// 支持增删alias
+pub async fn replace_alias(
+    host: impl AsRef<str>,
+    req: collection::ChangeAliases,
+    // body: serde_json::Value,
+) -> anyhow::Result<collection::CollectionOperationResponse> {
+    let url = format!("http://{host}/collections/aliases", host = host.as_ref());
+    let client = Client::new();
+    let response = client.post(&url).json(&req).send().await?;
+    let code = response.status().as_u16();
+    if code < 400 {
+        let body = response.text().await?;
+        let resp = serde_json::from_str(&body)?;
+        anyhow::Ok(resp)
+    } else {
+        anyhow::Result::Err(anyhow::anyhow!(
+            "engine request error; status code = {:?}",
+            response.status().as_u16()
+        ))
+    }
+}
+
 /// 支持增删alias
 pub async fn update_alias(
     host: impl AsRef<str>,

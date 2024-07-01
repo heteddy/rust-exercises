@@ -88,6 +88,33 @@ impl Into<IndexResp> for IndexEntity {
     }
 }
 
+impl Into<collection::ChangeAliases> for IndexEntity {
+    fn into(self) -> collection::ChangeAliases {
+        let mut vec = Vec::with_capacity(2);
+        let del_alias = collection::DeleteAlias {
+            alias_name: self.name.clone(),
+        };
+
+        let op1 = collection::AliasOperations {
+            action: Some(collection::alias_operations::Action::DeleteAlias(del_alias)),
+        };
+        vec.push(op1);
+        let add_alias = collection::CreateAlias {
+            collection_name: self.inactive.unwrap().clone(),
+            alias_name: self.name.clone(),
+        };
+        let op2 = collection::AliasOperations{
+            action: Some(collection::alias_operations::Action::CreateAlias(add_alias)),
+        };
+        vec.push(op2);
+        let req = collection::ChangeAliases{
+            actions: vec,
+            timeout:None,
+        };
+        req
+    }
+}
+
 impl Into<collection::CreateCollection> for IndexEntity {
     fn into(self) -> collection::CreateCollection {
         let oc = collection::OptimizersConfigDiff {

@@ -3,10 +3,13 @@ use crate::dao::base::EntityDao;
 use crate::dao::index::{IndexDao, IndexEntity};
 use crate::pb::svr::ApiError;
 use chrono::prelude::*;
+
 use std::convert::AsRef;
 use std::fmt::Debug;
 use tokio::sync::mpsc;
 use tracing::{info, instrument};
+
+// static GLOBAL_INDEX_SVC: OnceCell<IndexSvc> = OnceCell::new();
 
 #[derive(Clone)]
 pub struct IndexSvc {
@@ -30,7 +33,7 @@ impl IndexSvc {
             let time_str = local_time.format("%Y%m%d%H%M%S").to_string();
             e.inactive = Some(format!("{name}_{tm}", name = e.name, tm = time_str));
         }
-        
+
         let _e = self.repo.insert(e).await?;
         let _ = self
             .sender
