@@ -18,7 +18,6 @@ impl Into<bson::Bson> for MappingField {
     }
 }
 
-
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Setting {
     pub replicas: u32,
@@ -44,7 +43,7 @@ impl Into<bson::Bson> for Setting {
 pub struct Configure {
     pub bert: String,
     pub server: String,
-    pub preprocess: String,
+    pub preprocess: String, // 模版不需要跟index绑定
 }
 
 impl Into<bson::Bson> for Configure {
@@ -59,8 +58,8 @@ pub struct IndexReq {
     pub name: String, // 索引名称; 也是alias
     pub active: Option<String>,
     pub inactive: Option<String>,
-    pub setting: Setting,
-    pub mapping: Vec<MappingField>, // 设置字段以及类型
+    pub settings: Setting,
+    pub mappings: Vec<MappingField>, // 设置字段以及类型
     pub configure: Configure,
 }
 
@@ -71,8 +70,8 @@ pub struct IndexResp {
     pub name: String, // 索引名称; 也是alias
     pub active: Option<String>,
     pub inactive: Option<String>,
-    pub setting: Setting,
-    pub mapping: Vec<MappingField>, // 设置字段以及类型
+    pub settings: Setting,
+    pub mappings: Vec<MappingField>, // 设置字段以及类型
     pub configure: Configure,
     pub created_at: String,
     pub updated_at: String,

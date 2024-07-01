@@ -515,6 +515,7 @@ pub struct ChangeAliases {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AliasOperations {
+    #[serde(flatten)]
     pub action: Option<alias_operations::Action>,
 }
 /// Nested message and enum types in `AliasOperations`.
@@ -522,8 +523,11 @@ pub mod alias_operations {
     use super::*;
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum Action {
+        #[serde(rename="create_alias")]
         CreateAlias(super::CreateAlias),
+        #[serde(rename="rename_alias")]
         RenameAlias(super::RenameAlias),
+        #[serde(rename="delete_alias")]
         DeleteAlias(super::DeleteAlias),
     }
 }

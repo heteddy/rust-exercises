@@ -185,22 +185,7 @@ POST /collections/aliases
 }
 switch alias
 
-POST /collections/aliases
-{
-    "actions": [
-        {
-            "delete_alias": {
-                "alias_name": "production_collection"
-            }
-        },
-        {
-            "create_alias": {
-                "collection_name": "example_collection",
-                "alias_name": "production_collection"
-            }
-        }
-    ]
-}
+
 */
 
 /// 支持增删alias
@@ -224,7 +209,24 @@ pub async fn replace_alias(
         ))
     }
 }
-
+/* 
+POST /collections/aliases
+{
+    "actions": [
+        {
+            "delete_alias": {
+                "alias_name": "production_collection"
+            }
+        },
+        {
+            "create_alias": {
+                "collection_name": "example_collection",
+                "alias_name": "production_collection"
+            }
+        }
+    ]
+}
+*/
 /// 支持增删alias
 pub async fn update_alias(
     host: impl AsRef<str>,

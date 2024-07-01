@@ -38,8 +38,8 @@ pub struct IndexEntity {
     pub name: String, // 索引名称; 也是alias
     pub active: Option<String>,
     pub inactive: Option<String>,
-    pub setting: index::Setting,
-    pub mapping: Vec<index::MappingField>, // 设置字段以及类型
+    pub settings: index::Setting,
+    pub mappings: Vec<index::MappingField>, // 设置字段以及类型
     pub configure: index::Configure,
     #[serde(with = "chrono_datetime_as_bson_datetime")] //只能支持utc
     pub created_at: DateTime<Utc>,
@@ -56,8 +56,8 @@ impl From<IndexReq> for IndexEntity {
             name: value.name,
             active: value.active,
             inactive: value.inactive,
-            setting: value.setting,
-            mapping: value.mapping,
+            settings: value.settings,
+            mappings: value.mappings,
             configure: value.configure,
             created_at: Utc::now(),
             updated_at: Utc::now(),
@@ -78,8 +78,8 @@ impl Into<IndexResp> for IndexEntity {
             name: self.name,
             active: self.active,
             inactive: self.inactive,
-            setting: self.setting,
-            mapping: self.mapping,
+            settings: self.settings,
+            mappings: self.mappings,
             configure: self.configure,
             created_at: utils::format_chrono_utc_to_local(&self.created_at),
             updated_at: utils::format_chrono_utc_to_local(&self.updated_at),
@@ -122,7 +122,7 @@ impl Into<collection::CreateCollection> for IndexEntity {
             ..Default::default()
         };
         let vc = collection::VectorParams {
-            size: self.setting.vector_size as u64,
+            size: self.settings.vector_size as u64,
             distance: collection::Distance::Euclid.as_str_name().to_owned(),
             on_disk: Some(true),
             ..Default::default()
@@ -133,8 +133,8 @@ impl Into<collection::CreateCollection> for IndexEntity {
             on_disk_payload: Some(true),
             optimizers_config: Some(oc),
             vectors: Some(vc),
-            shard_number: Some(self.setting.shards),
-            replication_factor: Some(self.setting.replicas),
+            shard_number: Some(self.settings.shards),
+            replication_factor: Some(self.settings.replicas),
             ..Default::default()
         };
         // cc.optimizers_config =
@@ -164,8 +164,8 @@ impl Entity for IndexEntity {
             "app_id": rhs.app_id.clone(),
             "active": rhs.active.clone(),
             "inactive": rhs.inactive.clone(),
-            "setting": rhs.setting.clone(),  // 这里需要实现into<Bson>, 会完成自动转化
-            "mapping": rhs.mapping.clone(),
+            "setting": rhs.settings.clone(),  // 这里需要实现into<Bson>, 会完成自动转化
+            "mapping": rhs.mappings.clone(),
             "configure": rhs.configure.clone(),
             "updated_at": rhs.updated_at,
         }
@@ -180,9 +180,9 @@ impl IndexEntity {
     //     pub is_index: bool,
     // }
     pub fn to_field_index_collection(&self) -> Vec<points::CreateFieldIndexCollection> {
-        let mut rets = Vec::with_capacity(self.mapping.len());
+        let mut rets = Vec::with_capacity(self.mappings.len());
 
-        for f in &self.mapping {
+        for f in &self.mappings {
             if f.is_index {
                 let inactive = self.inactive.clone();
                 rets.push(points::CreateFieldIndexCollection {

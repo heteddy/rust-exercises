@@ -8,7 +8,7 @@ use crate::engine::qdrant::collection::{
 };
 use crate::engine::qdrant::index;
 use crate::pb::engine::qdrant::collection::{
-    CollectionOperationResponse, CreateCollection, GetCollectionInfoResponse,
+    ChangeAliases, CollectionOperationResponse, CreateCollection, GetCollectionInfoResponse,
     ListCollectionsResponse,
 };
 use crate::pb::engine::search;
@@ -80,16 +80,24 @@ impl CollectionSvc {
                 info!("start to create index len={:?}", indexes.len());
                 for _req in indexes.into_iter() {
                     let ret = index::create_field_index(&svr_host, _req).await?;
+                    info!("create index:{:?}", ret);
                 }
+
                 // TODO: 更新alias，删除原alias，增加inactive到和active
 
                 let mut e2 = e.clone();
                 e2.active = e2.inactive.clone();
-                collection
-                // 1. delete alias
+                let req: ChangeAliases = e2.clone().into(); // 后面还要继续用
+                                                            // 1. delete alias
+                                                                // 2. create alias
+                let req_j = serde_json::to_string_pretty(&req).unwrap();
+                info!("updating alias:{:?}", req_j);
 
-
-                // 2. create alias
+                let ret2 = update_alias(&svr_host, req).await?;
+                info!("created alias:{:?}", ret2);
+                let svc = IndexSvc::new(self.sender.clone());
+                svc.update(e2.id.as_ref().unwrap().to_hex(), e2);
+                info!("updated index");
                 anyhow::Ok(ret)
             }
         } else {
