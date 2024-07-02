@@ -411,6 +411,15 @@ impl IndexConfigRepo {
         self.index.get(name)
     }
 
+    pub fn get_active_collection(&self, name: impl AsRef<str>) -> Option<String> {
+        let i = self.index.get(name);
+        if let Some(ref e) = i {
+            e.active.clone()
+        } else {
+            None
+        }
+    }
+
     pub fn get_svr_http_address(&self, name: impl AsRef<str>) -> Option<String> {
         let i = self.index.get(name);
         if let Some(ref e) = i {

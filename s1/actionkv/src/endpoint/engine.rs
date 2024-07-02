@@ -2,12 +2,15 @@
 /// 配置修改collection
 use crate::cache::repo;
 use crate::cache::sync;
-use crate::engine::search::collection::CollectionSvc;
-use crate::pb::engine::qdrant::collection::CollectionOperationResponse;
+use crate::engine::engine::collection::CollectionSvc;
+use crate::pb::engine::qdrant::collection::{
+    CollectionOperationResponse, GetCollectionInfoResponse,
+};
 use crate::pb::engine::search::CollectionReq;
 use crate::pb::svr::{ApiError, ApiResponse, InternalError, Pagination};
 use crate::server;
 use crate::transport::middleware::auth::auth_middleware;
+// use anyhow::Ok;
 use axum::extract::{Json, Path, Query, State};
 use axum::handler::Handler;
 use axum::middleware::from_fn_with_state;
@@ -27,14 +30,30 @@ pub async fn create_collection(
 ) -> Result<ApiResponse<CollectionOperationResponse>, ApiError> {
     // 创建collection; 设置
     match svc.create(payload).await {
-        Ok(resp) => Ok(ApiResponse::from_result(resp)),
-        Err(e) => Err(InternalError::from(e.to_string()).into()),
+        anyhow::Result::Ok(resp) => Ok(ApiResponse::from_result(resp)),
+        anyhow::Result::Err(e) => Err(InternalError::from(e.to_string()).into()),
     }
 }
 // 获取单个collection
 #[instrument(skip_all)]
-async fn retrieve(State(svc): State<CollectionSvc>, Path(name): Path<String>) {
-
+async fn retrieve_collection(
+    State(svc): State<CollectionSvc>,
+    Path(name): Path<String>,
+) -> Result<ApiResponse<GetCollectionInfoResponse>, ApiError> {
+    match svc.get(&name).await {
+        anyhow::Result::Ok(resp) => Ok(ApiResponse::from_result(resp)),
+        anyhow::Result::Err(e) => Err(InternalError::from(e.to_string()).into()),
+    }
+}
+#[instrument(skip_all)]
+async fn delete_collection(
+    State(svc): State<CollectionSvc>,
+    Path(name): Path<String>,
+) -> Result<ApiResponse<CollectionOperationResponse>, ApiError> {
+    match svc.delete(&name).await {
+        anyhow::Result::Ok(resp) => Ok(ApiResponse::from_result(resp)),
+        anyhow::Result::Err(e) => Err(InternalError::from(e.to_string()).into()),
+    }
 }
 
 // 修改alias
@@ -47,5 +66,9 @@ pub fn register_route(tx: mpsc::Sender<sync::SyncData>) -> Router {
     let svc = CollectionSvc::new(tx);
     // _router = _router.route("/collections/:id", get(retrieve).put(update).delete(del));
     _router = _router.route("/collections", post(create_collection));
+    _router = _router.route(
+        "/collections/:name",
+        get(retrieve_collection).delete(delete_collection),
+    );
     Router::new().nest("/api/engine", _router).with_state(svc)
 }
