@@ -4,7 +4,7 @@ use crate::cache::repo;
 use crate::cache::sync;
 use crate::engine::engine::collection::CollectionSvc;
 use crate::pb::engine::qdrant::collection::{
-    CollectionOperationResponse, GetCollectionInfoResponse,
+    CollectionOperationResponse, GetCollectionInfoResponse, ListCollectionsResponse,
 };
 use crate::pb::engine::search::CollectionReq;
 use crate::pb::svr::{ApiError, ApiResponse, InternalError, Pagination};
@@ -56,15 +56,24 @@ async fn delete_collection(
     }
 }
 
-// 修改alias
-async fn alias() {}
+// // 修改alias
+// async fn alias() {}
 // 获取collections
-async fn list_collections() {}
+async fn list_collections(
+    State(svc): State<CollectionSvc>,
+    Path(svr): Path<String>,
+) -> Result<ApiResponse<ListCollectionsResponse>, ApiError> {
+    match svc.list(svr).await {
+        anyhow::Result::Ok(resp) => Ok(ApiResponse::from_result(resp)),
+        anyhow::Result::Err(e) => Err(InternalError::from(e.to_string()).into()),
+    }
+}
 
 pub fn register_route(tx: mpsc::Sender<sync::SyncData>) -> Router {
     let mut _router = Router::new();
     let svc = CollectionSvc::new(tx);
     // _router = _router.route("/collections/:id", get(retrieve).put(update).delete(del));
+    _router = _router.route("/list-collections/:svr", get(list_collections));
     _router = _router.route("/collections", post(create_collection));
     _router = _router.route(
         "/collections/:name",

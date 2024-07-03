@@ -103,13 +103,13 @@ impl Into<collection::ChangeAliases> for IndexEntity {
             collection_name: self.inactive.unwrap().clone(),
             alias_name: self.name.clone(),
         };
-        let op2 = collection::AliasOperations{
+        let op2 = collection::AliasOperations {
             action: Some(collection::alias_operations::Action::CreateAlias(add_alias)),
         };
         vec.push(op2);
-        let req = collection::ChangeAliases{
+        let req = collection::ChangeAliases {
             actions: vec,
-            timeout:None,
+            timeout: None,
         };
         req
     }
@@ -160,7 +160,7 @@ impl Entity for IndexEntity {
         self.updated_at = updated_at;
     }
     fn updating_doc(&self, rhs: &Self) -> Document {
-        doc! {
+        let d = doc! {
             "app_id": rhs.app_id.clone(),
             "active": rhs.active.clone(),
             "inactive": rhs.inactive.clone(),
@@ -168,7 +168,9 @@ impl Entity for IndexEntity {
             "mapping": rhs.mappings.clone(),
             "configure": rhs.configure.clone(),
             "updated_at": rhs.updated_at,
-        }
+        };
+        info!("generating doc {:?}", d);
+        d
     }
 }
 

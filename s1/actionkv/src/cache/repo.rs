@@ -503,10 +503,10 @@ impl IndexConfigRepo {
     #[instrument(skip(self))]
     pub fn handle_data(&mut self, mut data: sync::SyncData) {
         let t: &str = data.get_type();
-        info!(
-            "index configuration received data_type={:?},msg={:?}",
-            t, data
-        );
+        // info!(
+        //     "index configuration received data_type={:?},msg={:?}",
+        //     t, data
+        // );
         match t {
             "app" => {
                 self.app.handle_body(data);

@@ -478,7 +478,7 @@ pub mod payload_index_params {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PayloadSchemaInfo {
     /// Field data type
-    pub data_type: i32,
+    pub data_type: String,
     /// Field index parameters
     pub params: Option<PayloadIndexParams>,
     /// Number of points indexed within this field indexed
@@ -490,7 +490,7 @@ pub struct CollectionInfo {
     /// operating condition of the collection
     pub status: String,
     /// status of collection optimizers
-    pub optimizer_status: Option<OptimizerStatus>,
+    pub optimizer_status: String, //Option<OptimizerStatus>,
     /// Approximate number of vectors in the collection
     pub vectors_count: Option<u64>,
     /// Number of independent segments
@@ -523,11 +523,11 @@ pub mod alias_operations {
     use super::*;
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum Action {
-        #[serde(rename="create_alias")]
+        #[serde(rename = "create_alias")]
         CreateAlias(super::CreateAlias),
-        #[serde(rename="rename_alias")]
+        #[serde(rename = "rename_alias")]
         RenameAlias(super::RenameAlias),
-        #[serde(rename="delete_alias")]
+        #[serde(rename = "delete_alias")]
         DeleteAlias(super::DeleteAlias),
     }
 }

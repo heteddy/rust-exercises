@@ -64,7 +64,7 @@ where
             .col()
             .find_one_and_update(doc! {"_id":_id}, doc! { "$set": e.updating_doc(&e)}, opt)
             .await?;
-
+        
         e.update(Some(_id), updated_at);
         Ok(e)
     }

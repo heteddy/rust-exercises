@@ -48,6 +48,7 @@ pub async fn get_collection(
         host = host.as_ref(),
         name = collection_name.as_ref()
     );
+    info!("url={:?}", url);
     let response = client.get(url).send().await?;
     let status_code = response.status().as_u16();
     info!("create response status={:?}", status_code);
@@ -104,7 +105,9 @@ pub async fn create_collection(
     }
 }
 
-pub async fn list_collections(host: impl AsRef<str>) -> anyhow::Result<collection::ListCollectionsResponse> {
+pub async fn list_collections(
+    host: impl AsRef<str>,
+) -> anyhow::Result<collection::ListCollectionsResponse> {
     let url = format!("http://{host}/collections", host = host.as_ref());
     let client = Client::new();
 
@@ -209,7 +212,7 @@ switch alias
 //         ))
 //     }
 // }
-/* 
+/*
 POST /collections/aliases
 {
     "actions": [
