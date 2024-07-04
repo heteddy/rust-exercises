@@ -255,9 +255,9 @@ pub async fn update_alias(
 /*
 GET /collections/{collection_name}/aliases
 */
-pub async fn list_alias(
+pub async fn list_collection_alias(
     host: impl AsRef<str>,
-    collection_name: impl AsRef<str>,
+    collection_name: impl AsRef<str> + std::fmt::Debug,
 ) -> anyhow::Result<collection::ListAliasesResponse> {
     let url = format!(
         "http://{host}/collections/{name}/aliases",

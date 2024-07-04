@@ -27,3 +27,4 @@ pub mod server;
 pub mod transport;
 pub mod utils;
 pub mod engine;
+pub mod vdb;

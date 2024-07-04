@@ -1,4 +1,9 @@
-use crate::pb::engine::qdrant::points;
+use crate::pb::engine::qdrant::points::{
+    vectors, CountResponse, DeletePoints, DiscoverBatchResponse, DiscoverResponse, GetPoints,
+    GetResponse, PointsOperationResponse, RecommendBatchResponse, RecommendGroupsResponse,
+    RecommendResponse, RetrievedPoint, ScoredPoint, ScrollResponse, SearchBatchResponse,
+    SearchResponse, UpdateBatchResponse, UpsertPoints,
+};
 use anyhow;
 use anyhow::Ok;
 use http::Method;
@@ -50,5 +55,57 @@ Count(context.Context, *CountPoints) (*CountResponse, error)
 UpdateBatch(context.Context, *UpdateBatchPoints) (*UpdateBatchResponse, error)
 */
 
+pub async fn upsert(
+    host: impl AsRef<str>,
+    req: UpsertPoints,
+) -> anyhow::Result<PointsOperationResponse> {
+    unimplemented!()
+}
 
-pub async fn upsert(host: impl AsRef<str>) {}
+pub async fn delete(
+    host: impl AsRef<str>,
+    req: DeletePoints,
+) -> anyhow::Result<PointsOperationResponse> {
+    unimplemented!()
+}
+
+pub async fn get(host: impl AsRef<str>, req: GetPoints) -> anyhow::Result<GetResponse> {
+    unimplemented!()
+}
+
+pub async fn search(
+    host: impl AsRef<str>,
+    // req: SearchPoints,
+) -> anyhow::Result<SearchResponse> {
+    unimplemented!()
+}
+
+pub async fn recommend(
+    host: impl AsRef<str>,
+    // req: RecommendPoints,
+) -> anyhow::Result<RecommendResponse> {
+    unimplemented!()
+}
+
+pub async fn discover(
+    host: impl AsRef<str>,
+    // req: DiscoverPoints,
+) -> anyhow::Result<DiscoverResponse> {
+    unimplemented!()
+}
+
+mod tests {
+    use super::*;
+    #[test]
+    fn test_upsert() {}
+    #[test]
+    fn test_get() {}
+    #[test]
+    fn test_delete() {}
+    #[test]
+    fn test_search() {}
+    #[test]
+    fn test_recommend() {}
+    #[test]
+    fn test_discover() {}
+}

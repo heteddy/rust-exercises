@@ -7,3 +7,5 @@ pub mod template;
 pub mod search;  
 pub mod data;
 pub mod engine;
+pub mod points;
+pub mod recommend;
