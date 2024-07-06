@@ -18,6 +18,7 @@ use std::fmt::Debug;
 use tokio::sync::mpsc;
 use tracing::{event, info, instrument, span, Level};
 
+#[derive(Clone)]
 pub struct PointSvc {}
 
 impl PointSvc {
@@ -62,7 +63,7 @@ impl PointSvc {
         }
         delete_points(host.unwrap(), active.unwrap(), req).await
     }
-    
+
     pub async fn get_points(
         &self,
         name: String,

@@ -10,7 +10,7 @@ use axum::{
 use std::time::Duration;
 // use tokio::time::sleep;
 use crate::cache::sync;
-use crate::endpoint::{app, bert, data, index, preprocess, server, template,engine};
+use crate::endpoint::{app, bert, points, index, preprocess, server, template,engine};
 
 use tokio::sync::mpsc;
 use tower::{self, ServiceBuilder};
@@ -35,7 +35,7 @@ pub fn init_app(tx: mpsc::Sender<sync::SyncData>) -> Router {
         .merge(preprocess::register_route(tx.clone()))
         .merge(index::register_route(tx.clone()))
         .merge(template::register_route(tx.clone()))
-        .merge(data::register_route())
+        .merge(points::register_route())
         .merge(engine::register_route(tx))
         // .route_layer(layer)   // 仅命中路由才打印
         .fallback(fallback);

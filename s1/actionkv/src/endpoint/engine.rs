@@ -28,10 +28,10 @@ use tracing::{event, instrument, span, Level};
 pub async fn create_collection(
     State(svc): State<CollectionSvc>,
     Json(payload): Json<CollectionReq>,
-) -> Result<ApiResponse<CollectionOperationResponse>, ApiError> {
+) -> Result<CollectionOperationResponse, ApiError> {
     // 创建collection; 设置
     match svc.create(payload).await {
-        anyhow::Result::Ok(resp) => Ok(ApiResponse::from_result(resp)),
+        anyhow::Result::Ok(resp) => Ok(resp),
         anyhow::Result::Err(e) => Err(InternalError::from(e.to_string()).into()),
     }
 }
@@ -40,9 +40,9 @@ pub async fn create_collection(
 async fn retrieve_collection(
     State(svc): State<CollectionSvc>,
     Path(name): Path<String>,
-) -> Result<ApiResponse<GetCollectionInfoResponse>, ApiError> {
+) -> Result<GetCollectionInfoResponse, ApiError> {
     match svc.get(&name).await {
-        anyhow::Result::Ok(resp) => Ok(ApiResponse::from_result(resp)),
+        anyhow::Result::Ok(resp) => Ok(resp),
         anyhow::Result::Err(e) => Err(InternalError::from(e.to_string()).into()),
     }
 }
@@ -50,9 +50,9 @@ async fn retrieve_collection(
 async fn delete_collection(
     State(svc): State<CollectionSvc>,
     Path(name): Path<String>,
-) -> Result<ApiResponse<CollectionOperationResponse>, ApiError> {
+) -> Result<CollectionOperationResponse, ApiError> {
     match svc.delete(&name).await {
-        anyhow::Result::Ok(resp) => Ok(ApiResponse::from_result(resp)),
+        anyhow::Result::Ok(resp) => Ok(resp),
         anyhow::Result::Err(e) => Err(InternalError::from(e.to_string()).into()),
     }
 }
@@ -62,9 +62,9 @@ async fn change_alias(
     State(svc): State<CollectionSvc>,
     Path(name): Path<String>,
     Json(payload): Json<ChangeAliases>,
-) -> Result<ApiResponse<CollectionOperationResponse>, ApiError> {
+) -> Result<CollectionOperationResponse, ApiError> {
     match svc.change_alias(name, payload).await {
-        anyhow::Result::Ok(resp) => Ok(ApiResponse::from_result(resp)),
+        anyhow::Result::Ok(resp) => Ok(resp),
         anyhow::Result::Err(e) => Err(InternalError::from(e.to_string()).into()),
     }
 }
@@ -72,9 +72,9 @@ async fn change_alias(
 async fn get_alias(
     State(svc): State<CollectionSvc>,
     Path(name): Path<String>,
-) -> Result<ApiResponse<ListAliasesResponse>, ApiError> {
+) -> Result<ListAliasesResponse, ApiError> {
     match svc.get_alias(name).await {
-        anyhow::Result::Ok(resp) => Ok(ApiResponse::from_result(resp)),
+        anyhow::Result::Ok(resp) => Ok(resp),
         anyhow::Result::Err(e) => Err(InternalError::from(e.to_string()).into()),
     }
 }
@@ -83,9 +83,9 @@ async fn get_alias(
 async fn list_collections(
     State(svc): State<CollectionSvc>,
     Path(svr): Path<String>,
-) -> Result<ApiResponse<ListCollectionsResponse>, ApiError> {
+) -> Result<ListCollectionsResponse, ApiError> {
     match svc.list(svr).await {
-        anyhow::Result::Ok(resp) => Ok(ApiResponse::from_result(resp)),
+        anyhow::Result::Ok(resp) => Ok(resp),
         anyhow::Result::Err(e) => Err(InternalError::from(e.to_string()).into()),
     }
 }
