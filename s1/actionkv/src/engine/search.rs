@@ -2,8 +2,8 @@ use crate::cache::repo;
 use crate::cache::sync;
 use crate::dao::base::EntityDao;
 use crate::dao::index::{IndexDao, IndexEntity};
-use crate::vdb::qdrant::index;
-use crate::vdb::qdrant::points::search;
+use crate::driver::qdrant::index;
+use crate::driver::qdrant::points as driver_points;
 use crate::pb::engine::qdrant::collection;
 use crate::pb::engine::qdrant::collection::{
     ChangeAliases, CollectionOperationResponse, CreateCollection, GetCollectionInfoResponse,

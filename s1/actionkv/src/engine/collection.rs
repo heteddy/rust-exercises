@@ -2,11 +2,11 @@ use crate::cache::repo;
 use crate::cache::sync;
 use crate::dao::base::EntityDao;
 use crate::dao::index::{IndexDao, IndexEntity};
-use crate::vdb::qdrant::collection::{
+use crate::driver::qdrant::collection::{
     create_collection, delete_collection, get_collection, list_collection_alias, list_collections,
     update_alias, update_collection,
 };
-use crate::vdb::qdrant::index;
+use crate::driver::qdrant::index;
 use crate::pb::engine::qdrant::collection;
 use crate::pb::engine::qdrant::collection::{
     ChangeAliases, CollectionOperationResponse, CreateCollection, GetCollectionInfoResponse,

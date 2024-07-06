@@ -1,3 +1,4 @@
+use crate::pb::engine::qdrant::points::{PointStruct, UpsertPoints};
 use serde::{Deserialize, Serialize};
 use serde_json::{value, Map};
 use std::collections::HashMap;
@@ -8,7 +9,18 @@ use validator::Validate;
 pub struct InboundDataReq {
     pub id: String,
     body: HashMap<String, value::Value>,
+    vector: Vec<f32>,
     version: String,
+}
+
+impl Into<PointStruct> for InboundDataReq {
+    fn into(self) -> PointStruct {
+        PointStruct {
+            id: Some(self.id),
+            payload: self.body,
+            vector: self.vector,
+        }
+    }
 }
 
 impl InboundDataReq {}
@@ -45,4 +57,3 @@ pub struct CollectionInfoReq {
     pub request_id: String,
     pub server: String, // 服务器名称
 }
-

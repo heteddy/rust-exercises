@@ -1,7 +1,7 @@
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{self, json, Map, Number, Value};
 use std::collections::HashMap;
 
 // #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -629,11 +629,8 @@ pub struct ShardTransferInfo {
 pub struct MoveShard {
     /// Local shard id
     pub shard_id: u32,
-
     pub from_peer_id: u64,
-
     pub to_peer_id: u64,
-
     pub method: Option<i32>,
 }
 
@@ -1014,70 +1011,70 @@ pub struct Struct {
 ///
 /// The JSON representation for `Value` is a JSON value.
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Value {
-    /// The kind of value.
-    pub kind: Option<value::Kind>,
-}
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct Value {
+//     /// The kind of value.
+//     pub kind: Option<value::Kind>,
+// }
 /// Nested message and enum types in `Value`.
-pub mod value {
-    /// The kind of value.
-    use super::*;
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub enum Kind {
-        /// Represents a null value.
-        NullValue(i32),
-        /// Represents a double value.
-        DoubleValue(f64),
-        /// Represents an integer value
-        IntegerValue(i64),
-        /// Represents a string value.
-        StringValue(String),
-        /// Represents a boolean value.
-        BoolValue(bool),
-        /// Represents a structured value.
-        StructValue(super::Struct),
-        /// Represents a repeated `Value`.
-        ListValue(super::ListValue),
-    }
-}
+// pub mod value {
+//     /// The kind of value.
+//     use super::*;
+//     #[derive(Debug, Clone, Serialize, Deserialize)]
+//     pub enum Kind {
+//         /// Represents a null value.
+//         NullValue(i32),
+//         /// Represents a double value.
+//         DoubleValue(f64),
+//         /// Represents an integer value
+//         IntegerValue(i64),
+//         /// Represents a string value.
+//         StringValue(String),
+//         /// Represents a boolean value.
+//         BoolValue(bool),
+//         /// Represents a structured value.
+//         StructValue(super::Struct),
+//         /// Represents a repeated `Value`.
+//         ListValue(super::ListValue),
+//     }
+// }
 /// `ListValue` is a wrapper around a repeated field of values.
 ///
 /// The JSON representation for `ListValue` is a JSON array.
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ListValue {
-    /// Repeated field of dynamically typed values.
-    pub values: Vec<Value>,
-}
-/// `NullValue` is a singleton enumeration to represent the null value for the
-/// `Value` type union.
-///
-///   The JSON representation for `NullValue` is JSON `null`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[repr(i32)]
-pub enum NullValue {
-    /// Null value.
-    NullValue = 0,
-}
-impl NullValue {
-    /// String value of the enum field names used in the ProtoBuf definition.
-    ///
-    /// The values are not transformed in any way and thus are considered stable
-    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
-    pub fn as_str_name(&self) -> &'static str {
-        match self {
-            NullValue::NullValue => "NULL_VALUE",
-        }
-    }
-    /// Creates an enum from field names used in the ProtoBuf definition.
-    pub fn from_str_name(value: &str) -> Option<Self> {
-        match value {
-            "NULL_VALUE" => Some(Self::NullValue),
-            _ => None,
-        }
-    }
-}
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct ListValue {
+//     /// Repeated field of dynamically typed values.
+//     pub values: Vec<Value>,
+// }
+// /// `NullValue` is a singleton enumeration to represent the null value for the
+// /// `Value` type union.
+// ///
+// ///   The JSON representation for `NullValue` is JSON `null`.
+// #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+// #[repr(i32)]
+// pub enum NullValue {
+//     /// Null value.
+//     NullValue = 0,
+// }
+// impl NullValue {
+//     /// String value of the enum field names used in the ProtoBuf definition.
+//     ///
+//     /// The values are not transformed in any way and thus are considered stable
+//     /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+//     pub fn as_str_name(&self) -> &'static str {
+//         match self {
+//             NullValue::NullValue => "NULL_VALUE",
+//         }
+//     }
+//     /// Creates an enum from field names used in the ProtoBuf definition.
+//     pub fn from_str_name(value: &str) -> Option<Self> {
+//         match value {
+//             "NULL_VALUE" => Some(Self::NullValue),
+//             _ => None,
+//         }
+//     }
+// }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WriteOrdering {
@@ -1103,8 +1100,10 @@ pub mod read_consistency {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PointId {
+    #[serde(flatten)]
     pub point_id_options: Option<point_id::PointIdOptions>,
 }
+
 /// Nested message and enum types in `PointId`.
 pub mod point_id {
     use super::*;
@@ -1125,7 +1124,6 @@ pub struct SparseIndices {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Vector {
     pub data: Vec<f32>,
-
     pub indices: Option<SparseIndices>,
 }
 /// ---------------------------------------------
@@ -1138,12 +1136,13 @@ pub struct ShardKeySelector {
     pub shard_keys: Vec<ShardKey>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct UpsertPoints {
     /// name of the collection
-    pub collection_name: String,
+    // pub collection_name: String,
     /// Wait until the changes have been applied?
     pub wait: Option<bool>,
+    /// points
     pub points: Vec<PointStruct>,
     /// Write ordering guarantees
     pub ordering: Option<WriteOrdering>,
@@ -1154,27 +1153,32 @@ pub struct UpsertPoints {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeletePoints {
     /// name of the collection
-    pub collection_name: String,
+    // pub collection_name: String,
     /// Wait until the changes have been applied?
     pub wait: Option<bool>,
     /// Affected points
     // pub points: Option<PointsSelector>,
+    // pub points: Option<PointId>,
+    pub points: Vec<String>,
     /// Write ordering guarantees
     pub ordering: Option<WriteOrdering>,
     /// Option for custom sharding to specify used shard keys
     pub shard_key_selector: Option<ShardKeySelector>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct GetPoints {
     /// name of the collection
-    pub collection_name: String,
+    // pub collection_name: String,
     /// List of points to retrieve
-    pub ids: Vec<PointId>,
+    // pub ids: Vec<PointId>,
+    pub ids: Vec<String>,
     /// Options for specifying which payload to include or not
-    pub with_payload: Option<WithPayloadSelector>,
+    // pub with_payload: Option<WithPayloadSelector>,
+    pub with_payload: Option<bool>,
     /// Options for specifying which vectors to include into response
-    pub with_vectors: Option<WithVectorsSelector>,
+    // pub with_vectors: Option<WithVectorsSelector>,
+    pub with_vectors: Option<bool>,
     /// Options for specifying read consistency guarantees
     pub read_consistency: Option<ReadConsistency>,
     /// Specify in which shards to look for the points, if not specified - look in all shards
@@ -1198,7 +1202,8 @@ pub struct UpdatePointVectors {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PointVectors {
     /// ID to update vectors for
-    pub id: Option<PointId>,
+    // pub id: Option<PointId>,
+    pub id: Option<String>,
     /// Named vectors to update, leave others intact
     pub vectors: Option<Vectors>,
 }
@@ -1364,6 +1369,7 @@ pub struct NamedVectors {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Vectors {
+    #[serde(flatten)]
     pub vectors_options: Option<vectors::VectorsOptions>,
 }
 /// Nested message and enum types in `Vectors`.
@@ -1469,7 +1475,8 @@ pub struct UpdateResult {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScoredPoint {
     /// Point id
-    pub id: Option<PointId>,
+    // pub id: Option<PointId>,
+    pub id: Option<String>,
     /// Payload
     pub payload: ::std::collections::HashMap<String, Value>,
     /// Similarity score
@@ -1573,7 +1580,8 @@ impl IntoResponse for CountResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScrollResponse {
     /// Use this offset for the next query
-    pub next_page_offset: Option<PointId>,
+    // pub next_page_offset: Option<PointId>,
+    pub next_page_offset: Option<String>,
 
     pub result: Vec<RetrievedPoint>,
     /// Time spent to process
@@ -1593,8 +1601,8 @@ pub struct CountResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RetrievedPoint {
-    pub id: Option<PointId>,
-
+    // pub id: Option<PointId>,
+    pub id: Option<String>,
     pub payload: ::std::collections::HashMap<String, Value>,
 
     pub vectors: Option<Vectors>,
@@ -1810,15 +1818,15 @@ pub struct PointsIdsList {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PointStruct {
-    pub id: Option<PointId>,
-    pub payload: ::std::collections::HashMap<String, Value>,
-    pub vectors: Option<Vectors>,
+    // pub id: Option<PointId>,
+    pub id: Option<String>,
+    pub payload: std::collections::HashMap<String, Value>,
+    pub vector: Vec<f32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeoPoint {
     pub lon: f64,
-
     pub lat: f64,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
