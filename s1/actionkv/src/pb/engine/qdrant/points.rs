@@ -1205,7 +1205,8 @@ pub struct PointVectors {
     // pub id: Option<PointId>,
     pub id: Option<String>,
     /// Named vectors to update, leave others intact
-    pub vectors: Option<Vectors>,
+    // pub vectors: Option<Vectors>,
+    pub vectors: Option<Vec<f32>>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -1484,7 +1485,8 @@ pub struct ScoredPoint {
     /// Last update operation applied to this point
     pub version: u64,
     /// Vectors to search
-    pub vectors: Option<Vectors>,
+    // pub vectors: Option<Vectors>,
+    pub vectors: Option<Vec<f32>>,
     /// Shard key
     pub shard_key: Option<ShardKey>,
 }
@@ -1604,8 +1606,8 @@ pub struct RetrievedPoint {
     // pub id: Option<PointId>,
     pub id: Option<String>,
     pub payload: ::std::collections::HashMap<String, Value>,
-
-    pub vectors: Option<Vectors>,
+    pub vector: Option<Vec<f32>>,
+    // pub vectors: Option<Vectors>,
     /// Shard key
     pub shard_key: Option<ShardKey>,
 }
