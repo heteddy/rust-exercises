@@ -229,7 +229,6 @@ pub async fn auth_middleware(
     if name.len() > 0 && app_id.len() > 0 && app_secret.len() > 0 {
         // 读index config
         let s: std::sync::RwLockReadGuard<repo::IndexConfigRepo> = svc.read().unwrap();
-        
         if !s.auth(&app_id, &app_secret, &name) {
             return Err((
                 StatusCode::UNAUTHORIZED,

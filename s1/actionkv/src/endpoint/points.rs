@@ -42,7 +42,6 @@ async fn upsert_point(
 async fn retrieve(
     State(svc): State<PointSvc>,
     headers: HeaderMap,
-    Query(id): Query<String>,
     Path(name): Path<String>,
     Json(body): Json<pb_points::GetPoints>,
 ) -> Result<pb_points::GetResponse, ApiError> {
@@ -55,9 +54,8 @@ async fn retrieve(
 
 #[instrument(skip_all)]
 async fn delete_point(
-    State(svc): State<PointSvc>,
+    State(svc): State<PointSvc>, // 必须放在第一个
     headers: HeaderMap,
-    Query(id): Query<String>,
     Path(name): Path<String>,
     Json(body): Json<pb_points::DeletePoints>,
 ) -> Result<pb_points::PointsOperationResponse, ApiError> {
@@ -71,9 +69,29 @@ async fn delete_point(
 pub fn register_route() -> Router {
     let mut _router = Router::new();
     let svc = PointSvc::new();
-    _router = _router.route("/:name/points/upsert", post(upsert_point));
-    _router = _router.route("/:name/points/get", post(retrieve));
-    _router = _router.route("/:name/points/delete", delete(delete_point));
+    /*
+    // 获取全局的state
+    let middle_svc = repo::IndexConfigRepo::get_instance();
+    _route = _route.route(
+        "/berts/:name",
+        // handler middleware的方法
+        post(create.layer(from_fn_with_state(middle_svc, auth_middleware))),
+    );
+    .route_layer(from_fn_with_state(middle_svc, auth_middleware));
+    */
+    let middle_svc = repo::IndexConfigRepo::get_instance();
+    _router = _router.route(
+        "/:name/points/upsert",
+        post(upsert_point).layer(from_fn_with_state(middle_svc.clone(), auth_middleware)),
+    );
+    _router = _router.route(
+        "/:name/points/get",
+        post(retrieve).layer(from_fn_with_state(middle_svc.clone(), auth_middleware)),
+    );
+    _router = _router.route(
+        "/:name/points/delete",
+        delete(delete_point).layer(from_fn_with_state(middle_svc, auth_middleware)),
+    );
     // _router = _router.route("/data", get(list).post(create));
-    Router::new().nest("/api", _router).with_state(svc)
+    Router::new().nest("/api/data", _router).with_state(svc)
 }

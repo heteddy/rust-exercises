@@ -8,16 +8,16 @@ use validator::Validate;
 #[serde(default)]
 pub struct InboundDataReq {
     pub id: String,
-    body: HashMap<String, value::Value>,
-    vector: Vec<f32>,
-    version: String,
+    pub payload: HashMap<String, value::Value>,
+    pub vector: Vec<f32>,
+    pub version: String,
 }
 
 impl Into<PointStruct> for InboundDataReq {
     fn into(self) -> PointStruct {
         PointStruct {
             id: Some(self.id),
-            payload: self.body,
+            payload: self.payload,
             vector: self.vector,
         }
     }
