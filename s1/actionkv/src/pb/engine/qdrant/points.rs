@@ -1150,7 +1150,7 @@ pub struct UpsertPoints {
     pub shard_key_selector: Option<ShardKeySelector>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DeletePoints {
     /// name of the collection
     // pub collection_name: String,

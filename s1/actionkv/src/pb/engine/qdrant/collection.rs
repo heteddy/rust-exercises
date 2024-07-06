@@ -633,9 +633,7 @@ pub struct RemoteShardInfo {
 pub struct ShardTransferInfo {
     /// Local shard id
     pub shard_id: u32,
-
     pub from: u64,
-
     pub to: u64,
     /// If `true` transfer is a synchronization of a replicas; If `false` transfer is a moving of a shard from one peer to another
     pub sync: bool,
