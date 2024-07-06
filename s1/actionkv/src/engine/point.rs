@@ -4,10 +4,12 @@ use crate::dao::base::EntityDao;
 use crate::dao::index::{IndexDao, IndexEntity};
 use crate::driver::qdrant::index;
 use crate::driver::qdrant::points::{
-    delete_points, discover_points, get_points, recommend_points, search_points, upsert_points,
+    count_points, delete_points, discover_points, get_points, recommend_points, search_points,
+    upsert_points,
 };
 use crate::pb::engine::qdrant::collection as pb_collection;
 use crate::pb::engine::qdrant::points as pb_points;
+use crate::pb::engine::qdrant::points::CountResponse;
 use crate::pb::engine::qdrant::points::UpsertPoints;
 use crate::pb::engine::search;
 use crate::pb::svr::ApiError;
@@ -79,5 +81,17 @@ impl PointSvc {
             return anyhow::Result::Err(anyhow::anyhow!("not found active collection {:?}", &name));
         }
         get_points(host.unwrap(), active.unwrap(), req).await
+    }
+    pub async fn count_points(&self, name: String) -> anyhow::Result<CountResponse> {
+        let r = repo::IndexConfigRepo::get_instance();
+        let host = r.read().unwrap().get_svr_http_address(&name);
+        if host.is_none() {
+            return anyhow::Result::Err(anyhow::anyhow!("not found host {:?}", &name));
+        }
+        let active = r.read().unwrap().get_active_collection(&name);
+        if active.is_none() {
+            return anyhow::Result::Err(anyhow::anyhow!("not found active collection {:?}", &name));
+        }
+        count_points(host.unwrap(), active.unwrap()).await
     }
 }

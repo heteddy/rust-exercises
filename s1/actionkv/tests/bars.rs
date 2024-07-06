@@ -68,7 +68,7 @@ mod tests {
         {{/if}}  {{#each title}} {{this}};\n {{/each}}"#;
         // register template using given name
         reg.register_template_string("tpl_1", tpl_str)?;
-
+        
         let render_str = reg.render("tpl_1", &bm2)?;
         println!("tpl_1={},", &render_str);
         print_type_of(&render_str);

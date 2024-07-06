@@ -4,11 +4,8 @@ use crate::dao::base::EntityDao;
 use crate::dao::index::{IndexDao, IndexEntity};
 use crate::driver::qdrant::index;
 use crate::driver::qdrant::points as driver_points;
-use crate::pb::engine::qdrant::collection;
-use crate::pb::engine::qdrant::collection::{
-    ChangeAliases, CollectionOperationResponse, CreateCollection, GetCollectionInfoResponse,
-    ListAliasesResponse, ListCollectionsResponse,
-};
+use crate::pb::engine::qdrant::collection as pb_collection;
+use crate::pb::engine::qdrant::points as pb_points;
 use crate::pb::engine::search;
 use crate::pb::svr::ApiError;
 use crate::server::index::IndexSvc;

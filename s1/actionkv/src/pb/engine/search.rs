@@ -1,6 +1,6 @@
 use crate::pb::engine::qdrant::points::{PointStruct, UpsertPoints};
 use serde::{Deserialize, Serialize};
-use serde_json::{value, Map};
+use serde_json::{Map, Value};
 use std::collections::HashMap;
 use validator::Validate;
 
@@ -8,7 +8,7 @@ use validator::Validate;
 #[serde(default)]
 pub struct InboundDataReq {
     pub id: String,
-    pub payload: HashMap<String, value::Value>,
+    pub payload: HashMap<String, Value>,
     pub vector: Vec<f32>,
     pub version: String,
 }
@@ -28,14 +28,14 @@ impl InboundDataReq {}
 #[derive(Debug, Clone, Default, Validate, Deserialize, Serialize)]
 pub struct SearchReq {
     request_id: String,
-    param: HashMap<String, value::Value>,
+    param: HashMap<String, Value>,
     tpl: String,
     size: i32,
 }
 
 pub struct SearchRet {
     Count: i32,
-    Data: Vec<HashMap<String, value::Value>>,
+    Data: Vec<HashMap<String, Value>>,
 }
 
 // 创建一个collection
