@@ -59,8 +59,21 @@ async fn delete_point(
     Path(name): Path<String>,
     Json(body): Json<pb_points::DeletePoints>,
 ) -> Result<pb_points::PointsOperationResponse, ApiError> {
-    info!("retrieve points from index name:{:?}", name);
+    info!("delete points from index name:{:?}", name);
     match svc.delete_points(name, body).await {
+        anyhow::Result::Ok(resp) => Ok(resp),
+        anyhow::Result::Err(e) => Err(InternalError::from(e.to_string()).into()),
+    }
+}
+
+#[instrument(skip_all)]
+async fn count_points(
+    State(svc): State<PointSvc>,
+    headers: HeaderMap,
+    Path(name): Path<String>,
+) -> Result<pb_points::CountResponse, ApiError> {
+    info!("count points from index name:{:?}", name);
+    match svc.count_points(name).await {
         anyhow::Result::Ok(resp) => Ok(resp),
         anyhow::Result::Err(e) => Err(InternalError::from(e.to_string()).into()),
     }
@@ -87,6 +100,10 @@ pub fn register_route() -> Router {
     _router = _router.route(
         "/:name/points/get",
         post(retrieve).layer(from_fn_with_state(middle_svc.clone(), auth_middleware)),
+    );
+    _router = _router.route(
+        "/:name/points/count",
+        get(retrieve).layer(from_fn_with_state(middle_svc.clone(), auth_middleware)),
     );
     _router = _router.route(
         "/:name/points/delete",
