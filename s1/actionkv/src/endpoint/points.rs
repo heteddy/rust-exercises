@@ -94,21 +94,21 @@ pub fn register_route() -> Router {
     */
     let middle_svc = repo::IndexConfigRepo::get_instance();
     _router = _router.route(
-        "/:name/points/upsert",
+        "/index/:name/points/upsert",
         post(upsert_point).layer(from_fn_with_state(middle_svc.clone(), auth_middleware)),
     );
     _router = _router.route(
-        "/:name/points/get",
+        "/index/:name/points/get",
         post(retrieve).layer(from_fn_with_state(middle_svc.clone(), auth_middleware)),
     );
     _router = _router.route(
-        "/:name/points/count",
+        "/index/:name/points/count",
         get(retrieve).layer(from_fn_with_state(middle_svc.clone(), auth_middleware)),
     );
     _router = _router.route(
-        "/:name/points/delete",
+        "/index/:name/points/delete",
         delete(delete_point).layer(from_fn_with_state(middle_svc, auth_middleware)),
     );
     // _router = _router.route("/data", get(list).post(create));
-    Router::new().nest("/api/data", _router).with_state(svc)
+    Router::new().nest("/api/engine", _router).with_state(svc)
 }

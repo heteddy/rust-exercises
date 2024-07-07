@@ -63,5 +63,5 @@ pub fn register_route(tx: mpsc::Sender<SyncData>) -> Router {
     _router = _router.route("/servers/:id", get(retrieve).put(update).delete(del));
     _router = _router.route("/servers", get(list).post(create));
 
-    Router::new().nest("/api", _router).with_state(svc)
+    Router::new().nest("/api/config", _router).with_state(svc)
 }

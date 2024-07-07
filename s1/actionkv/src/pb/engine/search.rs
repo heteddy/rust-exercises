@@ -27,10 +27,10 @@ impl InboundDataReq {}
 
 #[derive(Debug, Clone, Default, Validate, Deserialize, Serialize)]
 pub struct SearchReq {
-    request_id: String,
-    param: HashMap<String, Value>,
-    tpl: String,
-    size: i32,
+    pub request_id: String,
+    pub params: HashMap<String, Value>,
+    pub template: String,
+    pub limit: i32,
 }
 
 pub struct SearchRet {

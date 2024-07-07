@@ -6,5 +6,5 @@ pub mod server;
 pub mod template;
 pub mod search;  
 pub mod points;
-pub mod engine;
+pub mod collection;
 pub mod recommend;

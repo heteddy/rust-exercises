@@ -1,3 +1,5 @@
+use crate::cache::sync;
+use crate::endpoint::{app, bert, collection, index, points, preprocess, search, server, template};
 use axum::error_handling::HandleErrorLayer;
 use axum::{
     http::{HeaderName, Method, StatusCode, Uri},
@@ -6,12 +8,7 @@ use axum::{
     routing::get,
     BoxError, Router,
 };
-
 use std::time::Duration;
-// use tokio::time::sleep;
-use crate::cache::sync;
-use crate::endpoint::{app, bert, points, index, preprocess, server, template,engine};
-
 use tokio::sync::mpsc;
 use tower::{self, ServiceBuilder};
 use tower_http::compression::CompressionLayer;
@@ -36,7 +33,8 @@ pub fn init_app(tx: mpsc::Sender<sync::SyncData>) -> Router {
         .merge(index::register_route(tx.clone()))
         .merge(template::register_route(tx.clone()))
         .merge(points::register_route())
-        .merge(engine::register_route(tx))
+        .merge(collection::register_route(tx))
+        .merge(search::register_route())
         // .route_layer(layer)   // 仅命中路由才打印
         .fallback(fallback);
 

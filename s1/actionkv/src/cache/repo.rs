@@ -419,6 +419,11 @@ impl IndexConfigRepo {
             None
         }
     }
+    
+    pub fn get_template_body(&self, name: impl AsRef<str>) -> Option<String> {
+        let i = self.template.get(name);
+        i.map(|e| e.body.clone())
+    }
 
     pub fn get_svr_http_address(&self, name: impl AsRef<str>) -> Option<String> {
         let i = self.index.get(name);

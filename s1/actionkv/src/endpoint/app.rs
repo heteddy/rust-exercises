@@ -84,5 +84,5 @@ pub fn register_route(tx: mpsc::Sender<sync::SyncData>) -> Router {
     let mut app_route = Router::new();
     app_route = app_route.route("/apps", post(create_app).get(list));
     app_route = app_route.route("/apps/:id", get(retrieve).put(update));
-    Router::new().nest("/api", app_route).with_state(svc)
+    Router::new().nest("/api/config", app_route).with_state(svc)
 }

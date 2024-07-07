@@ -66,7 +66,7 @@ pub fn register_route(tx: mpsc::Sender<SyncData>) -> Router {
     let svc: server::index::IndexSvc = server::index::IndexSvc::new(tx);
     _router = _router.route("/indices/:id", get(retrieve).put(update).delete(del));
     _router = _router.route("/indices", get(list).post(create));
-    Router::new().nest("/api", _router).with_state(svc)
+    Router::new().nest("/api/config", _router).with_state(svc)
 }
 
 // 实现配置索引信息

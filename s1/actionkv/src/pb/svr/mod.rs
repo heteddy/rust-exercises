@@ -132,15 +132,15 @@ impl From<InternalError> for ApiError {
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         println!(
-            "error={:?}",
+            "error={}",
             json!(
                 {
                     "code":CODE_INTERNAL_ERROR.as_u16(),
-                    "msg":format!("{:?}", &self),
+                    "msg":format!("{}", &self),
                 }
             )
         );
-        let msg = format!("{:?}", &self);
+        let msg = format!("{}", &self);
         let err_resp: ErrorResponse = ErrorResponse::new(&msg);
 
         let status_code = match self {
