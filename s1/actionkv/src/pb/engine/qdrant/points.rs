@@ -1486,7 +1486,7 @@ pub struct ScoredPoint {
     pub version: u64,
     /// Vectors to search
     // pub vectors: Option<Vectors>,
-    pub vectors: Option<Vec<f32>>,
+    pub vector: Option<Vec<f32>>,
     /// Shard key
     pub shard_key: Option<ShardKey>,
 }
@@ -1525,7 +1525,7 @@ pub struct GroupsResult {
     pub groups: Vec<PointGroup>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Default, Deserialize)]
 pub struct SearchResponse {
     pub result: Vec<ScoredPoint>,
     /// Time spent to process
