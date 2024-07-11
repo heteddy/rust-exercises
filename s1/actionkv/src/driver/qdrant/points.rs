@@ -219,6 +219,7 @@ pub async fn discover_points(
 mod tests {
     use super::*;
     use std::hash::Hash;
+    
     #[tokio::test]
     async fn test_upsert_points() {
         let host = "localhost:6333";
