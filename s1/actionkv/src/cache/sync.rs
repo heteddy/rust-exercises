@@ -12,7 +12,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::{Arc, RwLock};
-
 use tokio::sync::mpsc;
 use tracing::{info, instrument, warn};
 
@@ -190,6 +189,29 @@ impl Synchronizer {
     }
 }
 
+
+// 这里的问题
+/*
+1. 不能把receive写到成员函数中，如果成员函数要换协程
+比如 
+
+
+synchronizer::send(self, msg){
+    self.tx.send(msg)
+}
+
+
+因为循环因此下面的函数必须在spawn中，tokio::spawn 函数要求参数是 “‘static，这意味着新任务必须拥有其内部的一切，这是一个问题，因为该方法借
+用了self，这意味着它不能将 self 的所有权交给新任务。
+synchronizer::loop(&mut self, msg){
+    loop {
+        let some(m) = rx.receive().await {
+            self.update();
+        }
+    }
+}
+
+*/
 #[instrument(skip(synchronizer))]
 pub async fn run_synchronizer(mut synchronizer: Synchronizer, mut _rx: mpsc::Receiver<SyncData>) {
     // 或者放到一个{}里面，
@@ -202,3 +224,5 @@ pub async fn run_synchronizer(mut synchronizer: Synchronizer, mut _rx: mpsc::Rec
         synchronizer.handle_sync_data(res).await;
     }
 }
+
+
