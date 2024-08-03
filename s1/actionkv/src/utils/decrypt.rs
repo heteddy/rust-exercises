@@ -30,7 +30,7 @@ pub fn decrypt(key: &str, iv: &str, cipher: &str) -> Option<String> {
     if cipher.is_ok() {
         let crypted_bytes = cipher.unwrap();
         let cipher_len = crypted_bytes.len();
-        let mut buf = [0u8; 64];
+        let mut buf = [0u8; 48];
         buf[..cipher_len].copy_from_slice(&crypted_bytes.as_slice());
 
         let mut iv_bytes: [u8; 16] = [0u8; 16];
