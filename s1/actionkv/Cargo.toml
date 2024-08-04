@@ -44,8 +44,8 @@ tower-http = { version = "0.5.2", features = ["full"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["json", "env-filter"] }
 validator = { version = "0.18.1", features = ["derive"] }
-reqwest = {version="0.12.4", features = ["json"]}
-http="1.1.0"
+reqwest = { version = "0.12.4", features = ["json"] }
+http = "1.1.0"
 cbc = "0.1.2"
 aes = "0.8.4"
 block-modes = "0.9.1"
@@ -53,7 +53,10 @@ hex-literal = "0.4.1"
 rand = "0.8.4"
 bytebuffer = "2.3.0"
 base64 = "0.22.0"
-hex="0.4.3"
+hex = "0.4.3"
+utoipa = { version = "4.2.3", features = ["axum_extras"] }
+# 或者使用utoipa-swagger-ui 7.1.0
+utoipa-swagger-ui-vendored = { version = "0.1.1" }
 [lib]
 name = "libakv"
 path = "src/lib.rs"
@@ -61,3 +64,5 @@ path = "src/lib.rs"
 [[bin]]
 name = "akv"
 path = "src/akv_mem.rs"
+
+
