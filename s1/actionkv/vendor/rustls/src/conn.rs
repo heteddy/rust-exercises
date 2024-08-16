@@ -3,17 +3,17 @@ use crate::enums::{AlertDescription, ContentType};
 use crate::error::{Error, PeerMisbehaved};
 #[cfg(feature = "logging")]
 use crate::log::trace;
-use crate::msgs::deframer::{Deframed, DeframerSliceBuffer, DeframerVecBuffer, MessageDeframer};
+use crate::msgs::deframer::{Deframed, MessageDeframer};
 use crate::msgs::handshake::Random;
 use crate::msgs::message::{Message, MessagePayload, PlainMessage};
+#[cfg(feature = "secret_extraction")]
 use crate::suites::{ExtractedSecrets, PartiallyExtractedSecrets};
 use crate::vecbuf::ChunkVecBuffer;
 
-use alloc::boxed::Box;
-use core::fmt::Debug;
-use core::mem;
-use core::ops::{Deref, DerefMut};
+use std::fmt::Debug;
 use std::io;
+use std::mem;
+use std::ops::{Deref, DerefMut};
 
 /// A client or server connection.
 #[derive(Debug)]
@@ -83,6 +83,16 @@ impl Connection {
         }
     }
 
+    /// Extract secrets, to set up kTLS for example
+    #[cfg(feature = "secret_extraction")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "secret_extraction")))]
+    pub fn extract_secrets(self) -> Result<ExtractedSecrets, Error> {
+        match self {
+            Self::Client(conn) => conn.extract_secrets(),
+            Self::Server(conn) => conn.extract_secrets(),
+        }
+    }
+
     /// This function uses `io` to complete any outstanding IO for this connection.
     ///
     /// See [`ConnectionCommon::complete_io()`] for more information.
@@ -94,15 +104,6 @@ impl Connection {
         match self {
             Self::Client(conn) => conn.complete_io(io),
             Self::Server(conn) => conn.complete_io(io),
-        }
-    }
-
-    /// Extract secrets, so they can be used when configuring kTLS, for example.
-    /// Should be used with care as it exposes secret key material.
-    pub fn dangerous_extract_secrets(self) -> Result<ExtractedSecrets, Error> {
-        match self {
-            Self::Client(client) => client.dangerous_extract_secrets(),
-            Self::Server(server) => server.dangerous_extract_secrets(),
         }
     }
 }
@@ -142,8 +143,8 @@ impl<'a> io::Read for Reader<'a> {
     /// connection, so the underlying TCP connection should be half-closed too.
     ///
     /// If the peer closes the TLS session uncleanly (a TCP EOF without sending a
-    /// `close_notify` alert) this function returns a `std::io::Error` of type
-    /// `ErrorKind::UnexpectedEof` once any pending data has been read.
+    /// `close_notify` alert) this function returns `Err(ErrorKind::UnexpectedEof.into())`
+    /// once any pending data has been read.
     ///
     /// Note that support for `close_notify` varies in peer TLS libraries: many do not
     /// support it and uncleanly close the TCP connection (this might be
@@ -164,13 +165,8 @@ impl<'a> io::Read for Reader<'a> {
                 // cleanly closed; don't care about TCP EOF: express this as Ok(0)
                 (true, _) => {}
                 // unclean closure
-                (false, true) => {
-                    return Err(io::Error::new(
-                        io::ErrorKind::UnexpectedEof,
-                        UNEXPECTED_EOF_MESSAGE,
-                    ))
-                }
-                // connection still going, but needs more data: signal `WouldBlock` so that
+                (false, true) => return Err(io::ErrorKind::UnexpectedEof.into()),
+                // connection still going, but need more data: signal `WouldBlock` so that
                 // the caller knows this
                 (false, false) => return Err(io::ErrorKind::WouldBlock.into()),
             }
@@ -187,8 +183,8 @@ impl<'a> io::Read for Reader<'a> {
     /// should be half-closed too.
     ///
     /// If the peer closes the TLS session uncleanly (a TCP EOF without sending a
-    /// `close_notify` alert) this function returns a `std::io::Error` of type
-    /// `ErrorKind::UnexpectedEof` once any pending data has been read.
+    /// `close_notify` alert) this function returns `Err(ErrorKind::UnexpectedEof.into())`
+    /// once any pending data has been read.
     ///
     /// Note that support for `close_notify` varies in peer TLS libraries: many do not
     /// support it and uncleanly close the TCP connection (this might be
@@ -213,12 +209,7 @@ impl<'a> io::Read for Reader<'a> {
                 // cleanly closed; don't care about TCP EOF: express this as Ok(0)
                 (true, _) => {}
                 // unclean closure
-                (false, true) => {
-                    return Err(io::Error::new(
-                        io::ErrorKind::UnexpectedEof,
-                        UNEXPECTED_EOF_MESSAGE,
-                    ));
-                }
+                (false, true) => return Err(io::ErrorKind::UnexpectedEof.into()),
                 // connection still going, but need more data: signal `WouldBlock` so that
                 // the caller knows this
                 (false, false) => return Err(io::ErrorKind::WouldBlock.into()),
@@ -231,9 +222,6 @@ impl<'a> io::Read for Reader<'a> {
 
 /// Internal trait implemented by the [`ServerConnection`]/[`ClientConnection`]
 /// allowing them to be the subject of a [`Writer`].
-///
-/// [`ServerConnection`]: crate::ServerConnection
-/// [`ClientConnection`]: crate::ClientConnection
 pub(crate) trait PlaintextSink {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize>;
     fn write_vectored(&mut self, bufs: &[io::IoSlice<'_>]) -> io::Result<usize>;
@@ -268,7 +256,7 @@ impl<'a> Writer<'a> {
     ///
     /// This is not an external interface.  Get one of these objects
     /// from [`Connection::writer`].
-    pub(crate) fn new(sink: &'a mut dyn PlaintextSink) -> Self {
+    pub(crate) fn new(sink: &'a mut dyn PlaintextSink) -> Writer<'a> {
         Writer { sink }
     }
 }
@@ -320,7 +308,7 @@ impl ConnectionRandoms {
 
 fn is_valid_ccs(msg: &PlainMessage) -> bool {
     // We passthrough ChangeCipherSpec messages in the deframer without decrypting them.
-    // Note: this is prior to the record layer, so is unencrypted. See
+    // nb. this is prior to the record layer, so is unencrypted. see
     // third paragraph of section 5 in RFC8446.
     msg.typ == ContentType::ChangeCipherSpec && msg.payload.0 == [0x01]
 }
@@ -328,7 +316,6 @@ fn is_valid_ccs(msg: &PlainMessage) -> bool {
 /// Interface shared by client and server connections.
 pub struct ConnectionCommon<Data> {
     pub(crate) core: ConnectionCore<Data>,
-    deframer_buffer: DeframerVecBuffer,
 }
 
 impl<Data> ConnectionCommon<Data> {
@@ -340,7 +327,7 @@ impl<Data> ConnectionCommon<Data> {
             // Are we done? i.e., have we processed all received messages, and received a
             // close_notify to indicate that no new messages will arrive?
             peer_cleanly_closed: common.has_received_close_notify
-                && !self.deframer_buffer.has_pending(),
+                && !self.core.message_deframer.has_pending(),
             has_seen_eof: common.has_seen_eof,
         }
     }
@@ -390,11 +377,6 @@ impl<Data> ConnectionCommon<Data> {
 
         loop {
             let until_handshaked = self.is_handshaking();
-
-            if !self.wants_write() && !self.wants_read() {
-                // We will make no further progress.
-                return Ok((rdlen, wrlen));
-            }
 
             while self.wants_write() {
                 wrlen += self.write_tls(io)?;
@@ -457,14 +439,11 @@ impl<Data> ConnectionCommon<Data> {
     /// This is a shortcut to the `process_new_packets()` -> `process_msg()` ->
     /// `process_handshake_messages()` path, specialized for the first handshake message.
     pub(crate) fn first_handshake_message(&mut self) -> Result<Option<Message>, Error> {
-        let mut deframer_buffer = self.deframer_buffer.borrow();
-        let res = self
+        match self
             .core
-            .deframe(None, &mut deframer_buffer);
-        let discard = deframer_buffer.pending_discard();
-        self.deframer_buffer.discard(discard);
-
-        match res?.map(Message::try_from) {
+            .deframe(None)?
+            .map(Message::try_from)
+        {
             Some(Ok(msg)) => Ok(Some(msg)),
             Some(Err(err)) => Err(self.send_fatal_alert(AlertDescription::DecodeError, err)),
             None => Ok(None),
@@ -495,8 +474,7 @@ impl<Data> ConnectionCommon<Data> {
     /// [`process_new_packets`]: Connection::process_new_packets
     #[inline]
     pub fn process_new_packets(&mut self) -> Result<IoState, Error> {
-        self.core
-            .process_new_packets(&mut self.deframer_buffer)
+        self.core.process_new_packets()
     }
 
     /// Read TLS content from `rd` into the internal buffer.
@@ -526,10 +504,7 @@ impl<Data> ConnectionCommon<Data> {
             ));
         }
 
-        let res = self
-            .core
-            .message_deframer
-            .read(rd, &mut self.deframer_buffer);
+        let res = self.core.message_deframer.read(rd);
         if let Ok(0) = res {
             self.has_seen_eof = true;
         }
@@ -562,8 +537,6 @@ impl<Data> ConnectionCommon<Data> {
     ///
     /// This function fails if called prior to the handshake completing;
     /// check with [`CommonState::is_handshaking`] first.
-    ///
-    /// This function fails if `output.len()` is zero.
     #[inline]
     pub fn export_keying_material<T: AsMut<[u8]>>(
         &self,
@@ -576,8 +549,9 @@ impl<Data> ConnectionCommon<Data> {
     }
 
     /// Extract secrets, so they can be used when configuring kTLS, for example.
-    /// Should be used with care as it exposes secret key material.
-    pub fn dangerous_extract_secrets(self) -> Result<ExtractedSecrets, Error> {
+    #[cfg(feature = "secret_extraction")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "secret_extraction")))]
+    pub fn extract_secrets(self) -> Result<ExtractedSecrets, Error> {
         if !self.enable_secret_extraction {
             return Err(Error::General("Secret extraction is disabled".into()));
         }
@@ -618,10 +592,7 @@ impl<T> DerefMut for ConnectionCommon<T> {
 
 impl<Data> From<ConnectionCore<Data>> for ConnectionCommon<Data> {
     fn from(core: ConnectionCore<Data>) -> Self {
-        Self {
-            core,
-            deframer_buffer: DeframerVecBuffer::default(),
-        }
+        Self { core }
     }
 }
 
@@ -642,10 +613,7 @@ impl<Data> ConnectionCore<Data> {
         }
     }
 
-    pub(crate) fn process_new_packets(
-        &mut self,
-        deframer_buffer: &mut DeframerVecBuffer,
-    ) -> Result<IoState, Error> {
+    pub(crate) fn process_new_packets(&mut self) -> Result<IoState, Error> {
         let mut state = match mem::replace(&mut self.state, Err(Error::HandshakeNotComplete)) {
             Ok(state) => state,
             Err(e) => {
@@ -654,36 +622,26 @@ impl<Data> ConnectionCore<Data> {
             }
         };
 
-        let mut borrowed_buffer = deframer_buffer.borrow();
-        while let Some(msg) = self.deframe(Some(&*state), &mut borrowed_buffer)? {
+        while let Some(msg) = self.deframe(Some(&*state))? {
             match self.process_msg(msg, state) {
                 Ok(new) => state = new,
                 Err(e) => {
                     self.state = Err(e.clone());
-                    let discard = borrowed_buffer.pending_discard();
-                    deframer_buffer.discard(discard);
                     return Err(e);
                 }
             }
         }
 
-        let discard = borrowed_buffer.pending_discard();
-        deframer_buffer.discard(discard);
         self.state = Ok(state);
         Ok(self.common_state.current_io_state())
     }
 
     /// Pull a message out of the deframer and send any messages that need to be sent as a result.
-    fn deframe(
-        &mut self,
-        state: Option<&dyn State<Data>>,
-        deframer_buffer: &mut DeframerSliceBuffer,
-    ) -> Result<Option<PlainMessage>, Error> {
-        match self.message_deframer.pop(
-            &mut self.common_state.record_layer,
-            self.common_state.negotiated_version,
-            deframer_buffer,
-        ) {
+    fn deframe(&mut self, state: Option<&dyn State<Data>>) -> Result<Option<PlainMessage>, Error> {
+        match self
+            .message_deframer
+            .pop(&mut self.common_state.record_layer)
+        {
             Ok(Some(Deframed {
                 want_close_before_decrypt,
                 aligned,
@@ -705,6 +663,7 @@ impl<Data> ConnectionCore<Data> {
             }
             Ok(None) => Ok(None),
             Err(err @ Error::InvalidMessage(_)) => {
+                #[cfg(feature = "quic")]
                 if self.common_state.is_quic() {
                     self.common_state.quic.alert = Some(AlertDescription::DecodeError);
                 }
@@ -786,12 +745,6 @@ impl<Data> ConnectionCore<Data> {
         label: &[u8],
         context: Option<&[u8]>,
     ) -> Result<T, Error> {
-        if output.as_mut().is_empty() {
-            return Err(Error::General(
-                "export_keying_material with zero-length output".into(),
-            ));
-        }
-
         match self.state.as_ref() {
             Ok(st) => st
                 .export_keying_material(output.as_mut(), label, context)
@@ -802,7 +755,4 @@ impl<Data> ConnectionCore<Data> {
 }
 
 /// Data specific to the peer's side (client or server).
-pub trait SideData: Debug {}
-
-const UNEXPECTED_EOF_MESSAGE: &str = "peer closed connection without sending TLS close_notify: \
-https://docs.rs/rustls/latest/rustls/manual/_03_howto/index.html#unexpected-eof";
+pub trait SideData {}

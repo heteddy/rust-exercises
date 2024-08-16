@@ -1,13 +1,11 @@
-use std::io::{self, Cursor, Read, Write};
-use std::pin::Pin;
-use std::task::{Context, Poll};
-
+use super::Stream;
 use futures_util::future::poll_fn;
 use futures_util::task::noop_waker_ref;
 use rustls::{ClientConnection, Connection, ServerConnection};
+use std::io::{self, Cursor, Read, Write};
+use std::pin::Pin;
+use std::task::{Context, Poll};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, ReadBuf};
-
-use super::Stream;
 
 struct Good<'a>(&'a mut Connection);
 
@@ -281,10 +279,12 @@ async fn stream_eof() -> io::Result<()> {
 }
 
 fn make_pair() -> (ServerConnection, ClientConnection) {
+    use std::convert::TryFrom;
+
     let (sconfig, cconfig) = utils::make_configs();
     let server = ServerConnection::new(sconfig).unwrap();
 
-    let domain = pki_types::ServerName::try_from("foobar.com").unwrap();
+    let domain = rustls::ServerName::try_from("foobar.com").unwrap();
     let client = ClientConnection::new(cconfig, domain).unwrap();
 
     (server, client)

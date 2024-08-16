@@ -4,18 +4,14 @@
 // Note: we don't use any of the standard 'cargo bench', 'test::Bencher',
 // etc. because it's unstable at the time of writing.
 
-#![cfg(feature = "ring")]
+use std::time::{Duration, Instant, SystemTime};
 
-use core::time::Duration;
-use std::prelude::v1::*;
-use std::println;
-use std::time::Instant;
-
-use crate::crypto::ring;
+use crate::key;
+use crate::verify;
 use crate::verify::ServerCertVerifier;
-use crate::webpki::{RootCertStore, WebPkiServerVerifier};
+use crate::{anchors, OwnedTrustAnchor};
 
-use pki_types::{CertificateDer, UnixTime};
+use webpki_roots;
 
 fn duration_nanos(d: Duration) -> u64 {
     ((d.as_secs() as f64) * 1e9 + (d.subsec_nanos() as f64)) as u64
@@ -183,18 +179,24 @@ fn test_wapo_cert() {
 struct Context {
     name: &'static str,
     domain: &'static str,
-    roots: RootCertStore,
-    chain: Vec<CertificateDer<'static>>,
-    now: UnixTime,
+    roots: anchors::RootCertStore,
+    chain: Vec<key::Certificate>,
+    now: SystemTime,
 }
 
 impl Context {
     fn new(name: &'static str, domain: &'static str, certs: &[&'static [u8]]) -> Self {
-        let mut roots = RootCertStore::empty();
-        roots.extend(
+        let mut roots = anchors::RootCertStore::empty();
+        roots.add_trust_anchors(
             webpki_roots::TLS_SERVER_ROOTS
                 .iter()
-                .cloned(),
+                .map(|ta| {
+                    OwnedTrustAnchor::from_subject_spki_name_constraints(
+                        ta.subject,
+                        ta.spki,
+                        ta.name_constraints,
+                    )
+                }),
         );
         Self {
             name,
@@ -203,17 +205,15 @@ impl Context {
             chain: certs
                 .iter()
                 .copied()
-                .map(|bytes| CertificateDer::from(bytes.to_vec()))
+                .map(|bytes| key::Certificate(bytes.to_vec()))
                 .collect(),
-            now: UnixTime::since_unix_epoch(Duration::from_secs(1_640_870_720)),
+            now: SystemTime::UNIX_EPOCH + Duration::from_secs(1640870720),
         }
     }
 
     fn bench(&self, count: usize) {
-        let verifier = WebPkiServerVerifier::new_without_revocation(
-            self.roots.clone(),
-            ring::default_provider().signature_verification_algorithms,
-        );
+        let verifier = verify::WebPkiVerifier::new(self.roots.clone(), None);
+        const SCTS: &[&[u8]] = &[];
         const OCSP_RESPONSE: &[u8] = &[];
         let mut times = Vec::new();
 
@@ -226,6 +226,7 @@ impl Context {
                     end_entity,
                     intermediates,
                     &server_name,
+                    &mut SCTS.iter().copied(),
                     OCSP_RESPONSE,
                     self.now,
                 )

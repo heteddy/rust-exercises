@@ -1,4 +1,6 @@
+use crate::dns_name::DnsNameRef;
 use crate::enums::{CipherSuite, HandshakeType, ProtocolVersion, SignatureScheme};
+use crate::key::Certificate;
 use crate::msgs::base::{Payload, PayloadU16, PayloadU24, PayloadU8};
 use crate::msgs::codec::{put_u16, Codec, Reader};
 use crate::msgs::enums::{
@@ -6,23 +8,17 @@ use crate::msgs::enums::{
     KeyUpdateRequest, NamedGroup, PSKKeyExchangeMode, ServerNameType,
 };
 use crate::msgs::handshake::{
-    CertReqExtension, CertificateChain, CertificateEntry, CertificateExtension,
-    CertificatePayloadTls13, CertificateRequestPayload, CertificateRequestPayloadTls13,
-    CertificateStatus, CertificateStatusRequest, ClientExtension, ClientHelloPayload,
-    ClientSessionTicket, ConvertProtocolNameList, ConvertServerNameList, DistinguishedName,
-    EcParameters, EcdheServerKeyExchange, HandshakeMessagePayload, HandshakePayload,
-    HasServerExtensions, HelloRetryExtension, HelloRetryRequest, KeyShareEntry,
-    NewSessionTicketExtension, NewSessionTicketPayload, NewSessionTicketPayloadTls13,
-    PresharedKeyBinder, PresharedKeyIdentity, PresharedKeyOffer, ProtocolName, Random,
-    ServerEcdhParams, ServerExtension, ServerHelloPayload, ServerKeyExchangePayload, SessionId,
-    UnknownExtension,
+    CertReqExtension, CertificateEntry, CertificateExtension, CertificatePayloadTLS13,
+    CertificateRequestPayload, CertificateRequestPayloadTLS13, CertificateStatus,
+    CertificateStatusRequest, ClientExtension, ClientHelloPayload, ClientSessionTicket,
+    ConvertProtocolNameList, ConvertServerNameList, DistinguishedName, ECDHEServerKeyExchange,
+    ECParameters, HandshakeMessagePayload, HandshakePayload, HasServerExtensions,
+    HelloRetryExtension, HelloRetryRequest, KeyShareEntry, NewSessionTicketExtension,
+    NewSessionTicketPayload, NewSessionTicketPayloadTLS13, PresharedKeyBinder,
+    PresharedKeyIdentity, PresharedKeyOffer, ProtocolName, Random, Sct, ServerECDHParams,
+    ServerExtension, ServerHelloPayload, ServerKeyExchangePayload, SessionId, UnknownExtension,
 };
 use crate::verify::DigitallySignedStruct;
-
-use pki_types::{CertificateDer, DnsName};
-
-use std::prelude::v1::*;
-use std::{format, println, vec};
 
 #[test]
 fn rejects_short_random() {
@@ -77,9 +73,8 @@ fn accepts_short_sessionid() {
     let sess = SessionId::read(&mut rd).unwrap();
     println!("{:?}", sess);
 
-    #[cfg(feature = "tls12")]
     assert!(!sess.is_empty());
-    assert_ne!(sess, SessionId::empty());
+    assert_eq!(sess.len(), 1);
     assert!(!rd.any_left());
 }
 
@@ -90,9 +85,8 @@ fn accepts_empty_sessionid() {
     let sess = SessionId::read(&mut rd).unwrap();
     println!("{:?}", sess);
 
-    #[cfg(feature = "tls12")]
     assert!(sess.is_empty());
-    assert_eq!(sess, SessionId::empty());
+    assert_eq!(sess.len(), 0);
     assert!(!rd.any_left());
 }
 
@@ -137,7 +131,7 @@ fn refuses_server_ext_with_unparsed_bytes() {
 
 #[test]
 fn refuses_certificate_ext_with_unparsed_bytes() {
-    let bytes = [0x00u8, 0x05, 0x00, 0x03, 0x00, 0x00, 0x01];
+    let bytes = [0x00u8, 0x12, 0x00, 0x03, 0x00, 0x00, 0x01];
     let mut rd = Reader::init(&bytes);
     assert!(CertificateExtension::read(&mut rd).is_err());
 }
@@ -368,10 +362,10 @@ fn get_sample_clienthellopayload() -> ClientHelloPayload {
         cipher_suites: vec![CipherSuite::TLS_NULL_WITH_NULL_NULL],
         compression_methods: vec![Compression::Null],
         extensions: vec![
-            ClientExtension::EcPointFormats(ECPointFormat::SUPPORTED.to_vec()),
+            ClientExtension::ECPointFormats(ECPointFormat::SUPPORTED.to_vec()),
             ClientExtension::NamedGroups(vec![NamedGroup::X25519]),
             ClientExtension::SignatureAlgorithms(vec![SignatureScheme::ECDSA_NISTP256_SHA256]),
-            ClientExtension::make_sni(&DnsName::try_from("hello").unwrap()),
+            ClientExtension::make_sni(DnsNameRef::try_from("hello").unwrap()),
             ClientExtension::SessionTicket(ClientSessionTicket::Request),
             ClientExtension::SessionTicket(ClientSessionTicket::Offer(Payload(vec![]))),
             ClientExtension::Protocols(vec![ProtocolName::from(vec![0])]),
@@ -391,6 +385,7 @@ fn get_sample_clienthellopayload() -> ClientHelloPayload {
             ClientExtension::Cookie(PayloadU16(vec![1, 2, 3])),
             ClientExtension::ExtendedMasterSecretRequest,
             ClientExtension::CertificateStatusRequest(CertificateStatusRequest::build_ocsp()),
+            ClientExtension::SignedCertificateTimestampRequest,
             ClientExtension::TransportParameters(vec![1, 2, 3]),
             ClientExtension::Unknown(UnknownExtension {
                 typ: ExtensionType::Unknown(12345),
@@ -527,7 +522,6 @@ fn client_get_namedgroups_extension() {
     });
 }
 
-#[cfg(feature = "tls12")]
 #[test]
 fn client_get_ecpoints_extension() {
     test_client_extension_getter(ExtensionType::ECPointFormats, |chp| {
@@ -607,7 +601,7 @@ fn test_truncated_helloretry_extension_is_detected() {
 
 fn test_helloretry_extension_getter(typ: ExtensionType, getter: fn(&HelloRetryRequest) -> bool) {
     let mut hrr = get_sample_helloretryrequest();
-    let mut exts = core::mem::take(&mut hrr.extensions);
+    let mut exts = std::mem::take(&mut hrr.extensions);
     exts.retain(|ext| ext.get_type() == typ);
 
     assert!(!getter(&hrr));
@@ -711,6 +705,11 @@ fn server_get_ecpoints_extension() {
 }
 
 #[test]
+fn server_get_sct_list() {
+    test_server_extension_getter(ExtensionType::SCT, |shp| shp.get_sct_list().is_some());
+}
+
+#[test]
 fn server_get_supported_versions() {
     test_server_extension_getter(ExtensionType::SupportedVersions, |shp| {
         shp.get_supported_versions().is_some()
@@ -721,7 +720,7 @@ fn test_cert_extension_getter(typ: ExtensionType, getter: fn(&CertificateEntry) 
     let mut ce = get_sample_certificatepayloadtls13()
         .entries
         .remove(0);
-    let mut exts = core::mem::take(&mut ce.exts);
+    let mut exts = std::mem::take(&mut ce.exts);
     exts.retain(|ext| ext.get_type() == typ);
 
     assert!(!getter(&ce));
@@ -743,6 +742,11 @@ fn certentry_get_ocsp_response() {
     });
 }
 
+#[test]
+fn certentry_get_scts() {
+    test_cert_extension_getter(ExtensionType::SCT, |ce| ce.get_scts().is_some());
+}
+
 fn get_sample_serverhellopayload() -> ServerHelloPayload {
     ServerHelloPayload {
         legacy_version: ProtocolVersion::TLSv1_2,
@@ -751,7 +755,7 @@ fn get_sample_serverhellopayload() -> ServerHelloPayload {
         cipher_suite: CipherSuite::TLS_NULL_WITH_NULL_NULL,
         compression_method: Compression::Null,
         extensions: vec![
-            ServerExtension::EcPointFormats(ECPointFormat::SUPPORTED.to_vec()),
+            ServerExtension::ECPointFormats(ECPointFormat::SUPPORTED.to_vec()),
             ServerExtension::ServerNameAck,
             ServerExtension::SessionTicketAck,
             ServerExtension::RenegotiationInfo(PayloadU8(vec![0])),
@@ -760,6 +764,7 @@ fn get_sample_serverhellopayload() -> ServerHelloPayload {
             ServerExtension::PresharedKey(3),
             ServerExtension::ExtendedMasterSecretAck,
             ServerExtension::CertificateStatusAck,
+            ServerExtension::SignedCertificateTimestamp(vec![Sct::from(vec![0])]),
             ServerExtension::SupportedVersions(ProtocolVersion::TLSv1_2),
             ServerExtension::TransportParameters(vec![1, 2, 3]),
             ServerExtension::Unknown(UnknownExtension {
@@ -797,15 +802,16 @@ fn get_sample_helloretryrequest() -> HelloRetryRequest {
     }
 }
 
-fn get_sample_certificatepayloadtls13() -> CertificatePayloadTls13 {
-    CertificatePayloadTls13 {
+fn get_sample_certificatepayloadtls13() -> CertificatePayloadTLS13 {
+    CertificatePayloadTLS13 {
         context: PayloadU8(vec![1, 2, 3]),
         entries: vec![CertificateEntry {
-            cert: CertificateDer::from(vec![3, 4, 5]),
+            cert: Certificate(vec![3, 4, 5]),
             exts: vec![
                 CertificateExtension::CertificateStatus(CertificateStatus {
                     ocsp_response: PayloadU24(vec![1, 2, 3]),
                 }),
+                CertificateExtension::SignedCertificateTimestamp(vec![Sct::from(vec![0])]),
                 CertificateExtension::Unknown(UnknownExtension {
                     typ: ExtensionType::Unknown(12345),
                     payload: Payload(vec![1, 2, 3]),
@@ -816,9 +822,9 @@ fn get_sample_certificatepayloadtls13() -> CertificatePayloadTls13 {
 }
 
 fn get_sample_serverkeyexchangepayload_ecdhe() -> ServerKeyExchangePayload {
-    ServerKeyExchangePayload::Ecdhe(EcdheServerKeyExchange {
-        params: ServerEcdhParams {
-            curve_params: EcParameters {
+    ServerKeyExchangePayload::ECDHE(ECDHEServerKeyExchange {
+        params: ServerECDHParams {
+            curve_params: ECParameters {
                 curve_type: ECCurveType::NamedCurve,
                 named_group: NamedGroup::X25519,
             },
@@ -840,8 +846,8 @@ fn get_sample_certificaterequestpayload() -> CertificateRequestPayload {
     }
 }
 
-fn get_sample_certificaterequestpayloadtls13() -> CertificateRequestPayloadTls13 {
-    CertificateRequestPayloadTls13 {
+fn get_sample_certificaterequestpayloadtls13() -> CertificateRequestPayloadTLS13 {
+    CertificateRequestPayloadTLS13 {
         context: PayloadU8(vec![1, 2, 3]),
         extensions: vec![
             CertReqExtension::SignatureAlgorithms(vec![SignatureScheme::ECDSA_NISTP256_SHA256]),
@@ -861,8 +867,8 @@ fn get_sample_newsessionticketpayload() -> NewSessionTicketPayload {
     }
 }
 
-fn get_sample_newsessionticketpayloadtls13() -> NewSessionTicketPayloadTls13 {
-    NewSessionTicketPayloadTls13 {
+fn get_sample_newsessionticketpayloadtls13() -> NewSessionTicketPayloadTLS13 {
+    NewSessionTicketPayloadTLS13 {
         lifetime: 123,
         age_add: 1234,
         nonce: PayloadU8(vec![1, 2, 3]),
@@ -904,9 +910,7 @@ fn get_all_tls12_handshake_payloads() -> Vec<HandshakeMessagePayload> {
         },
         HandshakeMessagePayload {
             typ: HandshakeType::Certificate,
-            payload: HandshakePayload::Certificate(CertificateChain(vec![CertificateDer::from(
-                vec![1, 2, 3],
-            )])),
+            payload: HandshakePayload::Certificate(vec![Certificate(vec![1, 2, 3])]),
         },
         HandshakeMessagePayload {
             typ: HandshakeType::ServerKeyExchange,
@@ -1034,7 +1038,7 @@ fn get_all_tls13_handshake_payloads() -> Vec<HandshakeMessagePayload> {
         },
         HandshakeMessagePayload {
             typ: HandshakeType::Certificate,
-            payload: HandshakePayload::CertificateTls13(get_sample_certificatepayloadtls13()),
+            payload: HandshakePayload::CertificateTLS13(get_sample_certificatepayloadtls13()),
         },
         HandshakeMessagePayload {
             typ: HandshakeType::ServerKeyExchange,
@@ -1050,7 +1054,7 @@ fn get_all_tls13_handshake_payloads() -> Vec<HandshakeMessagePayload> {
         },
         HandshakeMessagePayload {
             typ: HandshakeType::CertificateRequest,
-            payload: HandshakePayload::CertificateRequestTls13(
+            payload: HandshakePayload::CertificateRequestTLS13(
                 get_sample_certificaterequestpayloadtls13(),
             ),
         },
@@ -1071,7 +1075,7 @@ fn get_all_tls13_handshake_payloads() -> Vec<HandshakeMessagePayload> {
         },
         HandshakeMessagePayload {
             typ: HandshakeType::NewSessionTicket,
-            payload: HandshakePayload::NewSessionTicketTls13(
+            payload: HandshakePayload::NewSessionTicketTLS13(
                 get_sample_newsessionticketpayloadtls13(),
             ),
         },
@@ -1203,13 +1207,4 @@ fn can_decode_server_hello_from_api_devicecheck_apple_com() {
     let mut r = Reader::init(data);
     let hm = HandshakeMessagePayload::read(&mut r).unwrap();
     println!("msg: {:?}", hm);
-}
-
-#[test]
-fn wrapped_dn_encoding() {
-    let subject = b"subject";
-    let dn = DistinguishedName::in_sequence(&subject[..]);
-    const DER_SEQUENCE_TAG: u8 = 0x30;
-    let expected_prefix = vec![DER_SEQUENCE_TAG, subject.len() as u8];
-    assert_eq!(dn.as_ref(), [expected_prefix, subject.to_vec()].concat());
 }

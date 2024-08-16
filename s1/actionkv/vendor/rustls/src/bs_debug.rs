@@ -1,4 +1,4 @@
-use core::fmt;
+use std::fmt;
 
 /// Alternative implementation of `fmt::Debug` for byte slice.
 ///
@@ -40,10 +40,8 @@ impl<'a> fmt::Debug for BsDebug<'a> {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::BsDebug;
-    use std::format;
-    use std::prelude::v1::*;
 
     #[test]
     fn debug() {

@@ -1,26 +1,24 @@
 use crate::enums::{AlertDescription, ContentType, HandshakeType, ProtocolVersion};
 use crate::error::{Error, InvalidMessage, PeerMisbehaved};
+use crate::key;
 #[cfg(feature = "logging")]
 use crate::log::{debug, warn};
 use crate::msgs::alert::AlertMessagePayload;
 use crate::msgs::base::Payload;
 use crate::msgs::enums::{AlertLevel, KeyUpdateRequest};
 use crate::msgs::fragmenter::MessageFragmenter;
-use crate::msgs::handshake::CertificateChain;
+#[cfg(feature = "quic")]
 use crate::msgs::message::MessagePayload;
 use crate::msgs::message::{BorrowedPlainMessage, Message, OpaqueMessage, PlainMessage};
+#[cfg(feature = "quic")]
 use crate::quic;
 use crate::record_layer;
+#[cfg(feature = "secret_extraction")]
 use crate::suites::PartiallyExtractedSecrets;
 use crate::suites::SupportedCipherSuite;
 #[cfg(feature = "tls12")]
 use crate::tls12::ConnectionSecrets;
 use crate::vecbuf::ChunkVecBuffer;
-
-use alloc::boxed::Box;
-use alloc::vec::Vec;
-
-use pki_types::CertificateDer;
 
 /// Connection state common to both client and server connections.
 pub struct CommonState {
@@ -38,16 +36,19 @@ pub struct CommonState {
     pub(crate) has_received_close_notify: bool,
     pub(crate) has_seen_eof: bool,
     pub(crate) received_middlebox_ccs: u8,
-    pub(crate) peer_certificates: Option<CertificateChain>,
+    pub(crate) peer_certificates: Option<Vec<key::Certificate>>,
     message_fragmenter: MessageFragmenter,
     pub(crate) received_plaintext: ChunkVecBuffer,
     sendable_plaintext: ChunkVecBuffer,
     pub(crate) sendable_tls: ChunkVecBuffer,
     queued_key_update_message: Option<Vec<u8>>,
 
+    #[allow(dead_code)] // only read for QUIC
     /// Protocol whose key schedule should be used. Unused for TLS < 1.3.
     pub(crate) protocol: Protocol,
+    #[cfg(feature = "quic")]
     pub(crate) quic: quic::Quic,
+    #[cfg(feature = "secret_extraction")]
     pub(crate) enable_secret_extraction: bool,
 }
 
@@ -73,8 +74,11 @@ impl CommonState {
             sendable_plaintext: ChunkVecBuffer::new(Some(DEFAULT_BUFFER_LIMIT)),
             sendable_tls: ChunkVecBuffer::new(Some(DEFAULT_BUFFER_LIMIT)),
             queued_key_update_message: None,
+
             protocol: Protocol::Tcp,
+            #[cfg(feature = "quic")]
             quic: quic::Quic::default(),
+            #[cfg(feature = "secret_extraction")]
             enable_secret_extraction: false,
         }
     }
@@ -112,7 +116,7 @@ impl CommonState {
     /// if client authentication was completed.
     ///
     /// The return value is None until this value is available.
-    pub fn peer_certificates(&self) -> Option<&[CertificateDer<'_>]> {
+    pub fn peer_certificates(&self) -> Option<&[key::Certificate]> {
         self.peer_certificates.as_deref()
     }
 
@@ -376,6 +380,7 @@ impl CommonState {
 
     /// Send a raw TLS message, fragmenting it if needed.
     pub(crate) fn send_msg(&mut self, m: Message, must_encrypt: bool) {
+        #[cfg(feature = "quic")]
         {
             if let Protocol::Quic = self.protocol {
                 if let MessagePayload::Alert(alert) = m.payload {
@@ -420,6 +425,7 @@ impl CommonState {
             .prepare_message_decrypter(dec);
     }
 
+    #[cfg(feature = "quic")]
     pub(crate) fn missing_extension(&mut self, why: PeerMisbehaved) -> Error {
         self.send_fatal_alert(AlertDescription::MissingExtension, why)
     }
@@ -439,8 +445,8 @@ impl CommonState {
         }
 
         // If we get a CloseNotify, make a note to declare EOF to our
-        // caller.  But do not treat unauthenticated alerts like this.
-        if self.may_receive_application_data && alert.description == AlertDescription::CloseNotify {
+        // caller.
+        if alert.description == AlertDescription::CloseNotify {
             self.has_received_close_notify = true;
             return Ok(());
         }
@@ -539,7 +545,12 @@ impl CommonState {
     }
 
     pub(crate) fn is_quic(&self) -> bool {
-        self.protocol == Protocol::Quic
+        #[cfg(feature = "quic")]
+        {
+            self.protocol == Protocol::Quic
+        }
+        #[cfg(not(feature = "quic"))]
+        false
     }
 
     pub(crate) fn should_update_key(
@@ -627,6 +638,7 @@ pub(crate) trait State<Data>: Send + Sync {
         Err(Error::HandshakeNotComplete)
     }
 
+    #[cfg(feature = "secret_extraction")]
     fn extract_secrets(&self) -> Result<PartiallyExtractedSecrets, Error> {
         Err(Error::HandshakeNotComplete)
     }
@@ -660,6 +672,7 @@ impl Side {
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub(crate) enum Protocol {
     Tcp,
+    #[cfg(feature = "quic")]
     Quic,
 }
 
