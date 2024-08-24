@@ -451,7 +451,9 @@ impl RenamedExport {
     }
     pub fn foo(&self) {}
 
-    pub fn bar(&self, _: &RenamedExport) {}
+    pub fn bar(&self, other: &RenamedExport) {
+        drop(other);
+    }
 }
 
 #[wasm_bindgen_test]

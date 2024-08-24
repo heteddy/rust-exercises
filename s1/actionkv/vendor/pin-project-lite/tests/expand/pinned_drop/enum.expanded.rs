@@ -1,3 +1,4 @@
+use std::pin::Pin;
 use pin_project_lite::pin_project;
 enum Enum<T, U> {
     Struct { pinned: T, unpinned: U },

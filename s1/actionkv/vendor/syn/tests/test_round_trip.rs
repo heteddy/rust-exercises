@@ -29,9 +29,10 @@ use rustc_ast::ast::{
 };
 use rustc_ast::mut_visit::{self, MutVisitor};
 use rustc_ast_pretty::pprust;
-use rustc_error_messages::{DiagMessage, LazyFallbackBundle};
-use rustc_errors::{translation, Diag, PResult};
+use rustc_error_messages::{DiagnosticMessage, LazyFallbackBundle};
+use rustc_errors::{translation, Diagnostic, PResult};
 use rustc_session::parse::ParseSess;
+use rustc_span::source_map::FilePathMapping;
 use rustc_span::FileName;
 use std::borrow::Cow;
 use std::fs;
@@ -55,7 +56,7 @@ fn test_round_trip() {
     repo::clone_rust();
     let abort_after = common::abort_after();
     if abort_after == 0 {
-        panic!("skipping all round_trip tests");
+        panic!("Skipping all round_trip tests");
     }
 
     let failed = AtomicUsize::new(0);
@@ -89,7 +90,8 @@ fn test(path: &Path, failed: &AtomicUsize, abort_after: usize) {
     rustc_span::create_session_if_not_set_then(edition, |_| {
         let equal = match panic::catch_unwind(|| {
             let locale_resources = rustc_driver::DEFAULT_LOCALE_RESOURCES.to_vec();
-            let sess = ParseSess::new(locale_resources);
+            let file_path_mapping = FilePathMapping::empty();
+            let sess = ParseSess::new(locale_resources, file_path_mapping);
             let before = match librustc_parse(content, &sess) {
                 Ok(before) => before,
                 Err(diagnostic) => {
@@ -104,7 +106,7 @@ fn test(path: &Path, failed: &AtomicUsize, abort_after: usize) {
             };
             let after = match librustc_parse(back, &sess) {
                 Ok(after) => after,
-                Err(diagnostic) => {
+                Err(mut diagnostic) => {
                     errorf!("=== {}: librustc failed to parse", path.display());
                     diagnostic.emit();
                     return Err(false);
@@ -154,7 +156,7 @@ fn librustc_parse(content: String, sess: &ParseSess) -> PResult<Crate> {
     parse::parse_crate_from_source_str(name, content, sess)
 }
 
-fn translate_message(diagnostic: &Diag) -> Cow<'static, str> {
+fn translate_message(diagnostic: &Diagnostic) -> Cow<'static, str> {
     thread_local! {
         static FLUENT_BUNDLE: LazyFallbackBundle = {
             let locale_resources = rustc_driver::DEFAULT_LOCALE_RESOURCES.to_vec();
@@ -164,11 +166,11 @@ fn translate_message(diagnostic: &Diag) -> Cow<'static, str> {
     }
 
     let message = &diagnostic.messages[0].0;
-    let args = translation::to_fluent_args(diagnostic.args.iter());
+    let args = translation::to_fluent_args(diagnostic.args());
 
     let (identifier, attr) = match message {
-        DiagMessage::Str(msg) | DiagMessage::Translated(msg) => return msg.clone(),
-        DiagMessage::FluentIdentifier(identifier, attr) => (identifier, attr),
+        DiagnosticMessage::Str(msg) | DiagnosticMessage::Eager(msg) => return msg.clone(),
+        DiagnosticMessage::FluentIdentifier(identifier, attr) => (identifier, attr),
     };
 
     FLUENT_BUNDLE.with(|fluent_bundle| {

@@ -1,13 +1,7 @@
 //! Extensions to the parsing API with niche applicability.
 
-use crate::buffer::Cursor;
-use crate::error::Result;
-use crate::parse::{inner_unexpected, ParseBuffer, Unexpected};
+use super::*;
 use proc_macro2::extra::DelimSpan;
-use proc_macro2::Delimiter;
-use std::cell::Cell;
-use std::mem;
-use std::rc::Rc;
 
 /// Extensions to the `ParseStream` API to support speculative parsing.
 pub trait Speculative {
@@ -167,7 +161,7 @@ pub trait Speculative {
 impl<'a> Speculative for ParseBuffer<'a> {
     fn advance_to(&self, fork: &Self) {
         if !crate::buffer::same_scope(self.cursor(), fork.cursor()) {
-            panic!("fork was not derived from the advancing parse stream");
+            panic!("Fork was not derived from the advancing parse stream");
         }
 
         let (self_unexp, self_sp) = inner_unexpected(self);

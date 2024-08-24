@@ -1,4 +1,3 @@
-use std::env;
 use std::error;
 use std::ffi::OsStr;
 use std::fmt;
@@ -14,6 +13,7 @@ use std::os::wasi::io::{AsFd, AsRawFd, BorrowedFd, RawFd};
 use std::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, RawHandle};
 use std::path::{Path, PathBuf};
 
+use crate::env;
 use crate::error::IoResultExt;
 use crate::Builder;
 
@@ -21,7 +21,7 @@ mod imp;
 
 /// Create a new temporary file.
 ///
-/// The file will be created in the location returned by [`std::env::temp_dir()`].
+/// The file will be created in the location returned by [`env::temp_dir()`].
 ///
 /// # Security
 ///
@@ -40,23 +40,14 @@ mod imp;
 ///
 /// ```
 /// use tempfile::tempfile;
-/// use std::io::{self, Write};
+/// use std::io::Write;
 ///
-/// # fn main() {
-/// #     if let Err(_) = run() {
-/// #         ::std::process::exit(1);
-/// #     }
-/// # }
-/// # fn run() -> Result<(), io::Error> {
-/// // Create a file inside of `std::env::temp_dir()`.
+/// // Create a file inside of `env::temp_dir()`.
 /// let mut file = tempfile()?;
 ///
 /// writeln!(file, "Brian was here. Briefly.")?;
-/// # Ok(())
-/// # }
+/// # Ok::<(), std::io::Error>(())
 /// ```
-///
-/// [`std::env::temp_dir()`]: https://doc.rust-lang.org/std/env/fn.temp_dir.html
 pub fn tempfile() -> io::Result<File> {
     tempfile_in(env::temp_dir())
 }
@@ -66,7 +57,7 @@ pub fn tempfile() -> io::Result<File> {
 /// # Security
 ///
 /// This variant is secure/reliable in the presence of a pathological temporary file cleaner.
-/// If the temporary file isn't created in [`std::env::temp_dir()`] then temporary file cleaners aren't an issue.
+/// If the temporary file isn't created in [`env::temp_dir()`] then temporary file cleaners aren't an issue.
 ///
 /// # Resource Leaking
 ///
@@ -81,23 +72,14 @@ pub fn tempfile() -> io::Result<File> {
 ///
 /// ```
 /// use tempfile::tempfile_in;
-/// use std::io::{self, Write};
+/// use std::io::Write;
 ///
-/// # fn main() {
-/// #     if let Err(_) = run() {
-/// #         ::std::process::exit(1);
-/// #     }
-/// # }
-/// # fn run() -> Result<(), io::Error> {
 /// // Create a file inside of the current working directory
 /// let mut file = tempfile_in("./")?;
 ///
 /// writeln!(file, "Brian was here. Briefly.")?;
-/// # Ok(())
-/// # }
+/// # Ok::<(), std::io::Error>(())
 /// ```
-///
-/// [`std::env::temp_dir()`]: https://doc.rust-lang.org/std/env/fn.temp_dir.html
 pub fn tempfile_in<P: AsRef<Path>>(dir: P) -> io::Result<File> {
     imp::create(dir.as_ref())
 }
@@ -159,15 +141,8 @@ impl TempPath {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::io;
     /// use tempfile::NamedTempFile;
     ///
-    /// # fn main() {
-    /// #     if let Err(_) = run() {
-    /// #         ::std::process::exit(1);
-    /// #     }
-    /// # }
-    /// # fn run() -> Result<(), io::Error> {
     /// let file = NamedTempFile::new()?;
     ///
     /// // Close the file, but keep the path to it around.
@@ -178,8 +153,7 @@ impl TempPath {
     /// // file will still be deleted when `file` goes out of scope, but we
     /// // won't know whether deleting the file succeeded.
     /// path.close()?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), std::io::Error>(())
     /// ```
     pub fn close(mut self) -> io::Result<()> {
         let result = fs::remove_file(&self.path).with_err_path(|| &*self.path);
@@ -212,22 +186,15 @@ impl TempPath {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::io::{self, Write};
+    /// use std::io::Write;
     /// use tempfile::NamedTempFile;
     ///
-    /// # fn main() {
-    /// #     if let Err(_) = run() {
-    /// #         ::std::process::exit(1);
-    /// #     }
-    /// # }
-    /// # fn run() -> Result<(), io::Error> {
     /// let mut file = NamedTempFile::new()?;
     /// writeln!(file, "Brian was here. Briefly.")?;
     ///
     /// let path = file.into_temp_path();
     /// path.persist("./saved_file.txt")?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), std::io::Error>(())
     /// ```
     ///
     /// [`PathPersistError`]: struct.PathPersistError.html
@@ -271,22 +238,15 @@ impl TempPath {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::io::{self, Write};
     /// use tempfile::NamedTempFile;
+    /// use std::io::Write;
     ///
-    /// # fn main() {
-    /// #     if let Err(_) = run() {
-    /// #         ::std::process::exit(1);
-    /// #     }
-    /// # }
-    /// # fn run() -> Result<(), io::Error> {
     /// let mut file = NamedTempFile::new()?;
     /// writeln!(file, "Brian was here. Briefly.")?;
     ///
     /// let path = file.into_temp_path();
     /// path.persist_noclobber("./saved_file.txt")?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), std::io::Error>(())
     /// ```
     ///
     /// [`PathPersistError`]: struct.PathPersistError.html
@@ -322,22 +282,15 @@ impl TempPath {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::io::{self, Write};
+    /// use std::io::Write;
     /// use tempfile::NamedTempFile;
     ///
-    /// # fn main() {
-    /// #     if let Err(_) = run() {
-    /// #         ::std::process::exit(1);
-    /// #     }
-    /// # }
-    /// # fn run() -> Result<(), io::Error> {
     /// let mut file = NamedTempFile::new()?;
     /// writeln!(file, "Brian was here. Briefly.")?;
     ///
     /// let path = file.into_temp_path();
     /// let path = path.keep()?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), std::io::Error>(())
     /// ```
     ///
     /// [`PathPersistError`]: struct.PathPersistError.html
@@ -406,7 +359,7 @@ impl AsRef<OsStr> for TempPath {
 /// A named temporary file.
 ///
 /// The default constructor, [`NamedTempFile::new()`], creates files in
-/// the location returned by [`std::env::temp_dir()`], but `NamedTempFile`
+/// the location returned by [`env::temp_dir()`], but `NamedTempFile`
 /// can be configured to manage a temporary file in any location
 /// by constructing with [`NamedTempFile::new_in()`].
 ///
@@ -483,7 +436,6 @@ impl AsRef<OsStr> for TempPath {
 /// [`tempfile()`]: fn.tempfile.html
 /// [`NamedTempFile::new()`]: #method.new
 /// [`NamedTempFile::new_in()`]: #method.new_in
-/// [`std::env::temp_dir()`]: https://doc.rust-lang.org/std/env/fn.temp_dir.html
 /// [`std::process::exit()`]: http://doc.rust-lang.org/std/process/fn.exit.html
 /// [`lazy_static`]: https://github.com/rust-lang-nursery/lazy-static.rs/issues/62
 pub struct NamedTempFile<F = File> {
@@ -585,20 +537,13 @@ impl NamedTempFile<File> {
     /// Create a named temporary file and write some data to it:
     ///
     /// ```no_run
-    /// # use std::io::{self, Write};
+    /// use std::io::Write;
     /// use tempfile::NamedTempFile;
     ///
-    /// # fn main() {
-    /// #     if let Err(_) = run() {
-    /// #         ::std::process::exit(1);
-    /// #     }
-    /// # }
-    /// # fn run() -> Result<(), ::std::io::Error> {
     /// let mut file = NamedTempFile::new()?;
     ///
     /// writeln!(file, "Brian was here. Briefly.")?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), std::io::Error>(())
     /// ```
     ///
     /// [`Builder`]: struct.Builder.html
@@ -661,20 +606,12 @@ impl<F> NamedTempFile<F> {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::io::{self, Write};
     /// use tempfile::NamedTempFile;
     ///
-    /// # fn main() {
-    /// #     if let Err(_) = run() {
-    /// #         ::std::process::exit(1);
-    /// #     }
-    /// # }
-    /// # fn run() -> Result<(), ::std::io::Error> {
     /// let file = NamedTempFile::new()?;
     ///
     /// println!("{:?}", file.path());
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), std::io::Error>(())
     /// ```
     #[inline]
     pub fn path(&self) -> &Path {
@@ -692,15 +629,8 @@ impl<F> NamedTempFile<F> {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::io;
     /// use tempfile::NamedTempFile;
     ///
-    /// # fn main() {
-    /// #     if let Err(_) = run() {
-    /// #         ::std::process::exit(1);
-    /// #     }
-    /// # }
-    /// # fn run() -> Result<(), io::Error> {
     /// let file = NamedTempFile::new()?;
     ///
     /// // By closing the `NamedTempFile` explicitly, we can check that it has
@@ -709,8 +639,7 @@ impl<F> NamedTempFile<F> {
     /// // of scope, but we won't know whether deleting the file
     /// // succeeded.
     /// file.close()?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), std::io::Error>(())
     /// ```
     pub fn close(self) -> io::Result<()> {
         let NamedTempFile { path, .. } = self;
@@ -741,21 +670,14 @@ impl<F> NamedTempFile<F> {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::io::{self, Write};
+    /// use std::io::Write;
     /// use tempfile::NamedTempFile;
     ///
-    /// # fn main() {
-    /// #     if let Err(_) = run() {
-    /// #         ::std::process::exit(1);
-    /// #     }
-    /// # }
-    /// # fn run() -> Result<(), io::Error> {
     /// let file = NamedTempFile::new()?;
     ///
     /// let mut persisted_file = file.persist("./saved_file.txt")?;
     /// writeln!(persisted_file, "Brian was here. Briefly.")?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), std::io::Error>(())
     /// ```
     ///
     /// [`PersistError`]: struct.PersistError.html
@@ -796,21 +718,14 @@ impl<F> NamedTempFile<F> {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::io::{self, Write};
+    /// use std::io::Write;
     /// use tempfile::NamedTempFile;
     ///
-    /// # fn main() {
-    /// #     if let Err(_) = run() {
-    /// #         ::std::process::exit(1);
-    /// #     }
-    /// # }
-    /// # fn run() -> Result<(), io::Error> {
     /// let file = NamedTempFile::new()?;
     ///
     /// let mut persisted_file = file.persist_noclobber("./saved_file.txt")?;
     /// writeln!(persisted_file, "Brian was here. Briefly.")?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), std::io::Error>(())
     /// ```
     pub fn persist_noclobber<P: AsRef<Path>>(self, new_path: P) -> Result<F, PersistError<F>> {
         let NamedTempFile { path, file } = self;
@@ -838,21 +753,14 @@ impl<F> NamedTempFile<F> {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::io::{self, Write};
+    /// use std::io::Write;
     /// use tempfile::NamedTempFile;
     ///
-    /// # fn main() {
-    /// #     if let Err(_) = run() {
-    /// #         ::std::process::exit(1);
-    /// #     }
-    /// # }
-    /// # fn run() -> Result<(), io::Error> {
     /// let mut file = NamedTempFile::new()?;
     /// writeln!(file, "Brian was here. Briefly.")?;
     ///
     /// let (file, path) = file.keep()?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), std::io::Error>(())
     /// ```
     ///
     /// [`PathPersistError`]: struct.PathPersistError.html
@@ -930,20 +838,12 @@ impl NamedTempFile<File> {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::io;
     /// use tempfile::NamedTempFile;
     ///
-    /// # fn main() {
-    /// #     if let Err(_) = run() {
-    /// #         ::std::process::exit(1);
-    /// #     }
-    /// # }
-    /// # fn run() -> Result<(), io::Error> {
     /// let file = NamedTempFile::new()?;
     ///
     /// let another_handle = file.reopen()?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), std::io::Error>(())
     /// ```
     pub fn reopen(&self) -> io::Result<File> {
         imp::reopen(self.as_file(), NamedTempFile::path(self))
@@ -1112,7 +1012,7 @@ pub(crate) fn create_named(
     // Make the path absolute. Otherwise, changing directories could cause us to
     // delete the wrong file.
     if !path.is_absolute() {
-        path = env::current_dir()?.join(path)
+        path = std::env::current_dir()?.join(path)
     }
     imp::create_named(&path, open_options, permissions)
         .with_err_path(|| path.clone())

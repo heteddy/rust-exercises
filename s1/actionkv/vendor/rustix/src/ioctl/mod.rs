@@ -332,7 +332,6 @@ type _RawOpcode = c::c_int;
     bsd,
     target_os = "redox",
     target_os = "haiku",
-    target_os = "horizon",
     target_os = "hurd",
     target_os = "vita"
 ))]

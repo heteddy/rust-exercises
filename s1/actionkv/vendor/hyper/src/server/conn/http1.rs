@@ -79,6 +79,7 @@ pub struct Builder {
     h1_writev: Option<bool>,
     max_buf_size: Option<usize>,
     pipeline_flush: bool,
+    date_header: bool,
 }
 
 /// Deconstructed parts of a `Connection`.
@@ -165,7 +166,6 @@ where
     where
         S: Unpin,
         S::Future: Unpin,
-        B: Unpin,
     {
         self.conn.poll_without_shutdown(cx)
     }
@@ -176,12 +176,7 @@ where
     /// # Error
     ///
     /// This errors if the underlying connection protocol is not HTTP/1.
-    pub fn without_shutdown(self) -> impl Future<Output = crate::Result<Parts<I, S>>>
-    where
-        S: Unpin,
-        S::Future: Unpin,
-        B: Unpin,
-    {
+    pub fn without_shutdown(self) -> impl Future<Output = crate::Result<Parts<I, S>>> {
         let mut zelf = Some(self);
         futures_util::future::poll_fn(move |cx| {
             ready!(zelf.as_mut().unwrap().conn.poll_without_shutdown(cx))?;
@@ -246,6 +241,7 @@ impl Builder {
             h1_writev: None,
             max_buf_size: None,
             pipeline_flush: false,
+            date_header: true,
         }
     }
     /// Set whether HTTP/1 connections should support half-closures.
@@ -356,6 +352,16 @@ impl Builder {
             "the max_buf_size cannot be smaller than the minimum that h1 specifies."
         );
         self.max_buf_size = Some(max);
+        self
+    }
+
+    /// Set whether the `date` header should be included in HTTP responses.
+    ///
+    /// Note that including the `date` header is recommended by RFC 7231.
+    ///
+    /// Default is true.
+    pub fn auto_date_header(&mut self, enabled: bool) -> &mut Self {
+        self.date_header = enabled;
         self
     }
 

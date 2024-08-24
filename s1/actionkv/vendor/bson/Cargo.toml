@@ -12,7 +12,7 @@
 [package]
 edition = "2018"
 name = "bson"
-version = "2.10.0"
+version = "2.11.0"
 authors = [
     "Y. T. Chung <zonyitoo@gmail.com>",
     "Kevin Yeh <kevinyeah@utexas.edu>",

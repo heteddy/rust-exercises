@@ -107,8 +107,7 @@ macro_rules! parse_quote_spanned {
 ////////////////////////////////////////////////////////////////////////////////
 // Can parse any type that implements Parse.
 
-use crate::error::Result;
-use crate::parse::{Parse, ParseStream, Parser};
+use crate::parse::{Parse, ParseStream, Parser, Result};
 use proc_macro2::TokenStream;
 
 // Not public API.

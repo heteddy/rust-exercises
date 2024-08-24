@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0 OR MIT
-
 #![allow(dead_code, unused_macros)]
 
 macro_rules! assert_unpin {

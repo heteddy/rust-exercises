@@ -14,5 +14,9 @@ build:
 	cargo build --target-dir ./target
 	cp -f ./target/debug/${SVR_BIN} ./deploy
 
+build-release:
+	cargo build --release --target-dir ./target
+	cp -f ./target/debug/${SVR_BIN} ./deploy
+
 clean:
 	-rm ./deploy/${SVR_BIN}

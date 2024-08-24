@@ -135,7 +135,7 @@ fn compile_zstd() {
     // See: https://github.com/gyscos/zstd-rs/pull/209
     let need_wasm_shim = !cfg!(feature = "no_wasm_shim")
         && env::var("TARGET").map_or(false, |target| {
-            target == "wasm32-unknown-unknown" || target == "wasm32-wasi"
+            target == "wasm32-unknown-unknown" || target.starts_with("wasm32-wasi")
         });
 
     if need_wasm_shim {
@@ -143,7 +143,6 @@ fn compile_zstd() {
         cargo_print(&"rerun-if-changed=wasm-shim/string.h");
 
         config.include("wasm-shim/");
-        config.define("XXH_STATIC_ASSERT", Some("0"));
     }
 
     // Some extra parameters

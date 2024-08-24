@@ -131,7 +131,6 @@ pub struct ItemSearchOptions {
     keychains: Option<CFArray<SecKeychain>>,
     #[cfg(not(target_os = "macos"))]
     keychains: Option<CFArray<CFType>>,
-    case_insensitive: Option<bool>,
     class: Option<ItemClass>,
     key_class: Option<KeyClass>,
     load_refs: bool,
@@ -141,7 +140,6 @@ pub struct ItemSearchOptions {
     trusted_only: Option<bool>,
     label: Option<CFString>,
     service: Option<CFString>,
-    subject: Option<CFString>,
     account: Option<CFString>,
     access_group: Option<CFString>,
     pub_key_hash: Option<CFData>,
@@ -169,13 +167,6 @@ impl ItemSearchOptions {
     #[inline(always)]
     pub fn class(&mut self, class: ItemClass) -> &mut Self {
         self.class = Some(class);
-        self
-    }
-
-    /// Whether search for an item should be case insensitive or not.
-    #[inline(always)]
-    pub fn case_insensitive(&mut self, case_insensitive: Option<bool>) -> &mut Self {
-        self.case_insensitive = case_insensitive;
         self
     }
 
@@ -241,24 +232,11 @@ impl ItemSearchOptions {
         self.service = Some(CFString::new(service));
         self
     }
-    
-    /// Search for an item with exactly the given subject.
-    #[inline(always)]
-    pub fn subject(&mut self, subject: &str) -> &mut Self {
-        self.subject = Some(CFString::new(subject));
-        self
-    }
 
     /// Search for an item with the given account.
     #[inline(always)]
     pub fn account(&mut self, account: &str) -> &mut Self {
         self.account = Some(CFString::new(account));
-        self
-    }
-
-    /// Search for an item with a specific access group.
-    pub fn access_group(&mut self, access_group: &str) -> &mut Self {
-        self.access_group = Some(CFString::new(access_group));
         self
     }
 
@@ -305,13 +283,6 @@ impl ItemSearchOptions {
 
             if let Some(class) = self.class {
                 params.push((CFString::wrap_under_get_rule(kSecClass), class.to_value()));
-            }
-
-            if let Some(case_insensitive) = self.case_insensitive {
-                params.push((
-                    CFString::wrap_under_get_rule(kSecMatchCaseInsensitive),
-                    CFBoolean::from(case_insensitive).as_CFType()
-                ));
             }
 
             if let Some(key_class) = self.key_class {
@@ -364,13 +335,6 @@ impl ItemSearchOptions {
                 params.push((
                     CFString::wrap_under_get_rule(kSecAttrService),
                     service.as_CFType(),
-                ));
-            }
-            
-            if let Some(ref subject) = self.subject {
-                params.push((
-                    CFString::wrap_under_get_rule(kSecMatchSubjectWholeString),
-                    subject.as_CFType(),
                 ));
             }
 
@@ -572,62 +536,25 @@ impl SearchResult {
 pub struct ItemAddOptions {
     /// The value (by ref or data) of the item to add, required.
     pub value: ItemAddValue,
-    /// Optional kSecAttrAccount attribute.
-    pub account_name: Option<CFString>,
-    /// Optional kSecAttrAccessGroup attribute.
-    pub access_group: Option<CFString>,
-    /// Optional kSecAttrComment attribute.
-    pub comment: Option<CFString>,
-    /// Optional kSecAttrDescription attribute.
-    pub description: Option<CFString>,
     /// Optional kSecAttrLabel attribute.
-    pub label: Option<CFString>,
-    /// Optional kSecAttrService attribute.
-    pub service: Option<CFString>,
+    pub label: Option<String>,
     /// Optional keychain location.
     pub location: Option<Location>,
 }
 
 impl ItemAddOptions {
     /// Specifies the item to add.
-    #[must_use]
-    pub fn new(value: ItemAddValue) -> Self {
-        Self{ value, label: None, location: None, service: None, account_name: None, comment: None, description: None, access_group: None }
-    }
-
-    /// Specifies the `kSecAttrAccount` attribute.
-    pub fn set_account_name(&mut self, account_name: impl AsRef<str>) -> &mut Self {
-        self.account_name = Some(account_name.as_ref().into());
-        self
-    }
-    /// Specifies the `kSecAttrAccessGroup` attribute.
-    pub fn set_access_group(&mut self, access_group: impl AsRef<str>) -> &mut Self {
-        self.access_group = Some(access_group.as_ref().into());
-        self
-    }
-    /// Specifies the `kSecAttrComment` attribute.
-    pub fn set_comment(&mut self, comment: impl AsRef<str>) -> &mut Self {
-        self.comment = Some(comment.as_ref().into());
-        self
-    }
-    /// Specifies the `kSecAttrDescription` attribute.
-    pub fn set_description(&mut self, description: impl AsRef<str>) -> &mut Self {
-        self.description = Some(description.as_ref().into());
-        self
+    #[must_use] pub fn new(value: ItemAddValue) -> Self {
+        Self{ value, label: None, location: None }
     }
     /// Specifies the `kSecAttrLabel` attribute.
-    pub fn set_label(&mut self, label: impl AsRef<str>) -> &mut Self {
-        self.label = Some(label.as_ref().into());
+    pub fn set_label(&mut self, label: impl Into<String>) -> &mut Self {
+        self.label = Some(label.into());
         self
     }
     /// Specifies which keychain to add the item to.
     pub fn set_location(&mut self, location: Location) -> &mut Self {
         self.location = Some(location);
-        self
-    }
-    /// Specifies the `kSecAttrService` attribute.
-    pub fn set_service(&mut self, service: impl AsRef<str>) -> &mut Self {
-        self.service = Some(service.as_ref().into());
         self
     }
     /// Populates a `CFDictionary` to be passed to
@@ -665,23 +592,10 @@ impl ItemAddOptions {
                 },
             }
         }
-        if let Some(account_name) = &self.account_name {
-            dict.add(&unsafe { kSecAttrAccount }.to_void(), &account_name.to_void());
-        }
-        if let Some(access_group) = &self.access_group {
-            dict.add(&unsafe { kSecAttrAccessGroup }.to_void(), &access_group.to_void());
-        }
-        if let Some(comment) = &self.comment {
-            dict.add(&unsafe { kSecAttrComment }.to_void(), &comment.to_void());
-        }
-        if let Some(description) = &self.description {
-            dict.add(&unsafe { kSecAttrDescription }.to_void(), &description.to_void());
-        }
-        if let Some(label) = &self.label {
+
+        let label = self.label.as_deref().map(CFString::from);
+        if let Some(label) = &label {
             dict.add(&unsafe { kSecAttrLabel }.to_void(), &label.to_void());
-        }
-        if let Some(service) = &self.service {
-            dict.add(&unsafe { kSecAttrService }.to_void(), &service.to_void());
         }
 
         dict.to_immutable()

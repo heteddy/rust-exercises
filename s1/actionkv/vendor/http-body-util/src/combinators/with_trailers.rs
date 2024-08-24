@@ -4,7 +4,7 @@ use std::{
     task::{Context, Poll},
 };
 
-use futures_core::ready;
+use futures_util::ready;
 use http::HeaderMap;
 use http_body::{Body, Frame};
 use pin_project_lite::pin_project;
@@ -123,7 +123,7 @@ mod tests {
     use std::convert::Infallible;
 
     use bytes::Bytes;
-    use http::{HeaderMap, HeaderName, HeaderValue};
+    use http::{HeaderName, HeaderValue};
 
     use crate::{BodyExt, Empty, Full};
 

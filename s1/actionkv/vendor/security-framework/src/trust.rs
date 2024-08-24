@@ -67,7 +67,6 @@ unsafe impl Send for SecTrust {}
 #[cfg(target_os = "macos")]
 bitflags::bitflags! {
     /// The option flags used to configure the evaluation of a `SecTrust`.
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub struct TrustOptions: SecTrustOptionFlags {
         /// Allow expired certificates (except for the root certificate).
         const ALLOW_EXPIRED = kSecTrustOptionAllowExpired;

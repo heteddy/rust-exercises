@@ -1,9 +1,4 @@
-use crate::attr::Attribute;
-use crate::expr::Expr;
-use crate::item::Item;
-use crate::mac::Macro;
-use crate::pat::Pat;
-use crate::token;
+use super::*;
 
 ast_struct! {
     /// A braced block containing Rust statements.
@@ -79,19 +74,9 @@ ast_struct! {
 
 #[cfg(feature = "parsing")]
 pub(crate) mod parsing {
-    use crate::attr::Attribute;
-    use crate::error::Result;
-    use crate::expr::{self, Expr, ExprBlock, ExprMacro};
-    use crate::ident::Ident;
-    use crate::item;
-    use crate::mac::{self, Macro};
+    use super::*;
     use crate::parse::discouraged::Speculative as _;
-    use crate::parse::{Parse, ParseStream};
-    use crate::pat::{Pat, PatType};
-    use crate::path::Path;
-    use crate::stmt::{Block, Local, LocalInit, Stmt, StmtMacro};
-    use crate::token;
-    use crate::ty::Type;
+    use crate::parse::{Parse, ParseStream, Result};
     use proc_macro2::TokenStream;
 
     struct AllowNoSemi(bool);
@@ -334,7 +319,7 @@ pub(crate) mod parsing {
         allow_nosemi: AllowNoSemi,
         mut attrs: Vec<Attribute>,
     ) -> Result<Stmt> {
-        let mut e = Expr::parse_with_earlier_boundary_rule(input)?;
+        let mut e = expr::parsing::expr_early(input)?;
 
         let mut attr_target = &mut e;
         loop {
@@ -410,8 +395,7 @@ pub(crate) mod parsing {
 
 #[cfg(feature = "printing")]
 mod printing {
-    use crate::expr;
-    use crate::stmt::{Block, Local, Stmt, StmtMacro};
+    use super::*;
     use proc_macro2::TokenStream;
     use quote::{ToTokens, TokenStreamExt};
 

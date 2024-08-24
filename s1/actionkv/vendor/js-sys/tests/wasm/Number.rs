@@ -1,7 +1,4 @@
-use std::{
-    convert::TryFrom,
-    f64::{INFINITY, NAN},
-};
+use std::f64::{INFINITY, NAN};
 
 use js_sys::*;
 use wasm_bindgen::prelude::*;
@@ -72,21 +69,6 @@ fn new() {
     let v = JsValue::from(n);
     assert!(v.is_object());
     assert_eq!(Number::from(v).value_of(), 42.);
-}
-
-#[wasm_bindgen_test]
-fn try_from() {
-    assert_eq!(Number::try_from(42u128).unwrap(), 42.);
-    assert_eq!(
-        Number::try_from(Number::MAX_SAFE_INTEGER as u64).unwrap(),
-        Number::MAX_SAFE_INTEGER
-    );
-    assert_eq!(
-        Number::try_from(Number::MIN_SAFE_INTEGER as i128).unwrap(),
-        Number::MIN_SAFE_INTEGER
-    );
-    assert!(Number::try_from(Number::MAX_SAFE_INTEGER as u128 + 1).is_err());
-    assert!(Number::try_from(Number::MIN_SAFE_INTEGER as i64 - 1).is_err());
 }
 
 #[wasm_bindgen_test]

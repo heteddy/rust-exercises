@@ -1,51 +1,16 @@
 # `wasm-bindgen` Change Log
 --------------------------------------------------------------------------------
 
-## [0.2.92](https://github.com/rustwasm/wasm-bindgen/compare/0.2.91...0.2.92)
-
-Released 2024-03-04
-
-### Added
-
-* Add bindings for `RTCPeerConnectionIceErrorEvent`.
-  [#3835](https://github.com/rustwasm/wasm-bindgen/pull/3835)
-
-* Add bindings for `CanvasState.reset()`, affecting `CanvasRenderingContext2D` and `OffscreenCanvasRenderingContext2D`.
-  [#3844](https://github.com/rustwasm/wasm-bindgen/pull/3844)
-
-* Add `TryFrom` implementations for `Number`, that allow losslessly converting from 64- and 128-bits numbers.
-  [#3847](https://github.com/rustwasm/wasm-bindgen/pull/3847)
-
-* Add support for `Option<*const T>`, `Option<*mut T>` and `NonNull<T>`.
-  [#3852](https://github.com/rustwasm/wasm-bindgen/pull/3852)
-  [#3857](https://github.com/rustwasm/wasm-bindgen/pull/3857)
-
-* Allow overriding the URL used for headless tests by setting `WASM_BINDGEN_TEST_ADDRESS`.
-  [#3861](https://github.com/rustwasm/wasm-bindgen/pull/3861)
-
-### Fixed
-
-* Make .wasm output deterministic when using `--reference-types`.
-  [#3851](https://github.com/rustwasm/wasm-bindgen/pull/3851)
-
-* Don't allow invalid Unicode scalar values in `char`.
-  [#3866](https://github.com/rustwasm/wasm-bindgen/pull/3866)
-
---------------------------------------------------------------------------------
-
 ## [0.2.91](https://github.com/rustwasm/wasm-bindgen/compare/0.2.90...0.2.91)
 
 Released 2024-02-06
 
 ### Added
 
-* Added bindings for the `RTCRtpTransceiver.setCodecPreferences()` and unstable bindings for the `RTCRtpEncodingParameters.scalabilityMode`.
-  [#3828](https://github.com/rustwasm/wasm-bindgen/pull/3828)
-
 * Add unstable bindings for the FileSystemAccess API
   [#3810](https://github.com/rustwasm/wasm-bindgen/pull/3810)
 
-* Added support for running tests in shared and service workers with `wasm_bindgen_test_configure!` `run_in_shared_worker` and `run_in_service_worker`.
+* Added support for running tests in shared and service workers with ``wasm_bindgen_test_configure!` `run_in_shared_worker` and `run_in_service_worker`.
   [#3804](https://github.com/rustwasm/wasm-bindgen/pull/3804)
 
 * Accept the `--skip` flag with `wasm-bindgen-test-runner`.
@@ -87,8 +52,6 @@ Released 2024-02-06
 
 * Fixed nighly build of `wasm-bindgen-futures`.
   [#3827](https://github.com/rustwasm/wasm-bindgen/pull/3827)
-
---------------------------------------------------------------------------------
 
 ## [0.2.90](https://github.com/rustwasm/wasm-bindgen/compare/0.2.89...0.2.90)
 
@@ -132,8 +95,6 @@ Released 2024-01-06
   `RtcLifecycleEvent` and `WebrtcGlobalStatisticsReport` features.
   [#3723](https://github.com/rustwasm/wasm-bindgen/pull/3723)
 
---------------------------------------------------------------------------------
-
 ## [0.2.89](https://github.com/rustwasm/wasm-bindgen/compare/0.2.88...0.2.89)
 
 Released 2023-11-27.
@@ -161,8 +122,6 @@ Released 2023-11-27.
 
 * Removed Gecko-internal dictionary bindings `Csp`, `CspPolicies`, `CspReport` and `CspReportProperties`.
   [#3721](https://github.com/rustwasm/wasm-bindgen/pull/3721)
-
---------------------------------------------------------------------------------
 
 ## [0.2.88](https://github.com/rustwasm/wasm-bindgen/compare/0.2.87...0.2.88)
 
@@ -327,8 +286,6 @@ Released 2023-11-01
 
 * Removed `GetNotificationOptions`, `NotificationBehavior` and `Notification.get()` because
   they don't exist anymore.
-
---------------------------------------------------------------------------------
 
 ## [0.2.87](https://github.com/rustwasm/wasm-bindgen/compare/0.2.86...0.2.87)
 

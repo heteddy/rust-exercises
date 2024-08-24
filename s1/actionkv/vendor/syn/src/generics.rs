@@ -1,11 +1,5 @@
-use crate::attr::Attribute;
-use crate::expr::Expr;
-use crate::ident::Ident;
-use crate::lifetime::Lifetime;
-use crate::path::Path;
+use super::*;
 use crate::punctuated::{Iter, IterMut, Punctuated};
-use crate::token;
-use crate::ty::Type;
 use proc_macro2::TokenStream;
 #[cfg(all(feature = "printing", feature = "extra-traits"))]
 use std::fmt::{self, Debug};
@@ -39,7 +33,7 @@ ast_enum_of_structs! {
     ///
     /// This type is a [syntax tree enum].
     ///
-    /// [syntax tree enum]: crate::expr::Expr#syntax-tree-enums
+    /// [syntax tree enum]: Expr#syntax-tree-enums
     #[cfg_attr(doc_cfg, doc(cfg(any(feature = "full", feature = "derive"))))]
     pub enum GenericParam {
         /// A lifetime parameter: `'a: 'b + 'c + 'd`.
@@ -499,7 +493,7 @@ ast_enum_of_structs! {
     ///
     /// This type is a [syntax tree enum].
     ///
-    /// [syntax tree enum]: crate::expr::Expr#syntax-tree-enums
+    /// [syntax tree enum]: Expr#syntax-tree-enums
     #[cfg_attr(doc_cfg, doc(cfg(any(feature = "full", feature = "derive"))))]
     #[non_exhaustive]
     pub enum WherePredicate {
@@ -537,22 +531,9 @@ ast_struct! {
 
 #[cfg(feature = "parsing")]
 pub(crate) mod parsing {
-    use crate::attr::Attribute;
-    use crate::error::Result;
+    use super::*;
     use crate::ext::IdentExt as _;
-    use crate::generics::{
-        BoundLifetimes, ConstParam, GenericParam, Generics, LifetimeParam, PredicateLifetime,
-        PredicateType, TraitBound, TraitBoundModifier, TypeParam, TypeParamBound, WhereClause,
-        WherePredicate,
-    };
-    use crate::ident::Ident;
-    use crate::lifetime::Lifetime;
-    use crate::parse::{Parse, ParseStream};
-    use crate::path::{self, ParenthesizedGenericArguments, Path, PathArguments};
-    use crate::punctuated::Punctuated;
-    use crate::token;
-    use crate::ty::Type;
-    use crate::verbatim;
+    use crate::parse::{Parse, ParseStream, Result};
 
     #[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
     impl Parse for Generics {
@@ -990,12 +971,8 @@ pub(crate) mod parsing {
 
 #[cfg(feature = "printing")]
 mod printing {
+    use super::*;
     use crate::attr::FilterAttrs;
-    use crate::generics::{
-        BoundLifetimes, ConstParam, GenericParam, Generics, ImplGenerics, LifetimeParam,
-        PredicateLifetime, PredicateType, TraitBound, TraitBoundModifier, Turbofish, TypeGenerics,
-        TypeParam, WhereClause,
-    };
     use crate::print::TokensOrDefault;
     use proc_macro2::TokenStream;
     use quote::{ToTokens, TokenStreamExt};

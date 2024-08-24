@@ -121,7 +121,6 @@ pub(crate) use libc::ipv6_mreq as Ipv6Mreq;
 #[cfg(not(any(
     target_os = "dragonfly",
     target_os = "fuchsia",
-    target_os = "hurd",
     target_os = "illumos",
     target_os = "netbsd",
     target_os = "openbsd",
@@ -144,7 +143,6 @@ pub(crate) use libc::IP_HDRINCL;
     target_os = "redox",
     target_os = "solaris",
     target_os = "haiku",
-    target_os = "hurd",
     target_os = "nto",
     target_os = "espidf",
     target_os = "vita",
@@ -154,7 +152,6 @@ pub(crate) use libc::IP_RECVTOS;
     target_os = "fuchsia",
     target_os = "redox",
     target_os = "solaris",
-    target_os = "haiku",
     target_os = "illumos",
 )))]
 pub(crate) use libc::IP_TOS;
@@ -182,7 +179,6 @@ pub(crate) use libc::{
 #[cfg(not(any(
     target_os = "dragonfly",
     target_os = "haiku",
-    target_os = "hurd",
     target_os = "netbsd",
     target_os = "openbsd",
     target_os = "redox",
@@ -325,7 +321,6 @@ type IovLen = usize;
         target_os = "linux",
         any(
             target_env = "musl",
-            target_env = "ohos",
             all(target_env = "uclibc", target_pointer_width = "32")
         )
     ),
@@ -334,7 +329,6 @@ type IovLen = usize;
     target_os = "freebsd",
     target_os = "fuchsia",
     target_os = "haiku",
-    target_os = "hurd",
     target_os = "illumos",
     target_os = "ios",
     target_os = "macos",
@@ -435,7 +429,6 @@ impl Type {
             target_os = "dragonfly",
             target_os = "freebsd",
             target_os = "fuchsia",
-            target_os = "hurd",
             target_os = "illumos",
             target_os = "linux",
             target_os = "netbsd",
@@ -453,7 +446,6 @@ impl Type {
                 target_os = "dragonfly",
                 target_os = "freebsd",
                 target_os = "fuchsia",
-                target_os = "hurd",
                 target_os = "illumos",
                 target_os = "linux",
                 target_os = "netbsd",
@@ -472,7 +464,6 @@ impl Type {
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "fuchsia",
-        target_os = "hurd",
         target_os = "illumos",
         target_os = "linux",
         target_os = "netbsd",
@@ -1189,7 +1180,6 @@ pub(crate) fn set_tcp_keepalive(fd: Socket, keepalive: &TcpKeepalive) -> io::Res
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "fuchsia",
-        target_os = "hurd",
         target_os = "illumos",
         target_os = "ios",
         target_os = "linux",

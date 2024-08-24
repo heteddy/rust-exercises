@@ -7495,13 +7495,6 @@ mod gen_RtcPeerConnection;
 #[allow(unused_imports)]
 pub use gen_RtcPeerConnection::*;
 
-#[cfg(feature = "RtcPeerConnectionIceErrorEvent")]
-#[allow(non_snake_case)]
-mod gen_RtcPeerConnectionIceErrorEvent;
-#[cfg(feature = "RtcPeerConnectionIceErrorEvent")]
-#[allow(unused_imports)]
-pub use gen_RtcPeerConnectionIceErrorEvent::*;
-
 #[cfg(feature = "RtcPeerConnectionIceEvent")]
 #[allow(non_snake_case)]
 mod gen_RtcPeerConnectionIceEvent;

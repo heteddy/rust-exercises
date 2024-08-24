@@ -1,4 +1,4 @@
-FROM rust:1.75.0-bookworm
+FROM rust:1.75.0-bookworm as builder
 
 RUN mkdir /data
 RUN mkdir -p /data/.cargo
@@ -16,7 +16,7 @@ COPY  dump /data/dumps
 COPY  src /data/src
 COPY  tests /data/tests
 COPY  src /data/src
-COPY  src /data/src
+COPY  vendor /data/vendor
 COPY  Cargo.lock /data
 COPY  Cargo.toml /data
 COPY  makefile /data
@@ -26,9 +26,17 @@ COPY  readme.md /data
 # RUN cd ./deploy
 RUN cd /data/deploy \
     && tar -zxvf cmake-3.12.2-Linux-x86_64.tar.gz \
-    && mv cmake-3.12.2-Linux-x86_64 cmake-3.12.2 \
-    && ln -sf ./deploy/cmake-3.12.2/bin/* /usr/bin
+    && mv cmake-3.12.2-Linux-x86_64 cmake-3.12 \
+    && cp -r cmake-3.12 /usr/share/
+
+ENV PATH=$PATH:/usr/share/cmake-3.12/bin 
 RUN cd /data && make build
+
+FROM ubuntu
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN mkdir -p /data/deploy
+COPY --from=builder /data/deploy /data/deploy
 
 
 

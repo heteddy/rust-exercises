@@ -3,7 +3,8 @@
 use crate::backend::io::syscalls::ioctl;
 use crate::fd::AsFd;
 use crate::io;
-use core::{slice, str};
+use core::slice;
+use core::str;
 use linux_raw_sys::ctypes::c_char;
 use linux_raw_sys::ioctl::SIOCGIFINDEX;
 #[cfg(feature = "alloc")]

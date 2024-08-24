@@ -13,7 +13,7 @@
 edition = "2021"
 rust-version = "1.56"
 name = "darling_core"
-version = "0.20.9"
+version = "0.20.10"
 authors = ["Ted Driggs <ted.driggs@outlook.com>"]
 description = """
 Helper crate for proc-macro library for reading attributes into structs when

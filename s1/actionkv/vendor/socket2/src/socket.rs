@@ -760,7 +760,6 @@ const fn set_common_type(ty: Type) -> Type {
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "fuchsia",
-        target_os = "hurd",
         target_os = "illumos",
         target_os = "linux",
         target_os = "netbsd",
@@ -787,7 +786,6 @@ fn set_common_flags(socket: Socket) -> io::Result<Socket> {
             target_os = "dragonfly",
             target_os = "freebsd",
             target_os = "fuchsia",
-            target_os = "hurd",
             target_os = "illumos",
             target_os = "linux",
             target_os = "netbsd",
@@ -1309,7 +1307,6 @@ impl Socket {
     #[cfg(not(any(
         target_os = "dragonfly",
         target_os = "haiku",
-        target_os = "hurd",
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "redox",
@@ -1347,7 +1344,6 @@ impl Socket {
     #[cfg(not(any(
         target_os = "dragonfly",
         target_os = "haiku",
-        target_os = "hurd",
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "redox",
@@ -1373,43 +1369,6 @@ impl Socket {
                 sys::IPPROTO_IP,
                 sys::IP_DROP_SOURCE_MEMBERSHIP,
                 mreqs,
-            )
-        }
-    }
-
-    /// Get the value of the `IP_MULTICAST_ALL` option for this socket.
-    ///
-    /// For more information about this option, see [`set_multicast_all_v4`].
-    ///
-    /// [`set_multicast_all_v4`]: Socket::set_multicast_all_v4
-    #[cfg(all(feature = "all", target_os = "linux"))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", target_os = "linux"))))]
-    pub fn multicast_all_v4(&self) -> io::Result<bool> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IP, libc::IP_MULTICAST_ALL)
-                .map(|all| all != 0)
-        }
-    }
-
-    /// Set the value of the `IP_MULTICAST_ALL` option for this socket.
-    ///
-    /// This option can be used to modify the delivery policy of
-    /// multicast messages.  The argument is a boolean
-    /// (defaults to true).  If set to true, the socket will receive
-    /// messages from all the groups that have been joined
-    /// globally on the whole system.  Otherwise, it will deliver
-    /// messages only from the groups that have been explicitly
-    /// joined (for example via the `IP_ADD_MEMBERSHIP` option) on
-    /// this particular socket.
-    #[cfg(all(feature = "all", target_os = "linux"))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", target_os = "linux"))))]
-    pub fn set_multicast_all_v4(&self, all: bool) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IP,
-                libc::IP_MULTICAST_ALL,
-                all as c_int,
             )
         }
     }
@@ -1528,7 +1487,6 @@ impl Socket {
         target_os = "redox",
         target_os = "solaris",
         target_os = "illumos",
-        target_os = "haiku",
     )))]
     pub fn set_tos(&self, tos: u32) -> io::Result<()> {
         unsafe { setsockopt(self.as_raw(), sys::IPPROTO_IP, sys::IP_TOS, tos as c_int) }
@@ -1547,7 +1505,6 @@ impl Socket {
         target_os = "redox",
         target_os = "solaris",
         target_os = "illumos",
-        target_os = "haiku",
     )))]
     pub fn tos(&self) -> io::Result<u32> {
         unsafe {
@@ -1564,7 +1521,6 @@ impl Socket {
         target_os = "aix",
         target_os = "dragonfly",
         target_os = "fuchsia",
-        target_os = "hurd",
         target_os = "illumos",
         target_os = "netbsd",
         target_os = "openbsd",
@@ -1595,7 +1551,6 @@ impl Socket {
         target_os = "aix",
         target_os = "dragonfly",
         target_os = "fuchsia",
-        target_os = "hurd",
         target_os = "illumos",
         target_os = "netbsd",
         target_os = "openbsd",
@@ -1692,43 +1647,6 @@ impl Socket {
                 sys::IPPROTO_IPV6,
                 sys::IPV6_MULTICAST_HOPS,
                 hops as c_int,
-            )
-        }
-    }
-
-    /// Get the value of the `IPV6_MULTICAST_ALL` option for this socket.
-    ///
-    /// For more information about this option, see [`set_multicast_all_v6`].
-    ///
-    /// [`set_multicast_all_v6`]: Socket::set_multicast_all_v6
-    #[cfg(all(feature = "all", target_os = "linux"))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", target_os = "linux"))))]
-    pub fn multicast_all_v6(&self) -> io::Result<bool> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IPV6, libc::IPV6_MULTICAST_ALL)
-                .map(|all| all != 0)
-        }
-    }
-
-    /// Set the value of the `IPV6_MULTICAST_ALL` option for this socket.
-    ///
-    /// This option can be used to modify the delivery policy of
-    /// multicast messages.  The argument is a boolean
-    /// (defaults to true).  If set to true, the socket will receive
-    /// messages from all the groups that have been joined
-    /// globally on the whole system.  Otherwise, it will deliver
-    /// messages only from the groups that have been explicitly
-    /// joined (for example via the `IPV6_ADD_MEMBERSHIP` option) on
-    /// this particular socket.
-    #[cfg(all(feature = "all", target_os = "linux"))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", target_os = "linux"))))]
-    pub fn set_multicast_all_v6(&self, all: bool) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IPV6,
-                libc::IPV6_MULTICAST_ALL,
-                all as c_int,
             )
         }
     }
@@ -1857,7 +1775,6 @@ impl Socket {
         target_os = "redox",
         target_os = "solaris",
         target_os = "haiku",
-        target_os = "hurd",
         target_os = "espidf",
         target_os = "vita",
     )))]
@@ -1882,7 +1799,6 @@ impl Socket {
         target_os = "redox",
         target_os = "solaris",
         target_os = "haiku",
-        target_os = "hurd",
         target_os = "espidf",
         target_os = "vita",
     )))]

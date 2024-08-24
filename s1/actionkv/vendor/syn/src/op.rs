@@ -78,9 +78,8 @@ ast_enum! {
 
 #[cfg(feature = "parsing")]
 pub(crate) mod parsing {
-    use crate::error::Result;
-    use crate::op::{BinOp, UnOp};
-    use crate::parse::{Parse, ParseStream};
+    use super::*;
+    use crate::parse::{Parse, ParseStream, Result};
 
     #[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
     impl Parse for BinOp {
@@ -166,7 +165,7 @@ pub(crate) mod parsing {
 
 #[cfg(feature = "printing")]
 mod printing {
-    use crate::op::{BinOp, UnOp};
+    use super::*;
     use proc_macro2::TokenStream;
     use quote::ToTokens;
 

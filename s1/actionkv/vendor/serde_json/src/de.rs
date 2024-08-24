@@ -1575,7 +1575,10 @@ impl<'de, 'a, R: Read<'de>> de::Deserializer<'de> for &'a mut Deserializer<R> {
     ///
     /// The behavior of serde_json is specified to fail on non-UTF-8 strings
     /// when deserializing into Rust UTF-8 string types such as String, and
-    /// succeed with non-UTF-8 bytes when deserializing using this method.
+    /// succeed with the bytes representing the [WTF-8] encoding of code points
+    /// when deserializing using this method.
+    ///
+    /// [WTF-8]: https://simonsapin.github.io/wtf-8
     ///
     /// Escape sequences are processed as usual, and for `\uXXXX` escapes it is
     /// still checked if the hex number represents a valid Unicode code point.
@@ -1870,8 +1873,9 @@ impl<'de, 'a, R: Read<'de>> de::Deserializer<'de> for &'a mut Deserializer<R> {
             Some(b'{') => {
                 check_recursion! {
                     self.eat_char();
-                    let value = tri!(visitor.visit_enum(VariantAccess::new(self)));
+                    let ret = visitor.visit_enum(VariantAccess::new(self));
                 }
+                let value = tri!(ret);
 
                 match tri!(self.parse_whitespace()) {
                     Some(b'}') => {
