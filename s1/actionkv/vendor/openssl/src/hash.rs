@@ -70,7 +70,6 @@ impl MessageDigest {
     ///
     /// [`EVP_get_digestbynid`]: https://www.openssl.org/docs/manmaster/crypto/EVP_DigestInit.html
     pub fn from_nid(type_: Nid) -> Option<MessageDigest> {
-        ffi::init();
         unsafe {
             let ptr = ffi::EVP_get_digestbynid(type_.as_raw());
             if ptr.is_null() {

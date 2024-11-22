@@ -1,16 +1,18 @@
 #![allow(dead_code)]
 use super::backward_references::kHashMul32;
+//use super::super::alloc::{SliceWrapper, SliceWrapperMut};
+use super::super::alloc;
 use super::bit_cost::BitsEntropy;
 use super::brotli_bit_stream::{BrotliBuildAndStoreHuffmanTreeFast, BrotliStoreHuffmanTree};
 use super::entropy_encode::{
-    BrotliConvertBitDepthsToSymbols, BrotliCreateHuffmanTree, HuffmanTree,
+    BrotliConvertBitDepthsToSymbols, BrotliCreateHuffmanTree, HuffmanTree, NewHuffmanTree,
 };
 use super::static_dict::{
     FindMatchLengthWithLimit, BROTLI_UNALIGNED_LOAD32, BROTLI_UNALIGNED_LOAD64,
     BROTLI_UNALIGNED_STORE64,
 };
-use super::util::Log2FloorNonZero;
-use core::cmp::min;
+use super::util::{brotli_min_size_t, Log2FloorNonZero};
+use core;
 static kCompressFragmentTwoPassBlockSize: usize = (1i32 << 17) as usize;
 
 // returns number of commands inserted
@@ -112,8 +114,12 @@ fn EmitCopyLenLastDistance(copylen: usize, commands: &mut &mut [u32]) -> usize {
     }
 }
 fn HashBytesAtOffset(v: u64, offset: i32, shift: usize, length: usize) -> u32 {
-    let h: u64 = (v >> (8i32 * offset) << ((8 - length) * 8)).wrapping_mul(kHashMul32 as (u64));
-    (h >> shift) as u32
+    0i32;
+    0i32;
+    {
+        let h: u64 = (v >> (8i32 * offset) << ((8 - length) * 8)).wrapping_mul(kHashMul32 as (u64));
+        (h >> shift) as u32
+    }
 }
 
 fn EmitCopyLen(copylen: usize, commands: &mut &mut [u32]) -> usize {
@@ -173,7 +179,7 @@ fn CreateCommands(
     let kInputMarginBytes: usize = 16usize;
 
     if block_size >= kInputMarginBytes {
-        let len_limit: usize = min(
+        let len_limit: usize = brotli_min_size_t(
             block_size.wrapping_sub(min_match),
             input_size.wrapping_sub(kInputMarginBytes),
         );
@@ -192,6 +198,7 @@ fn CreateCommands(
             let mut skip: u32 = 32u32;
             let mut next_ip: usize = ip_index;
             let mut candidate: usize = 0;
+            0i32;
             loop {
                 {
                     'break3: loop {
@@ -200,6 +207,7 @@ fn CreateCommands(
                             let bytes_between_hash_lookups: u32 = skip >> 5;
                             skip = skip.wrapping_add(1);
                             ip_index = next_ip;
+                            0i32;
                             next_ip = ip_index.wrapping_add(bytes_between_hash_lookups as usize);
                             if next_ip > ip_limit {
                                 goto_emit_remainder = 1i32;
@@ -208,6 +216,7 @@ fn CreateCommands(
                                 }
                             }
                             next_hash = Hash(&base_ip[next_ip..], shift, min_match);
+                            0i32;
                             candidate = ip_index.wrapping_sub(last_distance as usize);
                             if IsMatch(&base_ip[ip_index..], &base_ip[candidate..], min_match)
                                 && candidate < ip_index
@@ -218,6 +227,8 @@ fn CreateCommands(
                                 }
                             }
                             candidate = table[(hash as usize)] as usize;
+                            0i32;
+                            0i32;
                             table[(hash as usize)] = ip_index.wrapping_sub(0) as i32;
                         }
                         if IsMatch(&base_ip[ip_index..], &base_ip[candidate..], min_match) {
@@ -245,6 +256,7 @@ fn CreateCommands(
                 let distance: i32 = base.wrapping_sub(candidate) as i32;
                 let insert: i32 = base.wrapping_sub(next_emit) as i32;
                 ip_index = ip_index.wrapping_add(matched);
+                0i32;
                 *num_commands += EmitInsertLen(insert as u32, commands);
                 (*literals)[..(insert as usize)]
                     .clone_from_slice(&base_ip[next_emit..(next_emit + insert as usize)]);
@@ -315,6 +327,7 @@ fn CreateCommands(
                 ));
                 ip_index = ip_index.wrapping_add(matched);
                 last_distance = base_index.wrapping_sub(candidate) as i32;
+                0i32;
                 *num_commands += EmitCopyLen(matched, commands);
                 *num_commands += EmitDistance(last_distance as u32, commands);
                 next_emit = ip_index;
@@ -371,6 +384,7 @@ fn CreateCommands(
             }
         }
     }
+    0i32;
     if next_emit < ip_end {
         let insert: u32 = ip_end.wrapping_sub(next_emit) as u32;
         *num_commands += EmitInsertLen(insert, commands);
@@ -452,7 +466,7 @@ fn BuildAndStoreCommandPrefixCode(
     storage_ix: &mut usize,
     storage: &mut [u8],
 ) {
-    let mut tree = [HuffmanTree::new(0, 0, 0); 129];
+    let mut tree: [HuffmanTree; 129] = [NewHuffmanTree(0, 0, 0); 129];
     let mut cmd_depth: [u8; 704] = [0; 704];
     let mut cmd_bits: [u16; 64] = [0; 64];
     BrotliCreateHuffmanTree(histogram, 64usize, 15i32, &mut tree[..], depth);
@@ -561,6 +575,7 @@ fn StoreCommands<AllocHT: alloc::Allocator<HuffmanTree>>(
     while i < num_commands {
         {
             let code: u32 = commands[i] & 0xffu32;
+            0i32;
             {
                 let _rhs = 1;
                 let _lhs = &mut cmd_histo[code as usize];
@@ -600,6 +615,7 @@ fn StoreCommands<AllocHT: alloc::Allocator<HuffmanTree>>(
         let cmd: u32 = commands[i];
         let code: u32 = cmd & 0xffu32;
         let extra: u32 = cmd >> 8;
+        0i32;
         BrotliWriteBits(
             cmd_depths[code as usize] as usize,
             cmd_bits[code as usize] as (u64),
@@ -656,7 +672,7 @@ fn BrotliCompressFragmentTwoPassImpl<AllocHT: alloc::Allocator<HuffmanTree>>(
 ) {
     let mut input_index: usize = 0usize;
     while input_size > 0usize {
-        let block_size: usize = min(input_size, kCompressFragmentTwoPassBlockSize);
+        let block_size: usize = brotli_min_size_t(input_size, kCompressFragmentTwoPassBlockSize);
         let mut num_literals: usize = 0;
         let mut num_commands: usize = 0;
         {

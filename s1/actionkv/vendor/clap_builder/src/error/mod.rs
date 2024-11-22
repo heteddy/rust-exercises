@@ -12,7 +12,7 @@ use std::{
     convert::From,
     error,
     fmt::{self, Debug, Display, Formatter},
-    io,
+    io::{self},
     result::Result as StdResult,
 };
 
@@ -23,7 +23,7 @@ use crate::output::fmt::Colorizer;
 use crate::output::fmt::Stream;
 use crate::parser::features::suggestions;
 use crate::util::FlatMap;
-use crate::util::{color::ColorChoice, SUCCESS_CODE, USAGE_CODE};
+use crate::util::{color::ColorChoice, safe_exit, SUCCESS_CODE, USAGE_CODE};
 use crate::Command;
 
 #[cfg(feature = "error-context")]
@@ -69,7 +69,7 @@ struct ErrorInner {
     context: FlatMap<ContextKind, ContextValue>,
     message: Option<Message>,
     source: Option<Box<dyn error::Error + Send + Sync>>,
-    help_flag: Option<Cow<'static, str>>,
+    help_flag: Option<&'static str>,
     styles: Styles,
     color_when: ColorChoice,
     color_help_when: ColorChoice,
@@ -85,7 +85,7 @@ impl<F: ErrorFormatter> Error<F> {
     /// Prefer [`Command::error`] for generating errors.
     ///
     /// [`Command::error`]: crate::Command::error
-    pub fn raw(kind: ErrorKind, message: impl Display) -> Self {
+    pub fn raw(kind: ErrorKind, message: impl std::fmt::Display) -> Self {
         Self::new(kind).set_message(message.to_string())
     }
 
@@ -233,7 +233,7 @@ impl<F: ErrorFormatter> Error<F> {
     pub fn exit(&self) -> ! {
         // Swallow broken pipe errors
         let _ = self.print();
-        std::process::exit(self.exit_code());
+        safe_exit(self.exit_code())
     }
 
     /// Prints formatted and colored error to `stdout` or `stderr` according to its error kind
@@ -319,7 +319,7 @@ impl<F: ErrorFormatter> Error<F> {
         self
     }
 
-    pub(crate) fn set_help_flag(mut self, help_flag: Option<Cow<'static, str>>) -> Self {
+    pub(crate) fn set_help_flag(mut self, help_flag: Option<&'static str>) -> Self {
         self.inner.help_flag = help_flag;
         self
     }
@@ -455,7 +455,7 @@ impl<F: ErrorFormatter> Error<F> {
                 (ContextKind::InvalidValue, ContextValue::String(bad_val)),
                 (
                     ContextKind::ValidValue,
-                    ContextValue::Strings(good_vals.iter().map(|s| (*s).clone()).collect()),
+                    ContextValue::Strings(good_vals.iter().map(|s| (*s).to_owned()).collect()),
                 ),
             ]);
             if let Some(suggestion) = suggestion {
@@ -832,8 +832,8 @@ impl<F: ErrorFormatter> From<fmt::Error> for Error<F> {
     }
 }
 
-impl<F: ErrorFormatter> Debug for Error<F> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+impl<F: ErrorFormatter> std::fmt::Debug for Error<F> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         self.inner.fmt(f)
     }
 }
@@ -846,7 +846,7 @@ impl<F: ErrorFormatter> error::Error for Error<F> {
 }
 
 impl<F: ErrorFormatter> Display for Error<F> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         // Assuming `self.message` already has a trailing newline, from `try_help` or similar
         ok!(write!(f, "{}", self.formatted()));
         if let Some(backtrace) = self.inner.backtrace.as_ref() {
@@ -884,7 +884,7 @@ impl Message {
         }
     }
 
-    fn formatted(&self, styles: &Styles) -> Cow<'_, StyledStr> {
+    fn formatted(&self, styles: &Styles) -> Cow<StyledStr> {
         match self {
             Message::Raw(s) => {
                 let styled = format::format_error_message(s, styles, None, None);
@@ -921,7 +921,7 @@ impl Backtrace {
 
 #[cfg(feature = "debug")]
 impl Display for Backtrace {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         // `backtrace::Backtrace` uses `Debug` instead of `Display`
         write!(f, "{:?}", self.0)
     }
@@ -940,7 +940,7 @@ impl Backtrace {
 
 #[cfg(not(feature = "debug"))]
 impl Display for Backtrace {
-    fn fmt(&self, _: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, _: &mut Formatter) -> fmt::Result {
         Ok(())
     }
 }

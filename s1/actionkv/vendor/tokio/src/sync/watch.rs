@@ -156,12 +156,6 @@ impl<T> Clone for Sender<T> {
     }
 }
 
-impl<T: Default> Default for Sender<T> {
-    fn default() -> Self {
-        Self::new(T::default())
-    }
-}
-
 /// Returns a reference to the inner value.
 ///
 /// Outstanding borrows hold a read lock on the inner value. This means that
@@ -1191,18 +1185,12 @@ impl<T> Sender<T> {
     /// Completes when all receivers have dropped.
     ///
     /// This allows the producer to get notified when interest in the produced
-    /// values is canceled and immediately stop doing work. Once a channel is
-    /// closed, the only way to reopen it is to call [`Sender::subscribe`] to
-    /// get a new receiver.
-    ///
-    /// If the channel becomes closed for a brief amount of time (e.g., the last
-    /// receiver is dropped and then `subscribe` is called), then this call to
-    /// `closed` might return, but it is also possible that it does not "notice"
-    /// that the channel was closed for a brief amount of time.
+    /// values is canceled and immediately stop doing work.
     ///
     /// # Cancel safety
     ///
-    /// This method is cancel safe.
+    /// This method is cancel safe. Once the channel is closed, it stays closed
+    /// forever and all future calls to `closed` will return immediately.
     ///
     /// # Examples
     ///
@@ -1323,22 +1311,6 @@ impl<T> Sender<T> {
     /// ```
     pub fn receiver_count(&self) -> usize {
         self.shared.ref_count_rx.load(Relaxed)
-    }
-
-    /// Returns `true` if senders belong to the same channel.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let (tx, rx) = tokio::sync::watch::channel(true);
-    /// let tx2 = tx.clone();
-    /// assert!(tx.same_channel(&tx2));
-    ///
-    /// let (tx3, rx3) = tokio::sync::watch::channel(true);
-    /// assert!(!tx3.same_channel(&tx2));
-    /// ```
-    pub fn same_channel(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.shared, &other.shared)
     }
 }
 

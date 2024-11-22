@@ -146,7 +146,7 @@ pub fn max_c_level() -> CompressionLevel {
 /// This will try to compress `src` entirely and write the result to `dst`, returning the number of
 /// bytes written. If `dst` is too small to hold the compressed content, an error will be returned.
 ///
-/// For streaming operations that don't require to store the entire input/output in memory, see
+/// For streaming operations that don't require to store the entire input/ouput in memory, see
 /// `compress_stream`.
 pub fn compress<C: WriteBuf + ?Sized>(
     dst: &mut C,
@@ -804,38 +804,6 @@ impl<'a> CCtx<'a> {
         // Safety: Just FFI
         unsafe { zstd_sys::ZSTD_CStreamOutSize() }
     }
-
-    /// Use a shared thread pool for this context.
-    ///
-    /// Thread pool must outlive the context.
-    #[cfg(all(feature = "experimental", feature = "zstdmt"))]
-    #[cfg_attr(
-        feature = "doc-cfg",
-        doc(cfg(all(feature = "experimental", feature = "zstdmt")))
-    )]
-    pub fn ref_thread_pool<'b>(&mut self, pool: &'b ThreadPool) -> SafeResult
-    where
-        'b: 'a,
-    {
-        parse_code(unsafe {
-            zstd_sys::ZSTD_CCtx_refThreadPool(self.0.as_ptr(), pool.0.as_ptr())
-        })
-    }
-
-    /// Return to using a private thread pool for this context.
-    #[cfg(all(feature = "experimental", feature = "zstdmt"))]
-    #[cfg_attr(
-        feature = "doc-cfg",
-        doc(cfg(all(feature = "experimental", feature = "zstdmt")))
-    )]
-    pub fn disable_thread_pool(&mut self) -> SafeResult {
-        parse_code(unsafe {
-            zstd_sys::ZSTD_CCtx_refThreadPool(
-                self.0.as_ptr(),
-                core::ptr::null_mut(),
-            )
-        })
-    }
 }
 
 impl<'a> Drop for CCtx<'a> {
@@ -1433,64 +1401,6 @@ impl<'a> Drop for DDict<'a> {
 unsafe impl<'a> Send for DDict<'a> {}
 unsafe impl<'a> Sync for DDict<'a> {}
 
-/// A shared thread pool for one or more compression contexts
-#[cfg(all(feature = "experimental", feature = "zstdmt"))]
-#[cfg_attr(
-    feature = "doc-cfg",
-    doc(cfg(all(feature = "experimental", feature = "zstdmt")))
-)]
-pub struct ThreadPool(NonNull<zstd_sys::ZSTD_threadPool>);
-
-#[cfg(all(feature = "experimental", feature = "zstdmt"))]
-#[cfg_attr(
-    feature = "doc-cfg",
-    doc(cfg(all(feature = "experimental", feature = "zstdmt")))
-)]
-impl ThreadPool {
-    /// Create a thread pool with the specified number of threads.
-    ///
-    /// # Panics
-    ///
-    /// If creating the thread pool failed.
-    pub fn new(num_threads: usize) -> Self {
-        Self::try_new(num_threads)
-            .expect("zstd returned null pointer when creating thread pool")
-    }
-
-    /// Create a thread pool with the specified number of threads.
-    pub fn try_new(num_threads: usize) -> Option<Self> {
-        Some(Self(NonNull::new(unsafe {
-            zstd_sys::ZSTD_createThreadPool(num_threads)
-        })?))
-    }
-}
-
-#[cfg(all(feature = "experimental", feature = "zstdmt"))]
-#[cfg_attr(
-    feature = "doc-cfg",
-    doc(cfg(all(feature = "experimental", feature = "zstdmt")))
-)]
-impl Drop for ThreadPool {
-    fn drop(&mut self) {
-        unsafe {
-            zstd_sys::ZSTD_freeThreadPool(self.0.as_ptr());
-        }
-    }
-}
-
-#[cfg(all(feature = "experimental", feature = "zstdmt"))]
-#[cfg_attr(
-    feature = "doc-cfg",
-    doc(cfg(all(feature = "experimental", feature = "zstdmt")))
-)]
-unsafe impl Send for ThreadPool {}
-#[cfg(all(feature = "experimental", feature = "zstdmt"))]
-#[cfg_attr(
-    feature = "doc-cfg",
-    doc(cfg(all(feature = "experimental", feature = "zstdmt")))
-)]
-unsafe impl Sync for ThreadPool {}
-
 /// Wraps the `ZSTD_decompress_usingDDict()` function.
 pub fn decompress_using_ddict(
     dctx: &mut DCtx<'_>,
@@ -2005,7 +1915,7 @@ pub fn get_dict_id_from_dict(dict: &[u8]) -> Option<NonZeroU32> {
 ///
 /// Returns `None` if the dictionary ID could not be decoded. This may happen if:
 /// * The frame was not encoded with a dictionary.
-/// * The frame intentionally did not include dictionary ID.
+/// * The frame intentionally did not include dicionary ID.
 /// * The dictionary was non-conformant.
 /// * `src` is too small and does not include the frame header.
 /// * `src` is not a valid zstd frame prefix.

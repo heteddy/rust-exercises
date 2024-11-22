@@ -57,7 +57,7 @@
 
 use std::cell::RefCell;
 use std::fmt::Display;
-use std::io::prelude::Write;
+use std::io::prelude::*;
 use std::rc::Rc;
 use std::{fmt, io, mem};
 
@@ -88,7 +88,6 @@ use self::writer::{Buffer, Writer};
 /// Seconds give precision of full seconds, milliseconds give thousands of a
 /// second (3 decimal digits), microseconds are millionth of a second (6 decimal
 /// digits) and nanoseconds are billionth of a second (9 decimal digits).
-#[allow(clippy::exhaustive_enums)] // compatibility
 #[derive(Copy, Clone, Debug)]
 pub enum TimestampPrecision {
     /// Full second precision (0 decimal digits)
@@ -150,7 +149,7 @@ impl Formatter {
     }
 
     pub(crate) fn clear(&mut self) {
-        self.buf.borrow_mut().clear();
+        self.buf.borrow_mut().clear()
     }
 }
 
@@ -189,7 +188,7 @@ impl Write for Formatter {
 }
 
 impl fmt::Debug for Formatter {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let buf = self.buf.borrow();
         f.debug_struct("Formatter")
             .field("buf", &buf)
@@ -198,18 +197,18 @@ impl fmt::Debug for Formatter {
     }
 }
 
-pub(crate) type FormatFn = Box<dyn Fn(&mut Formatter, &Record<'_>) -> io::Result<()> + Sync + Send>;
+pub(crate) type FormatFn = Box<dyn Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send>;
 
 pub(crate) struct Builder {
-    pub(crate) format_timestamp: Option<TimestampPrecision>,
-    pub(crate) format_module_path: bool,
-    pub(crate) format_target: bool,
-    pub(crate) format_level: bool,
-    pub(crate) format_indent: Option<usize>,
-    pub(crate) custom_format: Option<FormatFn>,
-    pub(crate) format_suffix: &'static str,
+    pub format_timestamp: Option<TimestampPrecision>,
+    pub format_module_path: bool,
+    pub format_target: bool,
+    pub format_level: bool,
+    pub format_indent: Option<usize>,
+    pub custom_format: Option<FormatFn>,
+    pub format_suffix: &'static str,
     #[cfg(feature = "unstable-kv")]
-    pub(crate) kv_format: Option<Box<KvFormatFn>>,
+    pub kv_format: Option<Box<KvFormatFn>>,
     built: bool,
 }
 
@@ -219,7 +218,7 @@ impl Builder {
     /// If the `custom_format` is `Some`, then any `default_format` switches are ignored.
     /// If the `custom_format` is `None`, then a default format is returned.
     /// Any `default_format` switches set to `false` won't be written by the format.
-    pub(crate) fn build(&mut self) -> FormatFn {
+    pub fn build(&mut self) -> FormatFn {
         assert!(!self.built, "attempt to re-use consumed builder");
 
         let built = mem::replace(
@@ -283,8 +282,8 @@ struct StyledValue<T> {
 }
 
 #[cfg(feature = "color")]
-impl<T: Display> Display for StyledValue<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl<T: std::fmt::Display> std::fmt::Display for StyledValue<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let style = self.style;
 
         // We need to make sure `f`s settings don't get passed onto the styling but do get passed
@@ -316,7 +315,7 @@ struct DefaultFormat<'a> {
 }
 
 impl<'a> DefaultFormat<'a> {
-    fn write(mut self, record: &Record<'_>) -> io::Result<()> {
+    fn write(mut self, record: &Record) -> io::Result<()> {
         self.write_timestamp()?;
         self.write_level(record)?;
         self.write_module_path(record)?;
@@ -361,7 +360,7 @@ impl<'a> DefaultFormat<'a> {
         }
     }
 
-    fn write_level(&mut self, record: &Record<'_>) -> io::Result<()> {
+    fn write_level(&mut self, record: &Record) -> io::Result<()> {
         if !self.level {
             return Ok(());
         }
@@ -387,7 +386,7 @@ impl<'a> DefaultFormat<'a> {
     fn write_timestamp(&mut self) -> io::Result<()> {
         #[cfg(feature = "humantime")]
         {
-            use self::TimestampPrecision::{Micros, Millis, Nanos, Seconds};
+            use self::TimestampPrecision::*;
             let ts = match self.timestamp {
                 None => return Ok(()),
                 Some(Seconds) => self.buf.timestamp_seconds(),
@@ -407,7 +406,7 @@ impl<'a> DefaultFormat<'a> {
         }
     }
 
-    fn write_module_path(&mut self, record: &Record<'_>) -> io::Result<()> {
+    fn write_module_path(&mut self, record: &Record) -> io::Result<()> {
         if !self.module_path {
             return Ok(());
         }
@@ -419,7 +418,7 @@ impl<'a> DefaultFormat<'a> {
         }
     }
 
-    fn write_target(&mut self, record: &Record<'_>) -> io::Result<()> {
+    fn write_target(&mut self, record: &Record) -> io::Result<()> {
         if !self.target {
             return Ok(());
         }
@@ -439,7 +438,7 @@ impl<'a> DefaultFormat<'a> {
         }
     }
 
-    fn write_args(&mut self, record: &Record<'_>) -> io::Result<()> {
+    fn write_args(&mut self, record: &Record) -> io::Result<()> {
         match self.indent {
             // Fast path for no indentation
             None => write!(self.buf, "{}", record.args()),
@@ -447,7 +446,7 @@ impl<'a> DefaultFormat<'a> {
             Some(indent_count) => {
                 // Create a wrapper around the buffer only if we have to actually indent the message
 
-                struct IndentWrapper<'a, 'b> {
+                struct IndentWrapper<'a, 'b: 'a> {
                     fmt: &'a mut DefaultFormat<'b>,
                     indent_count: usize,
                 }
@@ -492,7 +491,7 @@ impl<'a> DefaultFormat<'a> {
     }
 
     #[cfg(feature = "unstable-kv")]
-    fn write_kv(&mut self, record: &Record<'_>) -> io::Result<()> {
+    fn write_kv(&mut self, record: &Record) -> io::Result<()> {
         let format = self.kv_format;
         format(self.buf, record.key_values())
     }
@@ -504,7 +503,7 @@ mod tests {
 
     use log::{Level, Record};
 
-    fn write_record(record: Record<'_>, fmt: DefaultFormat<'_>) -> String {
+    fn write_record(record: Record, fmt: DefaultFormat) -> String {
         let buf = fmt.buf.buf.clone();
 
         fmt.write(&record).expect("failed to write record");
@@ -513,7 +512,7 @@ mod tests {
         String::from_utf8(buf.as_bytes().to_vec()).expect("failed to read record")
     }
 
-    fn write_target(target: &str, fmt: DefaultFormat<'_>) -> String {
+    fn write_target(target: &str, fmt: DefaultFormat) -> String {
         write_record(
             Record::builder()
                 .args(format_args!("log\nmessage"))
@@ -527,7 +526,7 @@ mod tests {
         )
     }
 
-    fn write(fmt: DefaultFormat<'_>) -> String {
+    fn write(fmt: DefaultFormat) -> String {
         write_target("", fmt)
     }
 

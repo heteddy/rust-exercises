@@ -3,7 +3,10 @@ use std::{fmt, io};
 
 use brotli::enc::{
     backward_references::BrotliEncoderParams,
-    encode::{BrotliEncoderOperation, BrotliEncoderStateStruct},
+    encode::{
+        BrotliEncoderCompressStream, BrotliEncoderCreateInstance, BrotliEncoderHasMoreOutput,
+        BrotliEncoderIsFinished, BrotliEncoderOperation, BrotliEncoderStateStruct,
+    },
     StandardAlloc,
 };
 
@@ -13,7 +16,7 @@ pub struct BrotliEncoder {
 
 impl BrotliEncoder {
     pub(crate) fn new(params: BrotliEncoderParams) -> Self {
-        let mut state = BrotliEncoderStateStruct::new(StandardAlloc::default());
+        let mut state = BrotliEncoderCreateInstance(StandardAlloc::default());
         state.params = params;
         Self { state }
     }
@@ -30,7 +33,8 @@ impl BrotliEncoder {
         let mut input_len = 0;
         let mut output_len = 0;
 
-        if !self.state.compress_stream(
+        if BrotliEncoderCompressStream(
+            &mut self.state,
             op,
             &mut in_buf.len(),
             in_buf,
@@ -40,7 +44,8 @@ impl BrotliEncoder {
             &mut output_len,
             &mut None,
             &mut |_, _, _, _| (),
-        ) {
+        ) <= 0
+        {
             return Err(io::Error::new(io::ErrorKind::Other, "brotli error"));
         }
 
@@ -74,7 +79,7 @@ impl Encode for BrotliEncoder {
             BrotliEncoderOperation::BROTLI_OPERATION_FLUSH,
         )?;
 
-        Ok(!self.state.has_more_output())
+        Ok(BrotliEncoderHasMoreOutput(&self.state) == 0)
     }
 
     fn finish(
@@ -87,7 +92,7 @@ impl Encode for BrotliEncoder {
             BrotliEncoderOperation::BROTLI_OPERATION_FINISH,
         )?;
 
-        Ok(self.state.is_finished())
+        Ok(BrotliEncoderIsFinished(&self.state) == 1)
     }
 }
 

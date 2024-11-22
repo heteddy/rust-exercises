@@ -1,5 +1,4 @@
 #![warn(clippy::pedantic)]
-#![allow(clippy::uninlined_format_args)]
 use core::fmt::{Debug, Display, Formatter};
 use core::ops::RangeInclusive;
 
@@ -235,12 +234,12 @@ impl ParsedRanges {
                     if i > file_size_bytes {
                         return Err(RangeUnsatisfiableError::FileSuffixOutOfBounds);
                     }
-                    file_size_bytes.saturating_sub(i)
+                    file_size_bytes - i
                 }
             };
             let end = match parsed.end {
-                EndPosition::Index(i) => core::cmp::min(i, file_size_bytes.saturating_sub(1)),
-                EndPosition::LastByte => file_size_bytes.saturating_sub(1),
+                EndPosition::Index(i) => core::cmp::min(i, file_size_bytes - 1),
+                EndPosition::LastByte => file_size_bytes - 1,
             };
 
             let valid = RangeInclusive::new(start, end);
@@ -374,7 +373,7 @@ mod tests {
     use core::ops::RangeInclusive;
 
     const TEST_FILE_LENGTH: u64 = 10_000;
-    /// Testing standard range compliance against <https://datatracker.ietf.org/doc/html/rfc7233>
+    /// Testing standard range compliance against https://datatracker.ietf.org/doc/html/rfc7233
     #[test]
     fn rfc_7233_standard_test1() {
         let input = "bytes=0-499";
@@ -384,7 +383,7 @@ mod tests {
         assert_eq!(single_range(expect), actual);
         let expect = RangeInclusive::new(0, 499);
         let actual = actual.validate(TEST_FILE_LENGTH).unwrap()[0].clone();
-        assert_eq!(expect, actual);
+        assert_eq!(expect, actual)
     }
 
     #[test]
@@ -396,10 +395,10 @@ mod tests {
         assert_eq!(single_range(expect), actual);
         let expect = RangeInclusive::new(500, 999);
         let actual = actual.validate(TEST_FILE_LENGTH).unwrap()[0].clone();
-        assert_eq!(expect, actual);
+        assert_eq!(expect, actual)
     }
 
-    /// Testing suffix compliance against <https://datatracker.ietf.org/doc/html/rfc7233>
+    /// Testing suffix compliance against https://datatracker.ietf.org/doc/html/rfc7233
     #[test]
     fn rfc_7233_suffixed_test() {
         let input = "bytes=-500";
@@ -409,10 +408,10 @@ mod tests {
         assert_eq!(single_range(expect), actual);
         let expect = RangeInclusive::new(9500, 9999);
         let actual = actual.validate(10_000).unwrap()[0].clone();
-        assert_eq!(expect, actual);
+        assert_eq!(expect, actual)
     }
 
-    /// Testing open range compliance against <https://datatracker.ietf.org/doc/html/rfc7233>
+    /// Testing open range compliance against https://datatracker.ietf.org/doc/html/rfc7233
     #[test]
     fn rfc_7233_open_range_test() {
         let input = "bytes=9500-";
@@ -422,10 +421,10 @@ mod tests {
         assert_eq!(single_range(expect), actual);
         let expect = RangeInclusive::new(9500, 9999);
         let actual = actual.validate(10_000).unwrap()[0].clone();
-        assert_eq!(expect, actual);
+        assert_eq!(expect, actual)
     }
 
-    /// Testing first and last bytes compliance against <https://datatracker.ietf.org/doc/html/rfc7233>
+    /// Testing first and last bytes compliance against https://datatracker.ietf.org/doc/html/rfc7233
     #[test]
     fn rfc_7233_first_and_last() {
         let input = "bytes=0-0, -1";
@@ -437,7 +436,7 @@ mod tests {
         assert_eq!(expect, actual.ranges);
         let expect = vec![0..=0, 9999..=9999];
         let actual = actual.validate(10_000).unwrap();
-        assert_eq!(expect, actual);
+        assert_eq!(expect, actual)
     }
 
     #[test]
@@ -449,7 +448,7 @@ mod tests {
         assert_eq!(single_range(expect), actual);
         let expect = RangeInclusive::new(0, 1023);
         let actual = actual.validate(TEST_FILE_LENGTH).unwrap()[0].clone();
-        assert_eq!(expect, actual);
+        assert_eq!(expect, actual)
     }
 
     #[test]
@@ -578,45 +577,19 @@ mod tests {
 
     #[test]
     fn parse_zero_length_suffix_as_unsatisfiable() {
-        let input = "bytes=-0";
+        let input = &format!("bytes=-0");
         let parsed = parse_range_header(input);
         assert_eq!(parsed, Err(RangeUnsatisfiableError::ZeroSuffix));
     }
 
     #[test]
     fn parse_single_reversed_as_invalid() {
-        let input = "bytes=15-0";
+        let input = &format!("bytes=15-0");
         let parsed = parse_range_header(input).unwrap();
         assert_eq!(
             parsed.validate(TEST_FILE_LENGTH),
             Err(RangeUnsatisfiableError::RangeReversed)
         );
-    }
-
-    #[test]
-    fn parse_zero_range_as_invalid() {
-        let input = "bytes=15-";
-        let parsed = parse_range_header(input).unwrap();
-        assert_eq!(
-            parsed.validate(0),
-            Err(RangeUnsatisfiableError::RangeReversed)
-        );
-    }
-
-    #[test]
-    fn parse_zero_range_last_byte_valid_if_file_size_0() {
-        let input = "bytes=0-";
-        let expect = SyntacticallyCorrectRange::new(StartPosition::Index(0), EndPosition::LastByte);
-        let actual = parse_range_header(input).unwrap().ranges[0];
-        assert_eq!(actual, expect);
-    }
-
-    #[test]
-    fn parse_zero_range_closed_valid_if_file_size_0() {
-        let input = "bytes=0-0";
-        let expect = SyntacticallyCorrectRange::new(StartPosition::Index(0), EndPosition::Index(0));
-        let actual = parse_range_header(input).unwrap().ranges[0];
-        assert_eq!(actual, expect);
     }
 
     #[test]
@@ -634,7 +607,7 @@ mod tests {
         assert_eq!(
             vec![0..=1023, 2015..=3000, 4000..=4500, 8000..=9999],
             validated
-        );
+        )
     }
 
     #[test]
@@ -717,11 +690,10 @@ mod tests {
     fn parse_multi_range_rejects_invalid() {
         let input = "bytes=0-15, 25, 9, ";
         let parsed = parse_range_header(input);
-        assert!(parsed.is_err());
+        assert!(parsed.is_err())
     }
 
     #[quickcheck_macros::quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
     fn always_errs_on_random_input(input: String) -> quickcheck::TestResult {
         // Basic regex matching most valid range headers
         let acceptable = regex::Regex::new(
@@ -730,10 +702,12 @@ mod tests {
         .unwrap();
         if acceptable.is_match(&input) {
             quickcheck::TestResult::discard()
-        } else if let Ok(passed_first_pass) = parse_range_header(&input) {
-            quickcheck::TestResult::from_bool(passed_first_pass.validate(u64::MAX).is_err())
         } else {
-            quickcheck::TestResult::passed()
+            if let Ok(passed_first_pass) = parse_range_header(&input) {
+                quickcheck::TestResult::from_bool(passed_first_pass.validate(u64::MAX).is_err())
+            } else {
+                quickcheck::TestResult::passed()
+            }
         }
     }
 

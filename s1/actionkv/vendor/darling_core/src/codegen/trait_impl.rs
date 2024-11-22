@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Generics, Ident};
+use syn::{Generics, Ident, WherePredicate};
 
 use crate::ast::{Data, Fields};
 use crate::codegen::{
@@ -16,6 +16,7 @@ pub struct TraitImpl<'a> {
     pub data: Data<Variant<'a>, Field<'a>>,
     pub default: Option<DefaultExpression<'a>>,
     pub post_transform: Option<&'a PostfixTransform>,
+    pub bound: Option<&'a [WherePredicate]>,
     pub allow_unknown_fields: bool,
 }
 

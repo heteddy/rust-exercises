@@ -1,5 +1,6 @@
 #![cfg(feature = "std")]
 use core::mem;
+use std;
 
 use alloc::{Allocator, SliceWrapper};
 use enc::backward_references::UnionHasher;

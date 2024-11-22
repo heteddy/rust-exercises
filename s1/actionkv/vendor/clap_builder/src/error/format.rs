@@ -3,8 +3,6 @@
 #![cfg_attr(not(feature = "error-context"), allow(dead_code))]
 #![cfg_attr(not(feature = "error-context"), allow(unused_imports))]
 
-use std::borrow::Cow;
-
 use crate::builder::Command;
 use crate::builder::StyledStr;
 use crate::builder::Styles;
@@ -14,7 +12,6 @@ use crate::error::ContextKind;
 use crate::error::ContextValue;
 use crate::error::ErrorKind;
 use crate::output::TAB;
-use crate::ArgAction;
 
 /// Defines how to format an error for displaying to the user
 pub trait ErrorFormatter: Sized {
@@ -123,7 +120,7 @@ impl ErrorFormatter for RichFormatter {
             put_usage(&mut styled, usage);
         }
 
-        try_help(&mut styled, styles, error.inner.help_flag.as_deref());
+        try_help(&mut styled, styles, error.inner.help_flag);
 
         styled
     }
@@ -340,7 +337,7 @@ fn write_dynamic_context(
                 let were_provided = singular_or_plural(*actual_num_values as usize);
                 let _ = write!(
                     styled,
-                    "{}{min_values}{} values required by '{}{invalid_arg}{}'; only {}{actual_num_values}{}{were_provided}",
+                    "{}{min_values}{} more values required by '{}{invalid_arg}{}'; only {}{actual_num_values}{}{were_provided}",
                     valid.render(),
                     valid.render_reset(),
                     literal.render(),
@@ -464,7 +461,7 @@ pub(crate) fn format_error_message(
         put_usage(&mut styled, usage);
     }
     if let Some(cmd) = cmd {
-        try_help(&mut styled, styles, get_help_flag(cmd).as_deref());
+        try_help(&mut styled, styles, get_help_flag(cmd));
     }
     styled
 }
@@ -483,32 +480,14 @@ fn put_usage(styled: &mut StyledStr, usage: &StyledStr) {
     styled.push_styled(usage);
 }
 
-pub(crate) fn get_help_flag(cmd: &Command) -> Option<Cow<'static, str>> {
+pub(crate) fn get_help_flag(cmd: &Command) -> Option<&'static str> {
     if !cmd.is_disable_help_flag_set() {
-        Some(Cow::Borrowed("--help"))
-    } else if let Some(flag) = get_user_help_flag(cmd) {
-        Some(Cow::Owned(flag))
+        Some("--help")
     } else if cmd.has_subcommands() && !cmd.is_disable_help_subcommand_set() {
-        Some(Cow::Borrowed("help"))
+        Some("help")
     } else {
         None
     }
-}
-
-fn get_user_help_flag(cmd: &Command) -> Option<String> {
-    let arg = cmd.get_arguments().find(|arg| match arg.get_action() {
-        ArgAction::Help | ArgAction::HelpShort | ArgAction::HelpLong => true,
-        ArgAction::Append
-        | ArgAction::Count
-        | ArgAction::SetTrue
-        | ArgAction::SetFalse
-        | ArgAction::Set
-        | ArgAction::Version => false,
-    })?;
-
-    arg.get_long()
-        .map(|long| format!("--{long}"))
-        .or_else(|| arg.get_short().map(|short| format!("-{short}")))
 }
 
 fn try_help(styled: &mut StyledStr, styles: &Styles, help: Option<&str>) {
@@ -566,7 +545,7 @@ fn did_you_mean(styled: &mut StyledStr, styles: &Styles, context: &str, valid: &
 struct Escape<'s>(&'s str);
 
 impl<'s> std::fmt::Display for Escape<'s> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.0.contains(char::is_whitespace) {
             std::fmt::Debug::fmt(self.0, f)
         } else {

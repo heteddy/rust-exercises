@@ -1,7 +1,3 @@
-# v0.1.2
-
-- Add `BodyDataStream` type to convert a body to a stream of its data.
-
 # v0.1.1
 
 - Add `BodyExt::with_trailers()` combinator.

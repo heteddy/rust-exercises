@@ -311,10 +311,10 @@ impl<T: Parser> Parser for Box<T> {
 }
 
 impl<T: CommandFactory> CommandFactory for Box<T> {
-    fn command() -> Command {
+    fn command<'help>() -> Command {
         <T as CommandFactory>::command()
     }
-    fn command_for_update() -> Command {
+    fn command_for_update<'help>() -> Command {
         <T as CommandFactory>::command_for_update()
     }
 }
@@ -355,7 +355,7 @@ impl<T: Subcommand> Subcommand for Box<T> {
     }
 }
 
-fn format_error<I: CommandFactory>(err: Error) -> Error {
+fn format_error<I: CommandFactory>(err: crate::Error) -> crate::Error {
     let mut cmd = I::command();
     err.format(&mut cmd)
 }

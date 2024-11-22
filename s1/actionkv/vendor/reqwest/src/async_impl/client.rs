@@ -565,23 +565,10 @@ impl ClientBuilder {
                         return Err(crate::error::builder("empty supported tls versions"));
                     }
 
-                    // Allow user to have installed a runtime default.
-                    // If not, we use ring.
-                    let provider = rustls::crypto::CryptoProvider::get_default()
-                        .map(|arc| arc.clone())
-                        .unwrap_or_else(|| {
-                            #[cfg(not(feature = "__rustls-ring"))]
-                            panic!("No provider set");
-
-                            #[cfg(feature = "__rustls-ring")]
-                            Arc::new(rustls::crypto::ring::default_provider())
-                        });
-
                     // Build TLS config
-                    let config_builder = rustls::ClientConfig::builder_with_provider(provider)
-                        .with_protocol_versions(&versions)
-                        .map_err(|_| crate::error::builder("invalid TLS versions"))?
-                        .with_root_certificates(root_cert_store);
+                    let config_builder =
+                        rustls::ClientConfig::builder_with_protocol_versions(&versions)
+                            .with_root_certificates(root_cert_store);
 
                     // Finalize TLS config
                     let mut tls = if let Some(id) = config.identity {
@@ -1318,8 +1305,6 @@ impl ClientBuilder {
     /// # Example
     ///
     /// ```
-    /// # #[cfg(all(feature = "__rustls", not(feature = "__rustls-ring")))]
-    /// # let _ = rustls::crypto::ring::default_provider().install_default();
     /// use std::net::IpAddr;
     /// let local_addr = IpAddr::from([12, 4, 1, 8]);
     /// let client = reqwest::Client::builder()
@@ -1339,8 +1324,6 @@ impl ClientBuilder {
     /// # Example
     ///
     /// ```
-    /// # #[cfg(all(feature = "__rustls", not(feature = "__rustls-ring")))]
-    /// # let _ = rustls::crypto::ring::default_provider().install_default();
     /// let interface = "lo";
     /// let client = reqwest::Client::builder()
     ///     .interface(interface)
@@ -1815,7 +1798,7 @@ impl ClientBuilder {
     /// The default is false.
     #[cfg(feature = "http3")]
     #[cfg_attr(docsrs, doc(cfg(all(reqwest_unstable, feature = "http3",))))]
-    pub fn tls_early_data(mut self, enabled: bool) -> ClientBuilder {
+    pub fn set_tls_enable_early_data(mut self, enabled: bool) -> ClientBuilder {
         self.config.tls_enable_early_data = enabled;
         self
     }
@@ -1827,7 +1810,7 @@ impl ClientBuilder {
     /// [`TransportConfig`]: https://docs.rs/quinn/latest/quinn/struct.TransportConfig.html
     #[cfg(feature = "http3")]
     #[cfg_attr(docsrs, doc(cfg(all(reqwest_unstable, feature = "http3",))))]
-    pub fn http3_max_idle_timeout(mut self, value: Duration) -> ClientBuilder {
+    pub fn set_quic_max_idle_timeout(mut self, value: Duration) -> ClientBuilder {
         self.config.quic_max_idle_timeout = Some(value);
         self
     }
@@ -1838,14 +1821,10 @@ impl ClientBuilder {
     /// Please see docs in [`TransportConfig`] in [`quinn`].
     ///
     /// [`TransportConfig`]: https://docs.rs/quinn/latest/quinn/struct.TransportConfig.html
-    ///
-    /// # Panics
-    ///
-    /// Panics if the value is over 2^62.
     #[cfg(feature = "http3")]
     #[cfg_attr(docsrs, doc(cfg(all(reqwest_unstable, feature = "http3",))))]
-    pub fn http3_stream_receive_window(mut self, value: u64) -> ClientBuilder {
-        self.config.quic_stream_receive_window = Some(value.try_into().unwrap());
+    pub fn set_quic_stream_receive_window(mut self, value: VarInt) -> ClientBuilder {
+        self.config.quic_stream_receive_window = Some(value);
         self
     }
 
@@ -1855,14 +1834,10 @@ impl ClientBuilder {
     /// Please see docs in [`TransportConfig`] in [`quinn`].
     ///
     /// [`TransportConfig`]: https://docs.rs/quinn/latest/quinn/struct.TransportConfig.html
-    ///
-    /// # Panics
-    ///
-    /// Panics if the value is over 2^62.
     #[cfg(feature = "http3")]
     #[cfg_attr(docsrs, doc(cfg(all(reqwest_unstable, feature = "http3",))))]
-    pub fn http3_conn_receive_window(mut self, value: u64) -> ClientBuilder {
-        self.config.quic_receive_window = Some(value.try_into().unwrap());
+    pub fn set_quic_receive_window(mut self, value: VarInt) -> ClientBuilder {
+        self.config.quic_receive_window = Some(value);
         self
     }
 
@@ -1873,7 +1848,7 @@ impl ClientBuilder {
     /// [`TransportConfig`]: https://docs.rs/quinn/latest/quinn/struct.TransportConfig.html
     #[cfg(feature = "http3")]
     #[cfg_attr(docsrs, doc(cfg(all(reqwest_unstable, feature = "http3",))))]
-    pub fn http3_send_window(mut self, value: u64) -> ClientBuilder {
+    pub fn set_quic_send_window(mut self, value: u64) -> ClientBuilder {
         self.config.quic_send_window = Some(value);
         self
     }
@@ -2404,7 +2379,7 @@ impl PendingRequest {
         self.project().headers
     }
 
-    #[cfg(any(feature = "http2", feature = "http3"))]
+    #[cfg(feature = "http2")]
     fn retry_error(mut self: Pin<&mut Self>, err: &(dyn std::error::Error + 'static)) -> bool {
         use log::trace;
 
@@ -2464,7 +2439,7 @@ impl PendingRequest {
     }
 }
 
-#[cfg(any(feature = "http2", feature = "http3"))]
+#[cfg(feature = "http2")]
 fn is_retryable_error(err: &(dyn std::error::Error + 'static)) -> bool {
     // pop the legacy::Error
     let err = if let Some(err) = err.source() {
@@ -2482,7 +2457,6 @@ fn is_retryable_error(err: &(dyn std::error::Error + 'static)) -> bool {
         }
     }
 
-    #[cfg(feature = "http2")]
     if let Some(cause) = err.source() {
         if let Some(err) = cause.downcast_ref::<h2::Error>() {
             // They sent us a graceful shutdown, try with a new connection!
@@ -2559,7 +2533,7 @@ impl Future for PendingRequest {
                             crate::error::request(e).with_url(self.url.clone())
                         ));
                     }
-                    Poll::Ready(Ok(res)) => res.map(super::body::boxed),
+                    Poll::Ready(Ok(res)) => res,
                     Poll::Pending => return Poll::Pending,
                 },
                 #[cfg(feature = "http3")]
@@ -2773,8 +2747,6 @@ fn add_cookie_header(headers: &mut HeaderMap, cookie_store: &dyn cookie::CookieS
 
 #[cfg(test)]
 mod tests {
-    #![cfg(not(feature = "rustls-tls-manual-roots-no-provider"))]
-
     #[tokio::test]
     async fn execute_request_rejects_invalid_urls() {
         let url_str = "hxxps://www.rust-lang.org/";

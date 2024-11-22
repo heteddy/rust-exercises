@@ -2,6 +2,7 @@
 use super::backward_references::BrotliEncoderParams;
 use super::vectorization::{sum8i, v256, v256i, Mem256f};
 
+use super::super::alloc;
 use super::super::alloc::{Allocator, SliceWrapper, SliceWrapperMut};
 use super::bit_cost::BrotliPopulationCost;
 use super::block_split::BlockSplit;
@@ -11,8 +12,8 @@ use super::histogram::{
     ClearHistograms, CostAccessors, HistogramAddHistogram, HistogramAddItem, HistogramAddVector,
     HistogramClear, HistogramCommand, HistogramDistance, HistogramLiteral,
 };
-use super::util::FastLog2;
-use core::cmp::{max, min};
+use super::util::{brotli_max_uint8_t, brotli_min_size_t, FastLog2};
+use core;
 #[cfg(feature = "simd")]
 use core::simd::prelude::{SimdFloat, SimdPartialOrd};
 
@@ -51,6 +52,40 @@ fn update_cost_and_signal(
     cost: &mut [Mem256f],
     switch_signal: &mut [u8],
 ) {
+    if (false) {
+        // scalar mode
+        for k in 0..((num_histograms32 as usize + 7) >> 3 << 3) {
+            cost[k >> 3][k & 7] -= min_cost;
+            if (cost[k >> 3][k & 7] >= block_switch_cost) {
+                let mask = (1_u8 << (k & 7));
+                cost[k >> 3][k & 7] = block_switch_cost;
+                switch_signal[ix + (k >> 3)] |= mask;
+            }
+        }
+        return;
+    }
+    if (false) {
+        // scalar mode
+
+        for k in 0..((num_histograms32 as usize + 7) >> 3 << 3) {
+            cost[k >> 3][k & 7] -= min_cost;
+            let cmpge = if (cost[k >> 3][k & 7] >= block_switch_cost) {
+                0xff
+            } else {
+                0
+            };
+            let mask = (1_u8 << (k & 7));
+            let bits = cmpge & mask;
+            if block_switch_cost < cost[k >> 3][k & 7] {
+                cost[k >> 3][k & 7] = block_switch_cost;
+            }
+            switch_signal[ix + (k >> 3)] |= bits;
+            //if (((k + 1)>> 3) != (k >>3)) {
+            //    println_stderr!("{:} ss {:} c {:?}", k, switch_signal[ix + (k >> 3)],cost[k>>3]);
+            //}
+        }
+        return;
+    }
     let ymm_min_cost = v256::splat(min_cost);
     let ymm_block_switch_cost = v256::splat(block_switch_cost);
     let ymm_and_mask = v256i::from([
@@ -88,6 +123,10 @@ fn CountLiterals(cmds: &[Command], num_commands: usize) -> usize {
     total_length
 }
 
+fn CommandCopyLen(xself: &Command) -> u32 {
+    xself.copy_len_ & 0xffffffu32
+}
+
 fn CopyLiteralsToByteArray(
     cmds: &[Command],
     num_commands: usize,
@@ -115,7 +154,7 @@ fn CopyLiteralsToByteArray(
         }
         from_pos = from_pos
             .wrapping_add(insert_len)
-            .wrapping_add(cmds[i].copy_len() as usize)
+            .wrapping_add(CommandCopyLen(&cmds[i]) as usize)
             & mask;
     }
 }
@@ -275,44 +314,60 @@ where
             u64::from(data_byte_ix.clone()).wrapping_mul(num_histograms as u64) as usize;
         let mut min_cost: super::util::floatX = 1e38 as super::util::floatX;
         let mut block_switch_cost: super::util::floatX = block_switch_bitcost;
-        // main (vectorized) loop
-        let insert_cost_slice = insert_cost.split_at(insert_cost_ix).1;
-        for (v_index, cost_iter) in cost
-            .split_at_mut(num_histograms >> 3)
-            .0
-            .iter_mut()
-            .enumerate()
-        {
-            let base_index = v_index << 3;
-            let mut local_insert_cost = [0.0 as super::util::floatX; 8];
-            local_insert_cost
-                .clone_from_slice(insert_cost_slice.split_at(base_index).1.split_at(8).0);
-            for sub_index in 0usize..8usize {
-                cost_iter[sub_index] += local_insert_cost[sub_index];
-                let final_cost = cost_iter[sub_index];
-                if final_cost < min_cost {
-                    min_cost = final_cost;
-                    *block_id_ptr = (base_index + sub_index) as u8;
+        if false {
+            // nonvectorized version: same code below
+            for (k, insert_cost_iter) in insert_cost
+                [insert_cost_ix..(insert_cost_ix + num_histograms)]
+                .iter()
+                .enumerate()
+            {
+                let cost_iter = &mut cost[(k >> 3)][k & 7];
+                *cost_iter += *insert_cost_iter;
+                if *cost_iter < min_cost {
+                    min_cost = *cost_iter;
+                    *block_id_ptr = k as u8;
                 }
             }
-        }
-        let vectorized_offset = ((num_histograms >> 3) << 3);
-        let mut k = vectorized_offset;
-        //remainder loop for
-        for insert_cost_iter in insert_cost
-            .split_at(insert_cost_ix + vectorized_offset)
-            .1
-            .split_at(num_histograms & 7)
-            .0
-            .iter()
-        {
-            let cost_iter = &mut cost[(k >> 3)];
-            cost_iter[k & 7] += *insert_cost_iter;
-            if cost_iter[k & 7] < min_cost {
-                min_cost = cost_iter[k & 7];
-                *block_id_ptr = k as u8;
+        } else {
+            // main (vectorized) loop
+            let insert_cost_slice = insert_cost.split_at(insert_cost_ix).1;
+            for (v_index, cost_iter) in cost
+                .split_at_mut(num_histograms >> 3)
+                .0
+                .iter_mut()
+                .enumerate()
+            {
+                let base_index = v_index << 3;
+                let mut local_insert_cost = [0.0 as super::util::floatX; 8];
+                local_insert_cost
+                    .clone_from_slice(insert_cost_slice.split_at(base_index).1.split_at(8).0);
+                for sub_index in 0usize..8usize {
+                    cost_iter[sub_index] += local_insert_cost[sub_index];
+                    let final_cost = cost_iter[sub_index];
+                    if final_cost < min_cost {
+                        min_cost = final_cost;
+                        *block_id_ptr = (base_index + sub_index) as u8;
+                    }
+                }
             }
-            k += 1;
+            let vectorized_offset = ((num_histograms >> 3) << 3);
+            let mut k = vectorized_offset;
+            //remainder loop for
+            for insert_cost_iter in insert_cost
+                .split_at(insert_cost_ix + vectorized_offset)
+                .1
+                .split_at(num_histograms & 7)
+                .0
+                .iter()
+            {
+                let cost_iter = &mut cost[(k >> 3)];
+                cost_iter[k & 7] += *insert_cost_iter;
+                if cost_iter[k & 7] < min_cost {
+                    min_cost = cost_iter[k & 7];
+                    *block_id_ptr = k as u8;
+                }
+                k += 1;
+            }
         }
         if byte_ix < 2000usize {
             block_switch_cost *= (0.77 as super::util::floatX
@@ -334,6 +389,7 @@ where
         let mut cur_id: u8 = block_id[byte_ix];
         while byte_ix > 0usize {
             let mask: u8 = (1u32 << (cur_id as i32 & 7i32)) as u8;
+            0i32;
             byte_ix -= 1;
             ix = ix.wrapping_sub(bitmaplen);
             if switch_signal[ix.wrapping_add((cur_id as i32 >> 3) as usize)] as i32 & mask as i32
@@ -361,6 +417,7 @@ fn RemapBlockIds(
         new_id[i] = kInvalidId;
     }
     for i in 0usize..length {
+        0i32;
         if new_id[(block_ids[i] as usize)] as i32 == kInvalidId as i32 {
             new_id[(block_ids[i] as usize)] = {
                 let _old = next_id;
@@ -371,7 +428,9 @@ fn RemapBlockIds(
     }
     for i in 0usize..length {
         block_ids[i] = new_id[(block_ids[i] as usize)] as u8;
+        0i32;
     }
+    0i32;
     next_id as usize
 }
 
@@ -427,8 +486,10 @@ fn ClusterBlocks<
     let mut cluster_size_capacity: usize = expected_num_clusters;
     let mut cluster_size = <Alloc as Allocator<u32>>::alloc_cell(alloc, cluster_size_capacity);
     let mut num_clusters: usize = 0usize;
-    let mut histograms =
-        <Alloc as Allocator<HistogramType>>::alloc_cell(alloc, min(num_blocks, 64));
+    let mut histograms = <Alloc as Allocator<HistogramType>>::alloc_cell(
+        alloc,
+        brotli_min_size_t(num_blocks, 64usize),
+    );
     let mut max_num_pairs: usize = (64i32 * 64i32 / 2i32) as usize;
     let pairs_capacity: usize = max_num_pairs.wrapping_add(1);
     let mut pairs = <Alloc as Allocator<HistogramPair>>::alloc_cell(alloc, pairs_capacity);
@@ -446,6 +507,7 @@ fn ClusterBlocks<
         i = 0usize;
         while i < length {
             {
+                0i32;
                 {
                     let _rhs = 1;
                     let _lhs = &mut block_lengths.slice_mut()[block_idx];
@@ -459,11 +521,12 @@ fn ClusterBlocks<
             }
             i = i.wrapping_add(1);
         }
+        0i32;
     }
     i = 0usize;
     while i < num_blocks {
         {
-            let num_to_combine: usize = min(num_blocks.wrapping_sub(i), 64);
+            let num_to_combine: usize = brotli_min_size_t(num_blocks.wrapping_sub(i), 64usize);
 
             for j in 0usize..num_to_combine {
                 HistogramClear(&mut histograms.slice_mut()[j]);
@@ -547,11 +610,13 @@ fn ClusterBlocks<
                     (num_clusters as u32).wrapping_add(remap[symbols[j] as usize]);
             }
             num_clusters = num_clusters.wrapping_add(num_new_clusters);
+            0i32;
+            0i32;
         }
         i = i.wrapping_add(64);
     }
     <Alloc as Allocator<HistogramType>>::free_cell(alloc, core::mem::take(&mut histograms));
-    max_num_pairs = min(
+    max_num_pairs = brotli_min_size_t(
         (64usize).wrapping_mul(num_clusters),
         num_clusters.wrapping_div(2).wrapping_mul(num_clusters),
     );
@@ -680,7 +745,7 @@ fn ClusterBlocks<
                 let id: u8 = new_index.slice()[(histogram_symbols.slice()[i] as usize)] as u8;
                 split.types.slice_mut()[block_idx] = id;
                 split.lengths.slice_mut()[block_idx] = cur_length;
-                max_type = max(max_type, id);
+                max_type = brotli_max_uint8_t(max_type, id);
                 cur_length = 0u32;
                 block_idx = block_idx.wrapping_add(1);
             }
@@ -894,7 +959,7 @@ pub fn BrotliSplitBlock<
     }
     {
         let mut insert_and_copy_codes = <Alloc as Allocator<u16>>::alloc_cell(alloc, num_commands);
-        for i in 0..min(num_commands, cmds.len()) {
+        for i in 0..core::cmp::min(num_commands, cmds.len()) {
             insert_and_copy_codes.slice_mut()[i] = (cmds[i]).cmd_prefix_;
         }
         SplitByteVector::<HistogramCommand, Alloc, u16>(
@@ -916,8 +981,8 @@ pub fn BrotliSplitBlock<
         let mut j: usize = 0usize;
         for i in 0usize..num_commands {
             let cmd = &cmds[i];
-            if cmd.copy_len() != 0 && cmd.cmd_prefix_ >= 128 {
-                distance_prefixes.slice_mut()[j] = cmd.dist_prefix_ & 0x03ff;
+            if CommandCopyLen(cmd) != 0 && (cmd.cmd_prefix_ as i32 >= 128i32) {
+                distance_prefixes.slice_mut()[j] = cmd.dist_prefix_ & 0x3ff;
                 j = j.wrapping_add(1);
             }
         }

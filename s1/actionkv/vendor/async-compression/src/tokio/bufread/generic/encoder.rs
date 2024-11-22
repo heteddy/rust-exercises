@@ -47,10 +47,6 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
         self.project().reader
     }
 
-    pub(crate) fn get_encoder_ref(&self) -> &E {
-        &self.encoder
-    }
-
     pub fn into_inner(self) -> R {
         self.reader
     }

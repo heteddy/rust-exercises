@@ -6,6 +6,7 @@
 // Std
 use std::borrow::Cow;
 use std::cmp;
+use std::usize;
 
 // Internal
 use crate::builder::PossibleValue;
@@ -73,7 +74,7 @@ const DEFAULT_NO_ARGS_TEMPLATE: &str = "\
 {usage-heading} {usage}{after-help}\
     ";
 
-/// Help template writer
+/// `clap` HelpTemplate Writer.
 ///
 /// Wraps a writer stream providing different methods to generate help for `clap` objects.
 pub(crate) struct HelpTemplate<'cmd, 'writer> {
@@ -650,7 +651,7 @@ impl<'cmd, 'writer> HelpTemplate<'cmd, 'writer> {
 
         let spaces = if next_line_help {
             TAB.len() + NEXT_LINE_INDENT.len()
-        } else if arg.map(|a| a.is_positional()).unwrap_or(true) {
+        } else if let Some(true) = arg.map(|a| a.is_positional()) {
             longest + TAB_WIDTH * 2
         } else {
             longest + TAB_WIDTH * 2 + 4 // See `fn short` for the 4
@@ -754,10 +755,7 @@ impl<'cmd, 'writer> HelpTemplate<'cmd, 'writer> {
             true
         } else {
             // force_next_line
-            let h = arg
-                .get_help()
-                .or_else(|| arg.get_long_help())
-                .unwrap_or_default();
+            let h = arg.get_help().unwrap_or_default();
             let h_w = h.display_width() + display_width(spec_vals);
             let taken = if arg.is_positional() {
                 longest + TAB_WIDTH * 2
@@ -1033,7 +1031,7 @@ impl<'cmd, 'writer> HelpTemplate<'cmd, 'writer> {
             .unwrap_or_default();
 
         self.subcmd(sc_str, next_line_help, longest);
-        self.help(None, about, spec_vals, next_line_help, longest);
+        self.help(None, about, spec_vals, next_line_help, longest)
     }
 
     fn sc_spec_vals(&self, a: &Command) -> String {
@@ -1069,10 +1067,7 @@ impl<'cmd, 'writer> HelpTemplate<'cmd, 'writer> {
             true
         } else {
             // force_next_line
-            let h = cmd
-                .get_about()
-                .or_else(|| cmd.get_long_about())
-                .unwrap_or_default();
+            let h = cmd.get_about().unwrap_or_default();
             let h_w = h.display_width() + display_width(spec_vals);
             let taken = longest + TAB_WIDTH * 2;
             self.term_w >= taken

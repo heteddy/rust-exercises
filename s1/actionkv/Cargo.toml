@@ -55,8 +55,7 @@ bytebuffer = "2.3.0"
 base64 = "0.22.0"
 hex = "0.4.3"
 utoipa = { version = "4.2.3", features = ["axum_extras"] }
-# 或者使用utoipa-swagger-ui 7.1.0
-utoipa-swagger-ui-vendored = { version = "0.1.1" }
+# utoipa-swagger-ui = { version = "8.0.3", features = ["axum"] }
 [lib]
 name = "libakv"
 path = "src/lib.rs"
@@ -65,4 +64,8 @@ path = "src/lib.rs"
 name = "akv"
 path = "src/akv_mem.rs"
 
+[source.crates-io]
+replace-with = "vendored-sources"
 
+[source.vendored-sources]
+directory = "vendor"

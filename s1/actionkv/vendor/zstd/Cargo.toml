@@ -13,7 +13,7 @@
 edition = "2018"
 rust-version = "1.64"
 name = "zstd"
-version = "0.13.2"
+version = "0.13.1"
 authors = ["Alexandre Bury <alexandre.bury@gmail.com>"]
 exclude = [
     "assets/*.zst",

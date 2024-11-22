@@ -30,7 +30,6 @@ use brotli::enc::{
 use brotli::CustomRead;
 #[allow(unused_imports)]
 use brotli::HuffmanCode;
-use core::cmp::{max, min};
 use core::ops;
 mod validate;
 use std::env;
@@ -427,7 +426,7 @@ where
             );
             util::write_one(&tmp);
             for cmd in data.iter() {
-                util::write_one(&cmd.thaw_pair(&mb));
+                util::write_one(&brotli::thaw_pair(cmd, &mb));
             }
         };
     if params.log_meta_block {
@@ -679,8 +678,8 @@ fn main() {
                 continue;
             }
             if argument.starts_with("-j") && !double_dash {
-                num_threads = min(
-                    max(
+                num_threads = core::cmp::min(
+                    core::cmp::max(
                         1,
                         argument
                             .trim_matches('-')

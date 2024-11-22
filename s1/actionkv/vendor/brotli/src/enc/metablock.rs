@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use super::super::alloc;
 use super::super::alloc::{Allocator, SliceWrapper, SliceWrapperMut};
 use super::backward_references::BrotliEncoderParams;
 use super::bit_cost::{BitsEntropy, BrotliPopulationCost};
@@ -7,7 +8,10 @@ use super::block_splitter::BrotliSplitBlock;
 use super::brotli_bit_stream::MetaBlockSplit;
 use super::cluster::BrotliClusterHistograms;
 use super::combined_alloc::BrotliAlloc;
-use super::command::{BrotliDistanceParams, Command, PrefixEncodeCopyDistance};
+use super::command::{
+    BrotliDistanceParams, Command, CommandCopyLen, CommandRestoreDistanceCode,
+    PrefixEncodeCopyDistance,
+};
 use super::constants::BROTLI_MAX_NPOSTFIX;
 use super::encode::{
     BROTLI_DISTANCE_ALPHABET_SIZE, BROTLI_LARGE_MAX_DISTANCE_BITS, BROTLI_MAX_ALLOWED_DISTANCE,
@@ -19,7 +23,8 @@ use super::histogram::{
     HistogramAddHistogram, HistogramAddItem, HistogramClear, HistogramCommand, HistogramDistance,
     HistogramLiteral,
 };
-use core::cmp::{max, min};
+use super::util::{brotli_max_size_t, brotli_min_size_t};
+use core;
 
 pub fn BrotliInitDistanceParams(params: &mut BrotliEncoderParams, npostfix: u32, ndirect: u32) {
     let dist_params = &mut params.dist;
@@ -68,8 +73,8 @@ fn RecomputeDistancePrefixes(
     }
 
     for cmd in cmds.split_at_mut(num_commands).0.iter_mut() {
-        if (cmd.copy_len() != 0 && cmd.cmd_prefix_ >= 128) {
-            let ret = cmd.restore_distance_code(orig_params);
+        if (CommandCopyLen(cmd) != 0 && cmd.cmd_prefix_ >= 128) {
+            let ret = CommandRestoreDistanceCode(cmd, orig_params);
             PrefixEncodeCopyDistance(
                 ret as usize,
                 new_params.num_direct_distance_codes as usize,
@@ -101,11 +106,11 @@ fn ComputeDistanceCost(
         equal_params = true;
     }
     for cmd in cmds.split_at(num_commands).0 {
-        if cmd.copy_len() != 0 && cmd.cmd_prefix_ >= 128 {
-            if equal_params {
+        if CommandCopyLen(cmd) != 0 && cmd.cmd_prefix_ >= 128 {
+            if (equal_params) {
                 dist_prefix = cmd.dist_prefix_;
             } else {
-                let distance = cmd.restore_distance_code(orig_params);
+                let distance = CommandRestoreDistanceCode(cmd, orig_params);
                 if distance > new_params.max_distance as u32 {
                     return false;
                 }
@@ -117,7 +122,7 @@ fn ComputeDistanceCost(
                     &mut dist_extra,
                 );
             }
-            HistogramAddItem(&mut histo, (dist_prefix & 0x03ff) as usize);
+            HistogramAddItem(&mut histo, (dist_prefix & 0x3FF) as usize);
             extra_bits += (dist_prefix >> 10) as f64;
         }
     }
@@ -401,7 +406,7 @@ fn InitBlockSplitter<
     histograms_size: &mut usize,
 ) -> BlockSplitter {
     let max_num_blocks: usize = num_symbols.wrapping_div(min_block_size).wrapping_add(1);
-    let max_num_types: usize = min(max_num_blocks, (256i32 + 1i32) as usize);
+    let max_num_types: usize = brotli_min_size_t(max_num_blocks, (256i32 + 1i32) as usize);
     let mut xself = BlockSplitter {
         last_entropy_: [0.0 as super::util::floatX; 2],
         alphabet_size_: alphabet_size,
@@ -500,7 +505,8 @@ fn InitContextBlockSplitter<
         last_histogram_ix_: [0; 2],
         last_entropy_: [0.0 as super::util::floatX; 2 * BROTLI_MAX_STATIC_CONTEXTS],
     };
-    let max_num_types: usize = min(max_num_blocks, xself.max_block_types_.wrapping_add(1));
+    let max_num_types: usize =
+        brotli_min_size_t(max_num_blocks, xself.max_block_types_.wrapping_add(1));
     {
         if split.types.slice().len() < max_num_blocks {
             let mut _new_size: usize = if split.types.slice().is_empty() {
@@ -563,7 +569,7 @@ fn BlockSplitterFinishBlock<
     histograms_size: &mut usize,
     is_final: i32,
 ) {
-    xself.block_size_ = max(xself.block_size_, xself.min_block_size_);
+    xself.block_size_ = brotli_max_size_t(xself.block_size_, xself.min_block_size_);
     if xself.num_blocks_ == 0usize {
         split.lengths.slice_mut()[0] = xself.block_size_ as u32;
         split.types.slice_mut()[0] = 0u8;
@@ -977,8 +983,8 @@ pub fn BrotliBuildMetaBlockGreedyInternal<
             }
             j = j.wrapping_sub(1);
         }
-        pos = pos.wrapping_add(cmd.copy_len() as usize);
-        if cmd.copy_len() != 0 {
+        pos = pos.wrapping_add(CommandCopyLen(&cmd) as usize);
+        if CommandCopyLen(&cmd) != 0 {
             prev_byte2 = ringbuffer[(pos.wrapping_sub(2) & mask)];
             prev_byte = ringbuffer[(pos.wrapping_sub(1) & mask)];
             if cmd.cmd_prefix_ as i32 >= 128i32 {

@@ -60,7 +60,6 @@ struct Test<'a> {
 }
 
 #[derive(Serialize)]
-#[allow(dead_code)]
 struct Dst {
     #[serde(with = "serde_bytes")]
     bytes: [u8],

@@ -80,7 +80,6 @@ impl Md {
     /// Returns the `Md` corresponding to an [`Nid`].
     #[corresponds(EVP_get_digestbynid)]
     pub fn from_nid(type_: Nid) -> Option<&'static MdRef> {
-        ffi::init();
         unsafe {
             let ptr = ffi::EVP_get_digestbynid(type_.as_raw());
             if ptr.is_null() {
@@ -101,7 +100,6 @@ impl Md {
         algorithm: &str,
         properties: Option<&str>,
     ) -> Result<Self, ErrorStack> {
-        ffi::init();
         let algorithm = CString::new(algorithm).unwrap();
         let properties = properties.map(|s| CString::new(s).unwrap());
 

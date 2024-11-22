@@ -9,7 +9,6 @@ pub(super) use self::buffer::Buffer;
 pub use target::Target;
 
 /// Whether or not to print styles to the target.
-#[allow(clippy::exhaustive_enums)] // By definition don't need more
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Default)]
 pub enum WriteStyle {
     /// Try to print styles, but don't force the issue.
@@ -51,7 +50,7 @@ pub(crate) struct Writer {
 }
 
 impl Writer {
-    pub(crate) fn write_style(&self) -> WriteStyle {
+    pub fn write_style(&self) -> WriteStyle {
         self.inner.write_style()
     }
 
@@ -123,8 +122,8 @@ impl Builder {
         #[cfg(feature = "auto-color")]
         let color_choice = if color_choice == WriteStyle::Auto {
             match &self.target {
-                Target::Stdout => anstream::AutoStream::choice(&io::stdout()).into(),
-                Target::Stderr => anstream::AutoStream::choice(&io::stderr()).into(),
+                Target::Stdout => anstream::AutoStream::choice(&std::io::stdout()).into(),
+                Target::Stderr => anstream::AutoStream::choice(&std::io::stderr()).into(),
                 Target::Pipe(_) => color_choice,
             }
         } else {

@@ -30,7 +30,6 @@ use crate::fs::AtFlags;
 #[cfg(not(any(
     netbsdlike,
     solarish,
-    target_os = "aix",
     target_os = "dragonfly",
     target_os = "espidf",
     target_os = "nto",
@@ -140,7 +139,12 @@ fn open_via_syscall(path: &CStr, oflags: OFlags, mode: Mode) -> io::Result<Owned
 pub(crate) fn open(path: &CStr, oflags: OFlags, mode: Mode) -> io::Result<OwnedFd> {
     // Work around <https://sourceware.org/bugzilla/show_bug.cgi?id=17523>.
     // glibc versions before 2.25 don't handle `O_TMPFILE` correctly.
-    #[cfg(all(unix, target_env = "gnu", not(target_os = "hurd")))]
+    #[cfg(all(
+        unix,
+        target_env = "gnu",
+        not(target_os = "hurd"),
+        not(target_os = "freebsd")
+    ))]
     if oflags.contains(OFlags::TMPFILE) && crate::backend::if_glibc_is_less_than_2_25() {
         return open_via_syscall(path, oflags, mode);
     }
@@ -203,7 +207,12 @@ pub(crate) fn openat(
 ) -> io::Result<OwnedFd> {
     // Work around <https://sourceware.org/bugzilla/show_bug.cgi?id=17523>.
     // glibc versions before 2.25 don't handle `O_TMPFILE` correctly.
-    #[cfg(all(unix, target_env = "gnu", not(target_os = "hurd")))]
+    #[cfg(all(
+        unix,
+        target_env = "gnu",
+        not(target_os = "hurd"),
+        not(target_os = "freebsd")
+    ))]
     if oflags.contains(OFlags::TMPFILE) && crate::backend::if_glibc_is_less_than_2_25() {
         return openat_via_syscall(dirfd, path, oflags, mode);
     }
@@ -1606,7 +1615,6 @@ fn futimens_old(fd: BorrowedFd<'_>, times: &Timestamps) -> io::Result<()> {
     apple,
     netbsdlike,
     solarish,
-    target_os = "aix",
     target_os = "dragonfly",
     target_os = "espidf",
     target_os = "nto",
@@ -2246,15 +2254,24 @@ pub(crate) fn getxattr(path: &CStr, name: &CStr, value: &mut [u8]) -> io::Result
     }
 
     #[cfg(apple)]
-    unsafe {
-        ret_usize(c::getxattr(
-            path.as_ptr(),
-            name.as_ptr(),
-            value_ptr.cast::<c::c_void>(),
-            value.len(),
-            0,
-            0,
-        ))
+    {
+        // Passing an empty to slice to getxattr leads to ERANGE on macOS. Pass null
+        // instead.
+        let ptr = if value.is_empty() {
+            core::ptr::null_mut()
+        } else {
+            value_ptr.cast::<c::c_void>()
+        };
+        unsafe {
+            ret_usize(c::getxattr(
+                path.as_ptr(),
+                name.as_ptr(),
+                ptr,
+                value.len(),
+                0,
+                0,
+            ))
+        }
     }
 }
 
@@ -2274,7 +2291,8 @@ pub(crate) fn lgetxattr(path: &CStr, name: &CStr, value: &mut [u8]) -> io::Resul
 
     #[cfg(apple)]
     {
-        // Passing an empty to slice to getxattr leads to ERANGE on macOS. Pass null instead.
+        // Passing an empty to slice to getxattr leads to ERANGE on macOS. Pass null
+        // instead.
         let ptr = if value.is_empty() {
             core::ptr::null_mut()
         } else {
@@ -2309,15 +2327,24 @@ pub(crate) fn fgetxattr(fd: BorrowedFd<'_>, name: &CStr, value: &mut [u8]) -> io
     }
 
     #[cfg(apple)]
-    unsafe {
-        ret_usize(c::fgetxattr(
-            borrowed_fd(fd),
-            name.as_ptr(),
-            value_ptr.cast::<c::c_void>(),
-            value.len(),
-            0,
-            0,
-        ))
+    {
+        // Passing an empty to slice to getxattr leads to ERANGE on macOS. Pass null
+        // instead.
+        let ptr = if value.is_empty() {
+            core::ptr::null_mut()
+        } else {
+            value_ptr.cast::<c::c_void>()
+        };
+        unsafe {
+            ret_usize(c::fgetxattr(
+                borrowed_fd(fd),
+                name.as_ptr(),
+                ptr,
+                value.len(),
+                0,
+                0,
+            ))
+        }
     }
 }
 

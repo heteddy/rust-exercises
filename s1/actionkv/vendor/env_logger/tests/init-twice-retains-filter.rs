@@ -1,4 +1,5 @@
-#![allow(clippy::unwrap_used)]
+extern crate env_logger;
+extern crate log;
 
 use std::env;
 use std::process;

@@ -9,6 +9,8 @@ use enc::threading::{
 };
 use enc::BrotliAlloc;
 use enc::BrotliEncoderParams;
+#[cfg(feature = "std")]
+use std;
 
 pub struct SingleThreadedJoinable<T: Send + 'static, U: Send + 'static> {
     result: Result<T, U>,

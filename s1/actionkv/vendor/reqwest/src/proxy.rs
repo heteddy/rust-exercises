@@ -1984,6 +1984,11 @@ mod test {
                         url::ParseError::InvalidIpv6Address,
                     );
                 }
+
+                #[test]
+                fn invalid_domain_character() {
+                    check_parse_error("http://abc 123/", url::ParseError::InvalidDomainCharacter);
+                }
             }
         }
     }

@@ -1,7 +1,6 @@
-#![allow(clippy::unwrap_used)]
-
 #[macro_use]
 extern crate log;
+extern crate env_logger;
 
 use std::env;
 use std::fmt;
@@ -11,7 +10,7 @@ use std::str;
 struct Foo;
 
 impl fmt::Display for Foo {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         info!("test");
         f.write_str("bar")
     }

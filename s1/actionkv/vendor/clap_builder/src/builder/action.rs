@@ -194,7 +194,7 @@ pub enum ArgAction {
     /// );
     /// ```
     SetFalse,
-    /// When encountered, increment a `u8` counter starting from `0`.
+    /// When encountered, increment a `u8` counter
     ///
     /// If no [`default_value`][super::Arg::default_value] is set, it will be `0`.
     ///

@@ -669,7 +669,7 @@ impl RedisError {
 
     /// Indicates that this failure is an IO failure.
     pub fn is_io_error(&self) -> bool {
-        self.kind() == ErrorKind::IoError
+        self.as_io_error().is_some()
     }
 
     pub(crate) fn as_io_error(&self) -> Option<&io::Error> {

@@ -11,7 +11,7 @@
 
 [package]
 name = "brotli-decompressor"
-version = "4.0.1"
+version = "3.0.0"
 authors = [
     "Daniel Reiter Horn <danielrh@dropbox.com>",
     "The Brotli Authors",
@@ -49,7 +49,10 @@ optional = true
 
 [features]
 benchmark = []
-default = ["std"]
+default = [
+    "std",
+    "ffi-api",
+]
 disable-timer = []
 ffi-api = []
 pass-through-ffi-panics = []

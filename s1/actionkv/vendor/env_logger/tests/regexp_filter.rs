@@ -1,7 +1,6 @@
-#![allow(clippy::unwrap_used)]
-
 #[macro_use]
 extern crate log;
+extern crate env_logger;
 
 use std::env;
 use std::process;
@@ -11,7 +10,7 @@ fn main() {
     if env::var("LOG_REGEXP_TEST").ok() == Some(String::from("1")) {
         child_main();
     } else {
-        parent_main();
+        parent_main()
     }
 }
 
@@ -33,13 +32,13 @@ fn run_child(rust_log: String) -> bool {
 }
 
 fn assert_message_printed(rust_log: &str) {
-    if !run_child(rust_log.to_owned()) {
+    if !run_child(rust_log.to_string()) {
         panic!("RUST_LOG={} should allow the test log message", rust_log)
     }
 }
 
 fn assert_message_not_printed(rust_log: &str) {
-    if run_child(rust_log.to_owned()) {
+    if run_child(rust_log.to_string()) {
         panic!(
             "RUST_LOG={} should not allow the test log message",
             rust_log

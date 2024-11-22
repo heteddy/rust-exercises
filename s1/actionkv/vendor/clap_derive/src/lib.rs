@@ -12,13 +12,11 @@
 // commit#ea76fa1b1b273e65e3b0b1046643715b49bec51f which is licensed under the
 // MIT/Apache 2.0 license.
 
-#![doc = include_str!("../README.md")]
 #![doc(html_logo_url = "https://raw.githubusercontent.com/clap-rs/clap/master/assets/clap.png")]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![doc = include_str!("../README.md")]
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
-#![warn(clippy::print_stderr)]
-#![warn(clippy::print_stdout)]
+
+extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};

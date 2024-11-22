@@ -43,6 +43,8 @@ pub mod singlethreading;
 pub mod threading;
 pub mod worker_pool;
 #[cfg(feature = "simd")]
+use core::simd::{f32x8, i16x16, i32x8};
+#[cfg(feature = "simd")]
 pub type s16 = core::simd::i16x16;
 #[cfg(feature = "simd")]
 pub type v8 = core::simd::f32x8;
@@ -59,9 +61,13 @@ mod parameters;
 mod test;
 mod weights;
 pub use self::backward_references::{BrotliEncoderParams, UnionHasher};
-use self::encode::{BrotliEncoderDestroyInstance, BrotliEncoderOperation};
+use self::encode::{
+    BrotliEncoderCompressStream, BrotliEncoderCreateInstance, BrotliEncoderDestroyInstance,
+    BrotliEncoderIsFinished, BrotliEncoderOperation, BrotliEncoderSetCustomDictionary,
+};
 pub use self::encode::{
     BrotliEncoderInitParams, BrotliEncoderMaxCompressedSize, BrotliEncoderMaxCompressedSizeMulti,
+    BrotliEncoderSetParameter,
 };
 pub use self::hash_to_binary_tree::ZopfliNode;
 pub use self::interface::StaticCommand;
@@ -81,7 +87,6 @@ use std::io::{Error, ErrorKind, Read, Write};
 
 #[cfg(feature = "std")]
 pub use brotli_decompressor::{IntoIoReader, IoReaderWrapper, IoWriterWrapper};
-use enc::encode::BrotliEncoderStateStruct;
 
 #[cfg(not(feature = "std"))]
 pub use self::singlethreading::{compress_worker_pool, new_work_pool, WorkerPool};
@@ -253,10 +258,10 @@ where
 {
     assert!(!input_buffer.is_empty());
     assert!(!output_buffer.is_empty());
-    let mut s_orig = BrotliEncoderStateStruct::new(alloc);
+    let mut s_orig = BrotliEncoderCreateInstance(alloc);
     s_orig.params = params.clone();
     if !dict.is_empty() {
-        s_orig.set_custom_dictionary(dict.len(), dict);
+        BrotliEncoderSetCustomDictionary(&mut s_orig, dict.len(), dict);
     }
     let mut next_in_offset: usize = 0;
     let mut next_out_offset: usize = 0;
@@ -295,7 +300,8 @@ where
             } else {
                 op = BrotliEncoderOperation::BROTLI_OPERATION_PROCESS;
             }
-            let result = s.compress_stream(
+            let result = BrotliEncoderCompressStream(
+                s,
                 op,
                 &mut available_in,
                 input_buffer,
@@ -306,8 +312,8 @@ where
                 &mut total_out,
                 metablock_callback,
             );
-            let fin = s.is_finished();
-            if available_out == 0 || fin {
+            let fin = BrotliEncoderIsFinished(s);
+            if available_out == 0 || fin != 0 {
                 let lim = output_buffer.len() - available_out;
                 assert_eq!(next_out_offset, lim);
                 next_out_offset = 0;
@@ -326,13 +332,13 @@ where
                 available_out = output_buffer.len();
                 next_out_offset = 0;
             }
-            if !result {
+            if result <= 0 {
                 if read_err.is_ok() {
                     read_err = Err(unexpected_eof_error_constant);
                 }
                 break;
             }
-            if fin {
+            if fin != 0 {
                 break;
             }
         }

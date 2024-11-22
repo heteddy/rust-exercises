@@ -1,8 +1,9 @@
+use super::super::alloc;
 use super::super::alloc::{SliceWrapper, SliceWrapperMut};
 use super::input_pair::{InputPair, InputReference};
 use super::interface;
 use super::util::FastLog2;
-use core::cmp::{max, min};
+use core::cmp;
 
 use core::ops::{Index, IndexMut, Range};
 // float32 doesn't have enough resolution for blocks of data more than 3.5 megs
@@ -118,7 +119,7 @@ impl<AllocU32: alloc::Allocator<u32>> EntropyBucketPopulation<AllocU32> {
         scratch: &mut EntropyBucketPopulation<AllocU32>,
     ) -> floatY {
         prev_bytes.reverse();
-        stride = max(1, stride); // we return stride=1 to mean 1 away
+        stride = cmp::max(1, stride); // we return stride=1 to mean 1 away
         scratch
             .bucket_populations
             .slice_mut()
@@ -195,7 +196,7 @@ impl<AllocU32: alloc::Allocator<u32>> EntropyPyramid<AllocU32> {
     }
     pub fn byte_index_to_pyramid_index(&self, byte_index: usize, metablock_size: usize) -> usize {
         let range = self.last_level_range();
-        min(
+        cmp::min(
             range.start + (range.end - range.start) * byte_index / metablock_size,
             range.end - 1,
         ) // since we tally after the end of the literal block, it could be after the pyramid
@@ -604,7 +605,7 @@ impl<AllocU32: alloc::Allocator<u32>> EntropyPyramid<AllocU32> {
                     .split_at(input.len() >> 3)
                     .1,
                 scratch,
-                0x0a,
+                0xa,
                 Some(5..7),
                 Some(7..0xa),
             );

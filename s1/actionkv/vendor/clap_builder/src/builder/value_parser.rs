@@ -564,7 +564,7 @@ where
 }
 
 impl std::fmt::Debug for ValueParser {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         match &self.0 {
             ValueParserInner::Bool => f.debug_struct("ValueParser::bool").finish(),
             ValueParserInner::String => f.debug_struct("ValueParser::string").finish(),
@@ -606,6 +606,23 @@ trait AnyValueParser: Send + Sync + 'static {
         self.parse_ref(cmd, arg, value)
     }
 
+    fn parse(
+        &self,
+        cmd: &crate::Command,
+        arg: Option<&crate::Arg>,
+        value: std::ffi::OsString,
+    ) -> Result<AnyValue, crate::Error>;
+
+    fn parse_(
+        &self,
+        cmd: &crate::Command,
+        arg: Option<&crate::Arg>,
+        value: std::ffi::OsString,
+        _source: ValueSource,
+    ) -> Result<AnyValue, crate::Error> {
+        self.parse(cmd, arg, value)
+    }
+
     /// Describes the content of `AnyValue`
     fn type_id(&self) -> AnyValueId;
 
@@ -639,6 +656,27 @@ where
         source: ValueSource,
     ) -> Result<AnyValue, crate::Error> {
         let value = ok!(TypedValueParser::parse_ref_(self, cmd, arg, value, source));
+        Ok(AnyValue::new(value))
+    }
+
+    fn parse(
+        &self,
+        cmd: &crate::Command,
+        arg: Option<&crate::Arg>,
+        value: std::ffi::OsString,
+    ) -> Result<AnyValue, crate::Error> {
+        let value = ok!(TypedValueParser::parse(self, cmd, arg, value));
+        Ok(AnyValue::new(value))
+    }
+
+    fn parse_(
+        &self,
+        cmd: &crate::Command,
+        arg: Option<&crate::Arg>,
+        value: std::ffi::OsString,
+        source: ValueSource,
+    ) -> Result<AnyValue, crate::Error> {
+        let value = ok!(TypedValueParser::parse_(self, cmd, arg, value, source));
         Ok(AnyValue::new(value))
     }
 
@@ -1308,12 +1346,12 @@ where
 /// assert_eq!(value_parser.parse_ref(&cmd, arg, OsStr::new("50")).unwrap(), 50);
 /// ```
 #[derive(Copy, Clone, Debug)]
-pub struct RangedI64ValueParser<T: TryFrom<i64> + Clone + Send + Sync = i64> {
+pub struct RangedI64ValueParser<T: std::convert::TryFrom<i64> + Clone + Send + Sync = i64> {
     bounds: (std::ops::Bound<i64>, std::ops::Bound<i64>),
     target: std::marker::PhantomData<T>,
 }
 
-impl<T: TryFrom<i64> + Clone + Send + Sync> RangedI64ValueParser<T> {
+impl<T: std::convert::TryFrom<i64> + Clone + Send + Sync> RangedI64ValueParser<T> {
     /// Select full range of `i64`
     pub fn new() -> Self {
         Self::from(..)
@@ -1393,9 +1431,10 @@ impl<T: TryFrom<i64> + Clone + Send + Sync> RangedI64ValueParser<T> {
     }
 }
 
-impl<T: TryFrom<i64> + Clone + Send + Sync + 'static> TypedValueParser for RangedI64ValueParser<T>
+impl<T: std::convert::TryFrom<i64> + Clone + Send + Sync + 'static> TypedValueParser
+    for RangedI64ValueParser<T>
 where
-    <T as TryFrom<i64>>::Error: Send + Sync + 'static + std::error::Error + ToString,
+    <T as std::convert::TryFrom<i64>>::Error: Send + Sync + 'static + std::error::Error + ToString,
 {
     type Value = T;
 
@@ -1451,7 +1490,7 @@ where
     }
 }
 
-impl<T: TryFrom<i64> + Clone + Send + Sync, B: RangeBounds<i64>> From<B>
+impl<T: std::convert::TryFrom<i64> + Clone + Send + Sync, B: RangeBounds<i64>> From<B>
     for RangedI64ValueParser<T>
 {
     fn from(range: B) -> Self {
@@ -1462,7 +1501,7 @@ impl<T: TryFrom<i64> + Clone + Send + Sync, B: RangeBounds<i64>> From<B>
     }
 }
 
-impl<T: TryFrom<i64> + Clone + Send + Sync> Default for RangedI64ValueParser<T> {
+impl<T: std::convert::TryFrom<i64> + Clone + Send + Sync> Default for RangedI64ValueParser<T> {
     fn default() -> Self {
         Self::new()
     }
@@ -1507,12 +1546,12 @@ impl<T: TryFrom<i64> + Clone + Send + Sync> Default for RangedI64ValueParser<T> 
 /// assert_eq!(value_parser.parse_ref(&cmd, arg, OsStr::new("50")).unwrap(), 50);
 /// ```
 #[derive(Copy, Clone, Debug)]
-pub struct RangedU64ValueParser<T: TryFrom<u64> = u64> {
+pub struct RangedU64ValueParser<T: std::convert::TryFrom<u64> = u64> {
     bounds: (std::ops::Bound<u64>, std::ops::Bound<u64>),
     target: std::marker::PhantomData<T>,
 }
 
-impl<T: TryFrom<u64>> RangedU64ValueParser<T> {
+impl<T: std::convert::TryFrom<u64>> RangedU64ValueParser<T> {
     /// Select full range of `u64`
     pub fn new() -> Self {
         Self::from(..)
@@ -1592,9 +1631,10 @@ impl<T: TryFrom<u64>> RangedU64ValueParser<T> {
     }
 }
 
-impl<T: TryFrom<u64> + Clone + Send + Sync + 'static> TypedValueParser for RangedU64ValueParser<T>
+impl<T: std::convert::TryFrom<u64> + Clone + Send + Sync + 'static> TypedValueParser
+    for RangedU64ValueParser<T>
 where
-    <T as TryFrom<u64>>::Error: Send + Sync + 'static + std::error::Error + ToString,
+    <T as std::convert::TryFrom<u64>>::Error: Send + Sync + 'static + std::error::Error + ToString,
 {
     type Value = T;
 
@@ -1650,7 +1690,7 @@ where
     }
 }
 
-impl<T: TryFrom<u64>, B: RangeBounds<u64>> From<B> for RangedU64ValueParser<T> {
+impl<T: std::convert::TryFrom<u64>, B: RangeBounds<u64>> From<B> for RangedU64ValueParser<T> {
     fn from(range: B) -> Self {
         Self {
             bounds: (range.start_bound().cloned(), range.end_bound().cloned()),
@@ -1659,7 +1699,7 @@ impl<T: TryFrom<u64>, B: RangeBounds<u64>> From<B> for RangedU64ValueParser<T> {
     }
 }
 
-impl<T: TryFrom<u64>> Default for RangedU64ValueParser<T> {
+impl<T: std::convert::TryFrom<u64>> Default for RangedU64ValueParser<T> {
     fn default() -> Self {
         Self::new()
     }
@@ -1873,7 +1913,7 @@ impl Default for FalseyValueParser {
 pub struct BoolishValueParser {}
 
 impl BoolishValueParser {
-    /// Parse bool-like string values, everything else is an error.
+    /// Parse bool-like string values, everything else is `true`
     pub fn new() -> Self {
         Self {}
     }
@@ -2118,7 +2158,7 @@ where
     }
 }
 
-/// When encountered, report [`ErrorKind::UnknownArgument`][crate::error::ErrorKind::UnknownArgument]
+/// When encountered, report [ErrorKind::UnknownArgument][crate::error::ErrorKind::UnknownArgument]
 ///
 /// Useful to help users migrate, either from old versions or similar tools.
 ///
@@ -2234,7 +2274,7 @@ impl TypedValueParser for UnknownArgumentValueParser {
     }
 }
 
-/// Register a type with [`value_parser!`][crate::value_parser!]
+/// Register a type with [value_parser!][crate::value_parser!]
 ///
 /// # Example
 ///
@@ -2609,6 +2649,10 @@ macro_rules! value_parser {
 
 mod private {
     use super::*;
+
+    // Prefer these so `clap_derive` defaults to optimized implementations
+    pub trait _ValueParserViaSelfSealed {}
+    impl<P: Into<ValueParser>> _ValueParserViaSelfSealed for &&&&&&&_AutoValueParser<P> {}
 
     pub trait _ValueParserViaFactorySealed {}
     impl<P: ValueParserFactory> _ValueParserViaFactorySealed for &&&&&&_AutoValueParser<P> {}

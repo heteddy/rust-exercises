@@ -14,10 +14,6 @@ impl ZlibEncoder {
             inner: crate::codec::FlateEncoder::new(level, true),
         }
     }
-
-    pub(crate) fn get_ref(&self) -> &crate::codec::FlateEncoder {
-        &self.inner
-    }
 }
 
 impl Encode for ZlibEncoder {

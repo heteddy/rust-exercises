@@ -3,8 +3,8 @@ use mongodb::{options::ClientOptions, Client};
 use serde_derive::{Deserialize, Serialize};
 use tokio::sync::OnceCell;
 use tracing::info;
-// 异步初始化方式
-pub static MONGO_CLIENT: OnceCell<Client> = OnceCell::const_new();
+// 异步初始化方式，只能是单线程，可以用于初始化
+pub static MONGO_CLIENT: OnceCell<Client> = OnceCell::const_new();  
 
 // init_mongodb 是一个异步任务
 pub async fn init_mongodb(_mongo: &cc::MongoConfig) -> &'static Client {

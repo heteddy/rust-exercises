@@ -1,13 +1,11 @@
-use std::io::{self, Cursor, Read, Write};
-use std::pin::Pin;
-use std::task::{Context, Poll};
-
+use super::Stream;
 use futures_util::future::poll_fn;
 use futures_util::task::noop_waker_ref;
 use rustls::{ClientConnection, Connection, ServerConnection};
+use std::io::{self, Cursor, Read, Write};
+use std::pin::Pin;
+use std::task::{Context, Poll};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, ReadBuf};
-
-use super::Stream;
 
 struct Good<'a>(&'a mut Connection);
 
@@ -122,15 +120,6 @@ impl AsyncWrite for Expected {
 
 #[tokio::test]
 async fn stream_good() -> io::Result<()> {
-    stream_good_impl(false).await
-}
-
-#[tokio::test]
-async fn stream_good_vectored() -> io::Result<()> {
-    stream_good_impl(true).await
-}
-
-async fn stream_good_impl(vectored: bool) -> io::Result<()> {
     const FILE: &[u8] = include_bytes!("../../README.md");
 
     let (server, mut client) = make_pair();
@@ -148,7 +137,7 @@ async fn stream_good_impl(vectored: bool) -> io::Result<()> {
         dbg!(stream.read_to_end(&mut buf).await)?;
         assert_eq!(buf, FILE);
 
-        dbg!(utils::write(&mut stream, b"Hello World!", vectored).await)?;
+        dbg!(stream.write_all(b"Hello World!").await)?;
         stream.session.send_close_notify();
 
         dbg!(stream.shutdown().await)?;
@@ -290,10 +279,12 @@ async fn stream_eof() -> io::Result<()> {
 }
 
 fn make_pair() -> (ServerConnection, ClientConnection) {
+    use std::convert::TryFrom;
+
     let (sconfig, cconfig) = utils::make_configs();
     let server = ServerConnection::new(sconfig).unwrap();
 
-    let domain = pki_types::ServerName::try_from("foobar.com").unwrap();
+    let domain = rustls::ServerName::try_from("foobar.com").unwrap();
     let client = ClientConnection::new(cconfig, domain).unwrap();
 
     (server, client)

@@ -27,39 +27,6 @@ fn private_key() {
 }
 
 #[test]
-fn public_keys() {
-    let data = include_bytes!("data/spki.pem");
-    let mut reader = BufReader::new(&data[..]);
-    assert_eq!(
-        rustls_pemfile::public_keys(&mut reader)
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap()
-            .len(),
-        1
-    );
-
-    let data = include_bytes!("data/zen2.pem");
-    let mut reader = BufReader::new(&data[..]);
-    assert_eq!(
-        rustls_pemfile::public_keys(&mut reader)
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap()
-            .len(),
-        2
-    );
-
-    let data = include_bytes!("data/certificate.chain.pem");
-    let mut reader = BufReader::new(&data[..]);
-    assert_eq!(
-        rustls_pemfile::public_keys(&mut reader)
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap()
-            .len(),
-        0
-    );
-}
-
-#[test]
 fn test_csr() {
     let data = include_bytes!("data/csr.pem");
     let mut reader = BufReader::new(&data[..]);
@@ -148,7 +115,7 @@ fn smoketest_iterate() {
         count += 1;
     }
 
-    assert_eq!(count, 18);
+    assert_eq!(count, 16);
 }
 
 #[test]

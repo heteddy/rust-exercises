@@ -1,14 +1,5 @@
-use redis::{ErrorKind, FromRedisValue, RedisError, ToRedisArgs, Value};
+use redis::{FromRedisValue, ToRedisArgs, Value};
 mod support;
-
-#[test]
-fn test_is_io_error() {
-    let err = RedisError::from((
-        ErrorKind::IoError,
-        "Multiplexed connection driver unexpectedly terminated",
-    ));
-    assert!(err.is_io_error());
-}
 
 #[test]
 fn test_is_single_arg() {

@@ -133,12 +133,6 @@
 //! end of the task, then the [`JoinHandle`] will instead report that the task
 //! exited normally.
 //!
-//! Be aware that tasks spawned using [`spawn_blocking`] cannot be aborted
-//! because they are not async. If you call `abort` on a `spawn_blocking`
-//! task, then this *will not have any effect*, and the task will continue
-//! running normally. The exception is if the task has not started running
-//! yet; in that case, calling `abort` may prevent the task from starting.
-//!
 //! Be aware that calls to [`JoinHandle::abort`] just schedule the task for
 //! cancellation, and will return before the cancellation has completed. To wait
 //! for cancellation to complete, wait for the task to finish by awaiting the
@@ -324,8 +318,10 @@
 cfg_rt! {
     pub use crate::runtime::task::{JoinError, JoinHandle};
 
-    mod blocking;
-    pub use blocking::spawn_blocking;
+    cfg_not_wasi! {
+        mod blocking;
+        pub use blocking::spawn_blocking;
+    }
 
     mod spawn;
     pub use spawn::spawn;
@@ -337,8 +333,10 @@ cfg_rt! {
     mod yield_now;
     pub use yield_now::yield_now;
 
-    mod consume_budget;
-    pub use consume_budget::consume_budget;
+    cfg_unstable! {
+        mod consume_budget;
+        pub use consume_budget::consume_budget;
+    }
 
     mod local;
     pub use local::{spawn_local, LocalSet, LocalEnterGuard};

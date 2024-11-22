@@ -260,9 +260,12 @@
 //! [level-enum]: https://docs.rs/log/latest/log/enum.Level.html
 //! [log-crate-url]: https://docs.rs/log
 
+#![doc(
+    html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
+    html_favicon_url = "https://www.rust-lang.org/static/images/favicon.ico"
+)]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![warn(clippy::print_stderr)]
-#![warn(clippy::print_stdout)]
+#![deny(missing_debug_implementations, missing_docs)]
 
 mod logger;
 

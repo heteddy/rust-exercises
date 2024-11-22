@@ -1,5 +1,6 @@
 use core::marker::PhantomData;
 use core::mem;
+use std;
 use std::thread::JoinHandle;
 
 use alloc_no_stdlib::{Allocator, SliceWrapper};

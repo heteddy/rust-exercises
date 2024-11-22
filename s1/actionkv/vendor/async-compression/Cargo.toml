@@ -12,7 +12,7 @@
 [package]
 edition = "2018"
 name = "async-compression"
-version = "0.4.12"
+version = "0.4.8"
 authors = [
     "Wim Looman <wim@nemo157.com>",
     "Allen Bui <fairingrey@gmail.com>",
@@ -96,16 +96,11 @@ required-features = [
     "tokio",
 ]
 
-[[test]]
-name = "zstd-window-size"
-required-features = [
-    "zstd",
-    "tokio",
-]
-
 [dependencies.brotli]
-version = "6.0"
+version = "4.0"
+features = ["std"]
 optional = true
+default-features = false
 
 [dependencies.bzip2]
 version = "0.4.4"
@@ -130,7 +125,7 @@ optional = true
 default-features = false
 
 [dependencies.libzstd]
-version = "0.13.1"
+version = "0.13"
 optional = true
 default-features = false
 package = "zstd"
@@ -171,7 +166,7 @@ version = "0.9"
 version = "1"
 
 [dev-dependencies.proptest-derive]
-version = "0.5"
+version = "0.4"
 
 [dev-dependencies.rand]
 version = "0.8.5"

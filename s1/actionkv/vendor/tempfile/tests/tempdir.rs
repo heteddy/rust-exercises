@@ -10,6 +10,7 @@
 
 #![deny(rust_2018_idioms)]
 
+use std::env;
 use std::fs;
 use std::path::Path;
 use std::sync::mpsc::channel;
@@ -148,7 +149,7 @@ where
     F: FnOnce(),
 {
     let tmpdir = TempDir::new().unwrap();
-    assert!(std::env::set_current_dir(tmpdir.path()).is_ok());
+    assert!(env::set_current_dir(tmpdir.path()).is_ok());
 
     f();
 }

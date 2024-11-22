@@ -10,10 +10,9 @@
 # See Cargo.toml.orig for the original contents.
 
 [package]
-edition = "2015"
 rust-version = "1.56.0"
 name = "brotli"
-version = "6.0.0"
+version = "4.0.0"
 authors = [
     "Daniel Reiter Horn <danielrh@dropbox.com>",
     "The Brotli Authors",
@@ -57,7 +56,7 @@ version = "~0.2"
 optional = true
 
 [dependencies.brotli-decompressor]
-version = "~4.0"
+version = "~3.0"
 default-features = false
 
 [dependencies.sha2]
@@ -66,7 +65,10 @@ optional = true
 
 [features]
 benchmark = ["brotli-decompressor/benchmark"]
-default = ["std"]
+default = [
+    "std",
+    "ffi-api",
+]
 disable-timer = ["brotli-decompressor/disable-timer"]
 external-literal-probability = []
 ffi-api = ["brotli-decompressor/ffi-api"]

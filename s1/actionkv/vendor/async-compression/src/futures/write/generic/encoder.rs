@@ -51,10 +51,6 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
         self.project().writer.get_pin_mut()
     }
 
-    pub(crate) fn get_encoder_ref(&self) -> &E {
-        &self.encoder
-    }
-
     pub fn into_inner(self) -> W {
         self.writer.into_inner()
     }

@@ -1,16 +1,10 @@
 use super::super::*;
 use libc::*;
 
-cfg_if! {
-    if #[cfg(libressl400)] {
-        pub enum X509_VAL {}
-    } else {
-        #[repr(C)]
-        pub struct X509_VAL {
-            pub notBefore: *mut ASN1_TIME,
-            pub notAfter: *mut ASN1_TIME,
-        }
-    }
+#[repr(C)]
+pub struct X509_VAL {
+    pub notBefore: *mut ASN1_TIME,
+    pub notAfter: *mut ASN1_TIME,
 }
 
 pub enum X509_NAME_ENTRY {}

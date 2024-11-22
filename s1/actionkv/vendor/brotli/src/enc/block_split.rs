@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use super::super::alloc;
 use super::super::alloc::Allocator;
 use super::super::alloc::SliceWrapper;
 

@@ -10,15 +10,10 @@
 # See Cargo.toml.orig for the original contents.
 
 [package]
-edition = "2021"
-rust-version = "1.63"
+edition = "2018"
+rust-version = "1.56"
 name = "tokio-rustls"
-version = "0.26.0"
-exclude = [
-    "/.github",
-    "/examples",
-    "/scripts",
-]
+version = "0.24.1"
 description = "Asynchronous TLS/SSL streams for Tokio using Rustls."
 homepage = "https://github.com/rustls/tokio-rustls"
 documentation = "https://docs.rs/tokio-rustls"
@@ -31,47 +26,47 @@ categories = [
 license = "MIT/Apache-2.0"
 repository = "https://github.com/rustls/tokio-rustls"
 
-[dependencies.pki-types]
-version = "1"
-package = "rustls-pki-types"
-
 [dependencies.rustls]
-version = "0.23"
-features = ["std"]
+version = "0.21.0"
 default-features = false
 
 [dependencies.tokio]
 version = "1.0"
 
 [dev-dependencies.argh]
-version = "0.1.1"
+version = "0.1"
 
 [dev-dependencies.futures-util]
 version = "0.3.1"
 
 [dev-dependencies.lazy_static]
-version = "1.1"
+version = "1"
 
 [dev-dependencies.rustls-pemfile]
-version = "2"
+version = "1"
 
 [dev-dependencies.tokio]
 version = "1.0"
 features = ["full"]
 
+[dev-dependencies.webpki]
+version = "0.100.0"
+features = [
+    "alloc",
+    "std",
+]
+package = "rustls-webpki"
+
 [dev-dependencies.webpki-roots]
-version = "0.26"
+version = "0.23.1"
 
 [features]
-aws-lc-rs = ["aws_lc_rs"]
-aws_lc_rs = ["rustls/aws_lc_rs"]
+dangerous_configuration = ["rustls/dangerous_configuration"]
 default = [
     "logging",
     "tls12",
-    "aws_lc_rs",
 ]
 early-data = []
-fips = ["rustls/fips"]
 logging = ["rustls/logging"]
-ring = ["rustls/ring"]
+secret_extraction = ["rustls/secret_extraction"]
 tls12 = ["rustls/tls12"]

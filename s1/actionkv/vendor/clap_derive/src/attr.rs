@@ -14,15 +14,15 @@ use syn::{
 use crate::utils::Sp;
 
 #[derive(Clone)]
-pub(crate) struct ClapAttr {
-    pub(crate) kind: Sp<AttrKind>,
-    pub(crate) name: Ident,
-    pub(crate) magic: Option<MagicAttrName>,
-    pub(crate) value: Option<AttrValue>,
+pub struct ClapAttr {
+    pub kind: Sp<AttrKind>,
+    pub name: Ident,
+    pub magic: Option<MagicAttrName>,
+    pub value: Option<AttrValue>,
 }
 
 impl ClapAttr {
-    pub(crate) fn parse_all(all_attrs: &[Attribute]) -> Result<Vec<Self>, syn::Error> {
+    pub fn parse_all(all_attrs: &[Attribute]) -> Result<Vec<Self>, syn::Error> {
         let mut parsed = Vec::new();
         for attr in all_attrs {
             let kind = if attr.path().is_ident("clap") {
@@ -50,13 +50,13 @@ impl ClapAttr {
         Ok(parsed)
     }
 
-    pub(crate) fn value_or_abort(&self) -> Result<&AttrValue, syn::Error> {
+    pub fn value_or_abort(&self) -> Result<&AttrValue, syn::Error> {
         self.value
             .as_ref()
             .ok_or_else(|| format_err!(self.name, "attribute `{}` requires a value", self.name))
     }
 
-    pub(crate) fn lit_str_or_abort(&self) -> Result<&LitStr, syn::Error> {
+    pub fn lit_str_or_abort(&self) -> Result<&LitStr, syn::Error> {
         let value = self.value_or_abort()?;
         match value {
             AttrValue::LitStr(tokens) => Ok(tokens),
@@ -72,7 +72,7 @@ impl ClapAttr {
 }
 
 impl Parse for ClapAttr {
-    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
         let name: Ident = input.parse()?;
         let name_str = name.to_string();
 
@@ -142,7 +142,7 @@ impl Parse for ClapAttr {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
-pub(crate) enum MagicAttrName {
+pub enum MagicAttrName {
     Short,
     Long,
     ValueParser,
@@ -172,7 +172,7 @@ pub(crate) enum MagicAttrName {
 
 #[derive(Clone)]
 #[allow(clippy::large_enum_variant)]
-pub(crate) enum AttrValue {
+pub enum AttrValue {
     LitStr(LitStr),
     Expr(Expr),
     Call(Vec<Expr>),
@@ -185,14 +185,14 @@ impl ToTokens for AttrValue {
             Self::Expr(t) => t.to_tokens(tokens),
             Self::Call(t) => {
                 let t = quote!(#(#t),*);
-                t.to_tokens(tokens);
+                t.to_tokens(tokens)
             }
         }
     }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
-pub(crate) enum AttrKind {
+pub enum AttrKind {
     Clap,
     StructOpt,
     Command,
@@ -202,7 +202,7 @@ pub(crate) enum AttrKind {
 }
 
 impl AttrKind {
-    pub(crate) fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             Self::Clap => "clap",
             Self::StructOpt => "structopt",

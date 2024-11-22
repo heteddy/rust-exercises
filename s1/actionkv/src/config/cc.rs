@@ -95,13 +95,13 @@ impl Configure {
 #[command(version, about, long_about = None)]
 pub struct Cli {
     #[arg(short, long, value_name = "FILE")]
-    file: Option<PathBuf>,
+    pub file: Option<PathBuf>,
     #[arg(short, long)]
-    name: Option<String>,
+    pub name: Option<String>,
     #[arg(short, long)]
-    port: String,
+    pub port: String,  // 启动的端口号
     #[arg(short, long, default_value_t = 1)]
-    count: u8,
+    pub count: u8,
 }
 
 #[instrument]

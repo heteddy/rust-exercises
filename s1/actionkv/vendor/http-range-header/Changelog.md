@@ -8,20 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 <!-- next-header -->
-## [TBD] - Release date
-
+## [Unreleased] - ReleaseDate
 ### Added
 ### Changed
 ### Fixed
 
-## [0.4.1] - 2024-05-03
-
-### Fixed
-
-- Panic at validation step if file-size doesn't make sense with the range, 
-should have been an Error, thanks @cholcombe973
-
-## [0.4.0] - 2023-07-21
+## [0.4.0] - ReleaseDate
 ### Added
 - Bench error performance
 

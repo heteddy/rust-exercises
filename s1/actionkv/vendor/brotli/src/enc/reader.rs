@@ -3,8 +3,9 @@
 use super::backward_references::BrotliEncoderParams;
 use super::combined_alloc::BrotliAlloc;
 use super::encode::{
-    BrotliEncoderDestroyInstance, BrotliEncoderOperation, BrotliEncoderParameter,
-    BrotliEncoderStateStruct,
+    BrotliEncoderCompressStream, BrotliEncoderCreateInstance, BrotliEncoderDestroyInstance,
+    BrotliEncoderIsFinished, BrotliEncoderOperation, BrotliEncoderParameter,
+    BrotliEncoderSetParameter, BrotliEncoderStateStruct,
 };
 use super::interface;
 use brotli_decompressor::CustomRead;
@@ -145,15 +146,19 @@ impl<ErrType, R: CustomRead<ErrType>, BufferType: SliceWrapperMut<u8>, Alloc: Br
             input_len: 0,
             input_eof: false,
             input: r,
-            state: StateWrapper(BrotliEncoderStateStruct::new(alloc)),
+            state: StateWrapper(BrotliEncoderCreateInstance(alloc)),
             error_if_invalid_data: Some(invalid_data_error_type),
         };
-        ret.state
-            .0
-            .set_parameter(BrotliEncoderParameter::BROTLI_PARAM_QUALITY, q);
-        ret.state
-            .0
-            .set_parameter(BrotliEncoderParameter::BROTLI_PARAM_LGWIN, lgwin);
+        BrotliEncoderSetParameter(
+            &mut ret.state.0,
+            BrotliEncoderParameter::BROTLI_PARAM_QUALITY,
+            q,
+        );
+        BrotliEncoderSetParameter(
+            &mut ret.state.0,
+            BrotliEncoderParameter::BROTLI_PARAM_LGWIN,
+            lgwin,
+        );
 
         ret
     }
@@ -227,7 +232,8 @@ impl<ErrType, R: CustomRead<ErrType>, BufferType: SliceWrapperMut<u8>, Alloc: Br
             } else {
                 op = BrotliEncoderOperation::BROTLI_OPERATION_PROCESS;
             }
-            let ret = self.state.0.compress_stream(
+            let ret = BrotliEncoderCompressStream(
+                &mut self.state.0,
                 op,
                 &mut avail_in,
                 self.input_buffer.slice_mut(),
@@ -241,10 +247,11 @@ impl<ErrType, R: CustomRead<ErrType>, BufferType: SliceWrapperMut<u8>, Alloc: Br
             if avail_in == 0 {
                 self.copy_to_front();
             }
-            if !ret {
+            if ret <= 0 {
                 return Err(self.error_if_invalid_data.take().unwrap());
             }
-            if self.state.0.is_finished() {
+            let fin = BrotliEncoderIsFinished(&mut self.state.0);
+            if fin != 0 {
                 break;
             }
         }

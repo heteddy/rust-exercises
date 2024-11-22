@@ -2,11 +2,11 @@
 
 ``` bash
 Blocking waiting for file lock on package cache
-rm -rf ~/.cargo/registry/index/* 
-rm ~/.cargo/.package-cache
+
+rm -rf ~/.cargo/registry/index/* ~/.cargo/.package-cache
 ```
 
-``` bash
+``` bash 
 cargo vendor --no-delete --versioned-dirs --respect-source-config
 
 --no-delete

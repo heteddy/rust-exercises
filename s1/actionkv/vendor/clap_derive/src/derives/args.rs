@@ -22,7 +22,7 @@ use syn::{
 use crate::item::{Item, Kind, Name};
 use crate::utils::{inner_type, sub_type, Sp, Ty};
 
-pub(crate) fn derive_args(input: &DeriveInput) -> Result<TokenStream, syn::Error> {
+pub fn derive_args(input: &DeriveInput) -> Result<TokenStream, syn::Error> {
     let ident = &input.ident;
 
     match input.data {
@@ -55,7 +55,7 @@ pub(crate) fn derive_args(input: &DeriveInput) -> Result<TokenStream, syn::Error
     }
 }
 
-pub(crate) fn gen_for_struct(
+pub fn gen_for_struct(
     item: &Item,
     item_name: &Ident,
     generics: &Generics,
@@ -166,7 +166,7 @@ pub(crate) fn gen_for_struct(
 
 /// Generate a block of code to add arguments/subcommands corresponding to
 /// the `fields` to an cmd.
-pub(crate) fn gen_augment(
+pub fn gen_augment(
     fields: &[(&Field, Item)],
     app_var: &Ident,
     parent_item: &Item,
@@ -228,16 +228,8 @@ pub(crate) fn gen_augment(
 
                 let next_help_heading = item.next_help_heading();
                 let next_display_order = item.next_display_order();
-                let flatten_group_assert = if matches!(**ty, Ty::Option) {
-                    quote_spanned! { kind.span()=>
-                        <#inner_type as clap::Args>::group_id().expect("cannot `#[flatten]` an `Option<Args>` with `#[group(skip)]");
-                    }
-                } else {
-                    quote! {}
-                };
                 if override_required {
                     Some(quote_spanned! { kind.span()=>
-                        #flatten_group_assert
                         let #app_var = #app_var
                             #next_help_heading
                             #next_display_order;
@@ -245,7 +237,6 @@ pub(crate) fn gen_augment(
                     })
                 } else {
                     Some(quote_spanned! { kind.span()=>
-                        #flatten_group_assert
                         let #app_var = #app_var
                             #next_help_heading
                             #next_display_order;
@@ -440,7 +431,7 @@ pub(crate) fn gen_augment(
     }})
 }
 
-pub(crate) fn gen_constructor(fields: &[(&Field, Item)]) -> Result<TokenStream, syn::Error> {
+pub fn gen_constructor(fields: &[(&Field, Item)]) -> Result<TokenStream, syn::Error> {
     let fields = fields.iter().map(|(field, item)| {
         let field_name = field.ident.as_ref().unwrap();
         let kind = item.kind();
@@ -508,7 +499,7 @@ pub(crate) fn gen_constructor(fields: &[(&Field, Item)]) -> Result<TokenStream, 
                         quote_spanned! { kind.span()=>
                             #field_name: {
                                 let group_id = <#inner_type as clap::Args>::group_id()
-                                    .expect("asserted during `Arg` creation");
+                                    .expect("`#[arg(flatten)]`ed field type implements `Args::group_id`");
                                 if #arg_matches.contains_id(group_id.as_str()) {
                                     Some(
                                         <#inner_type as clap::FromArgMatches>::from_arg_matches_mut(#arg_matches)?
@@ -551,10 +542,7 @@ pub(crate) fn gen_constructor(fields: &[(&Field, Item)]) -> Result<TokenStream, 
     }})
 }
 
-pub(crate) fn gen_updater(
-    fields: &[(&Field, Item)],
-    use_self: bool,
-) -> Result<TokenStream, syn::Error> {
+pub fn gen_updater(fields: &[(&Field, Item)], use_self: bool) -> Result<TokenStream, syn::Error> {
     let mut genned_fields = Vec::new();
     for (field, item) in fields {
         let field_name = field.ident.as_ref().unwrap();
@@ -762,19 +750,19 @@ fn gen_parsers(
 }
 
 #[cfg(feature = "raw-deprecated")]
-pub(crate) fn raw_deprecated() -> TokenStream {
+pub fn raw_deprecated() -> TokenStream {
     quote! {}
 }
 
 #[cfg(not(feature = "raw-deprecated"))]
-pub(crate) fn raw_deprecated() -> TokenStream {
+pub fn raw_deprecated() -> TokenStream {
     quote! {
         #![allow(deprecated)]  // Assuming any deprecation in here will be related to a deprecation in `Args`
 
     }
 }
 
-pub(crate) fn collect_args_fields<'a>(
+pub fn collect_args_fields<'a>(
     item: &'a Item,
     fields: &'a FieldsNamed,
 ) -> Result<Vec<(&'a Field, Item)>, syn::Error> {
