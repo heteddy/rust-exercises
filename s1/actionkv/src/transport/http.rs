@@ -4,7 +4,7 @@ use crate::endpoint::{app, bert, collection, index, points, preprocess, search, 
 use axum::error_handling::HandleErrorLayer;
 use axum::{
     http::{HeaderName, Method, StatusCode, Uri},
-    response::Html,
+    response::Json,
     response::IntoResponse,
     routing::get,
     BoxError, Router,
@@ -84,10 +84,10 @@ pub fn init_app(tx: mpsc::Sender<sync::SyncData>) -> Router {
                     .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
                     .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
             )
-            .layer(SetResponseHeaderLayer::<HeaderValue>::appending(
-                HeaderName::from_static("content-type"),
-                HeaderValue::from_static("charset=UTF-8"),
-            ))
+            // .layer(SetResponseHeaderLayer::<HeaderValue>::appending(
+            //     HeaderName::from_static("content-type"),
+            //     HeaderValue::from_static("charset=UTF-8"),
+            // ))
             // .layer(CompressionLayer::new().gzip(true))
             .layer(TimeoutLayer::new(Duration::new(0, 900_000_000))) //900ms
             .layer(SetRequestIdLayer::new(
@@ -121,6 +121,7 @@ async fn handle_timeout_error(method: Method, uri: Uri, err: BoxError) -> impl I
     }
 }
 
-async fn hello_world() -> Html<&'static str> {
-    Html("<h1>Hello, World!</h1>")
+async fn hello_world() -> Json<&'static str> {
+    // Html("<h1>Hello, World!</h1>")
+    Json("ok")
 }
