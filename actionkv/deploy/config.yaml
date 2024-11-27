@@ -1,0 +1,27 @@
+name: "aka-srv"
+
+kafka_config:
+  broker:
+  topics: topic_track_event
+  client_id: gw_track_event_producer
+
+redis:
+  addr: 192.168.64.5:6379
+  database: 3
+
+mongo:
+  hosts: 127.0.0.1:27017
+  user:
+  pass:
+  database: app_search
+  replica:
+
+table:
+  app: tb_collection_app
+  bert: tb_collection_bert
+  preprocess: tb_collection_preprocess
+  server: tb_collection_server
+  setting: tb_collection_setting
+  mapping: tb_collection_mapping
+  template: tb_collection_template
+  index: tb_collection_index
