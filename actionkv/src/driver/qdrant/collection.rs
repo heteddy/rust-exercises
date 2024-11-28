@@ -304,19 +304,22 @@ pub async fn delete_collection(
     }
 }
 
-pub async fn list_aliases(host: impl AsRef<str>) -> anyhow::Result<collection::ListAliasesResponse> {
-    let url = format!("http://{host}/aliases/", host = host.as_ref());
+pub async fn list_aliases(
+    host: impl AsRef<str>,
+) -> anyhow::Result<collection::ListAliasesResponse> {
+    let url = format!("http://{host}/aliases", host = host.as_ref());
     let client = Client::new();
     let response = client.get(url).send().await?;
     if response.status().is_success() {
         let body = response.text().await?;
         let resp = serde_json::from_str(&body)?;
         anyhow::Ok(resp)
-    }else{
+    } else {
         let code = response.status().as_u16();
         anyhow::Result::Err(anyhow::anyhow!(
-            "engine request error; status code = {:?}",
-            code
+            "engine request error; status code = {:?} resp={:?}",
+            code,
+            response.text().await?,
         ))
     }
 }
@@ -343,9 +346,11 @@ mod tests {
     fn test_list_aliaes() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            rt.spawn(async{
+            rt.spawn(async {
                 list_aliases("localhost:6333").await;
-            }).await.unwrap();
+            })
+            .await
+            .unwrap();
         });
     }
 }

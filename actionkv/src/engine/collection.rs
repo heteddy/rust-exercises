@@ -47,11 +47,12 @@ impl CollectionSvc {
         info!("service list aliases:{:?}", name.as_ref());
         let r = repo::IndexConfigRepo::get_instance();
         // 通过index的name 获取server地址
-        let addr = r.read().unwrap().get_svr_http_address(name.as_ref());
+        let addr = r.read().unwrap().get_svr_http_addrss(name.as_ref());
+        info!("list_aliases server address={:?}", &addr);
         if let Some(ref host) = addr {
             driver_list_aliases(host).await
         } else {
-            anyhow::Result::Err(anyhow::anyhow!("not found host {:?}", name.as_ref()))
+            anyhow::Result::Err(anyhow::anyhow!("not found host {}", name.as_ref()))
         }
     }
     #[instrument(skip_all)]
@@ -64,7 +65,7 @@ impl CollectionSvc {
 
         let r = repo::IndexConfigRepo::get_instance();
         // 通过index的name 获取server地址
-        let addr = r.read().unwrap().get_svr_http_address(name.as_ref());
+        let addr = r.read().unwrap().get_index_svr_http_address(name.as_ref());
         if let Some(ref host) = addr {
             update_alias(host, req).await
         } else {
@@ -77,7 +78,7 @@ impl CollectionSvc {
 
         let r = repo::IndexConfigRepo::get_instance();
         // 通过index的name 获取server地址
-        let addr = r.read().unwrap().get_svr_http_address(name.as_ref());
+        let addr = r.read().unwrap().get_index_svr_http_address(name.as_ref());
         let active_collection = r.read().unwrap().get_active_collection(name.as_ref());
         if active_collection.is_none() {
             anyhow::Result::Err(anyhow::anyhow!(
@@ -167,7 +168,7 @@ impl CollectionSvc {
         // 获取collection的server地址
 
         let r = repo::IndexConfigRepo::get_instance();
-        let addr = r.read().unwrap().get_svr_http_address(alias.as_ref());
+        let addr = r.read().unwrap().get_index_svr_http_address(alias.as_ref());
         let active_collection = r.read().unwrap().get_active_collection(alias.as_ref());
 
         if active_collection.is_none() {
@@ -223,7 +224,7 @@ impl CollectionSvc {
         alias: impl AsRef<str> + std::fmt::Debug, // 通过alias 删除？
     ) -> anyhow::Result<CollectionOperationResponse> {
         let r = repo::IndexConfigRepo::get_instance();
-        let addr = r.read().unwrap().get_svr_http_address(alias.as_ref());
+        let addr = r.read().unwrap().get_index_svr_http_address(alias.as_ref());
 
         let active_collection = r.read().unwrap().get_active_collection(alias.as_ref());
 

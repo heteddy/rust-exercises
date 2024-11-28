@@ -33,7 +33,7 @@ impl PointSvc {
         point: pb_points::PointStruct,
     ) -> anyhow::Result<pb_points::PointsOperationResponse> {
         let r = repo::IndexConfigRepo::get_instance();
-        let host = r.read().unwrap().get_svr_http_address(&name);
+        let host = r.read().unwrap().get_index_svr_http_address(&name);
         if host.is_none() {
             return anyhow::Result::Err(anyhow::anyhow!("not found host {:?}", &name));
         }
@@ -55,7 +55,7 @@ impl PointSvc {
         req: pb_points::DeletePoints,
     ) -> anyhow::Result<pb_points::PointsOperationResponse> {
         let r = repo::IndexConfigRepo::get_instance();
-        let host = r.read().unwrap().get_svr_http_address(&name);
+        let host = r.read().unwrap().get_index_svr_http_address(&name);
         if host.is_none() {
             return anyhow::Result::Err(anyhow::anyhow!("not found host {:?}", &name));
         }
@@ -72,7 +72,7 @@ impl PointSvc {
         req: pb_points::GetPoints,
     ) -> anyhow::Result<pb_points::GetResponse> {
         let r = repo::IndexConfigRepo::get_instance();
-        let host = r.read().unwrap().get_svr_http_address(&name);
+        let host = r.read().unwrap().get_index_svr_http_address(&name);
         if host.is_none() {
             return anyhow::Result::Err(anyhow::anyhow!("not found host {:?}", &name));
         }
@@ -84,7 +84,7 @@ impl PointSvc {
     }
     pub async fn count_points(&self, name: String) -> anyhow::Result<CountResponse> {
         let r = repo::IndexConfigRepo::get_instance();
-        let host = r.read().unwrap().get_svr_http_address(&name);
+        let host = r.read().unwrap().get_index_svr_http_address(&name);
         if host.is_none() {
             return anyhow::Result::Err(anyhow::anyhow!("not found host {:?}", &name));
         }

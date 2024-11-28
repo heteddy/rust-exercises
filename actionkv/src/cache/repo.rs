@@ -323,7 +323,7 @@ impl IndexRepo {
         let entities = result.unwrap_or_else(|_| Vec::new());
         entities.into_iter().for_each(|e| {
             self.table.insert(
-                e.name.clone(),
+                e.name.clone(), // 支持通过名字查找
                 IndexConfigure {
                     name: e.name.clone(),
                     app_id: e.app_id.clone(),
@@ -419,13 +419,18 @@ impl IndexConfigRepo {
             None
         }
     }
-    
+
     pub fn get_template_body(&self, name: impl AsRef<str>) -> Option<String> {
         let i = self.template.get(name);
         i.map(|e| e.body.clone())
     }
+    pub fn get_svr_http_addrss(&self, server_name: impl AsRef<str>) -> Option<String> {
+        let server_entity = self.server.get(server_name.as_ref());
+        let addr = server_entity.map(|s| s.http_addr);
 
-    pub fn get_svr_http_address(&self, name: impl AsRef<str>) -> Option<String> {
+        addr
+    }
+    pub fn get_index_svr_http_address(&self, name: impl AsRef<str>) -> Option<String> {
         let i = self.index.get(name);
         if let Some(ref e) = i {
             let server_name = &e.configure.server;
@@ -479,7 +484,6 @@ impl IndexConfigRepo {
             })));
         }
     }
-
     /// 另外一种实现使用onceCell.get_or_init
     pub fn get_instance() -> Arc<RwLock<IndexConfigRepo>> {
         // once 是线程安全的，因此只能被调用一次

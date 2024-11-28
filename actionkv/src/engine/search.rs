@@ -35,7 +35,7 @@ impl SearchSvc {
     ) -> anyhow::Result<pb_points::SearchResponse> {
         info!("search svc running...");
         let r = repo::IndexConfigRepo::get_instance();
-        let host = r.read().unwrap().get_svr_http_address(&name);
+        let host = r.read().unwrap().get_index_svr_http_address(&name);
         if host.is_none() {
             return anyhow::Result::Err(anyhow::anyhow!("not found host {}", &name));
         }
