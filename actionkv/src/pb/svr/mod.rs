@@ -63,7 +63,7 @@ impl From<String> for InternalError {
 
 impl Display for InternalError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}", self)
+        write!(f, "{}", self.0)
     }
 }
 
@@ -80,7 +80,7 @@ pub enum ApiError {
     DBError(mongodb::error::Error),
     InternalServerError(InternalError),
     BsonError(bson::oid::Error),
-    // Any(anyhow::Error)
+    // Any(anyhow::Erro
     // todo 增加404 not found
 }
 
@@ -89,7 +89,7 @@ pub enum ApiError {
 impl fmt::Display for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         info!("display fmt error"); // 这里是什么时候调用
-        write!(f, "{:?}", self)
+        write!(f, "{:?}", self) // 这里不能用{},会导致递归调用
     }
 }
 

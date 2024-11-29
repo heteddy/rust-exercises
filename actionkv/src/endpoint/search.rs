@@ -22,7 +22,7 @@ use tokio::sync::mpsc;
 use tracing::{event, info, instrument, span, Level};
 
 pub async fn search_points(
-    State(svc): State<SearchSvc>,
+    State(svc): State<SearchSvc<'_>>,
     headers: HeaderMap,
     Path(name): Path<String>,
     Json(mut req): Json<SearchReq>,

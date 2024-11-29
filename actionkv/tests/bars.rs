@@ -9,7 +9,8 @@
         non_snake_case
     )
 )]
-use handlebars::Handlebars;
+
+use handlebars::{self, Handlebars, JsonRender, JsonValue};
 use serde::{Deserialize, Serialize};
 use serde_json::{self, json, Map, Number, Value};
 use std::error::Error;
@@ -28,10 +29,41 @@ mod tests {
     #[test]
     fn test_handlebars() -> Result<(), Box<dyn Error>> {
         let mut reg = Handlebars::new();
+
+        reg.register_helper(
+            "stringify",
+            Box::new(
+                |h: &handlebars::Helper,
+                 r: &Handlebars,
+                 _: &handlebars::Context,
+                 rc: &mut handlebars::RenderContext,
+                 out: &mut dyn handlebars::Output|
+                 -> handlebars::HelperResult {
+                    let param =
+                        h.param(0)
+                            .ok_or(handlebars::RenderErrorReason::ParamNotFoundForIndex(
+                                "closure-helper",
+                                0,
+                            ))?;
+                    println!("{:?}", &param);
+                    // out.write("3rd helper: ")?;
+                    // let v = param.value();
+                    let v_result = serde_json::to_string_pretty(param.value());
+                    let v = v_result.unwrap();
+
+                    out.write(&v)?;
+                    Ok(())
+                },
+            ),
+        );
+
         // render without register
         println!(
             "{}",
-            reg.render_template("Hello {{name}}", &json!({"name": "foo"}))?
+            reg.render_template(
+                "Hello {{stringify title}}, i am {{name}}-{{stringify name}}, struct= {{stringify s}}",
+                &json!({"title": ["a","b"],"name":"teddy", "s":{"s1":1,"s2":2}})
+            )?
         );
         let mut bm2 = BodyMap2::new();
         bm2.0
@@ -68,7 +100,7 @@ mod tests {
         {{/if}}  {{#each title}} {{this}};\n {{/each}}"#;
         // register template using given name
         reg.register_template_string("tpl_1", tpl_str)?;
-        
+
         let render_str = reg.render("tpl_1", &bm2)?;
         println!("tpl_1={},", &render_str);
         print_type_of(&render_str);
