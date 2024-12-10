@@ -3,9 +3,10 @@ use crate::endpoint::{app, bert, collection, index, points, preprocess, search, 
 // use axum::body::{box_body, BoxBody};
 use axum::error_handling::HandleErrorLayer;
 use axum::{
-    http::{HeaderName, Method, StatusCode, Uri},
-    response::Json,
+    body::Body,
+    http::{HeaderMap, HeaderName, Method, Request, Response, StatusCode, Uri},
     response::IntoResponse,
+    response::Json,
     routing::get,
     BoxError, Router,
 };
@@ -13,14 +14,14 @@ use http::HeaderValue;
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tower::{self, ServiceBuilder};
+use tower_http::classify::ServerErrorsFailureClass;
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::request_id::{MakeRequestUuid, SetRequestIdLayer};
 use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::{self, TraceLayer};
-use tracing::Level;
-use tracing::{info, warn};
+use tracing::{debug, info, warn, Level, Span};
 // use utoipa::{
 //     openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
 //     Modify, OpenApi,
@@ -81,8 +82,13 @@ pub fn init_app(tx: mpsc::Sender<sync::SyncData>) -> Router {
         ServiceBuilder::new()
             .layer(
                 TraceLayer::new_for_http()
-                    .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
-                    .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
+                    .on_request(|request: &Request<Body>, _span: &Span| {})
+                    .on_failure(
+                        |error: ServerErrorsFailureClass, latency: Duration, _span: &Span| {
+                            tracing::error!("error request, {}, latency:{:?}", error, latency)
+                        },
+                    ), // .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
+                       // .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
             )
             // .layer(SetResponseHeaderLayer::<HeaderValue>::appending(
             //     HeaderName::from_static("content-type"),
@@ -98,7 +104,7 @@ pub fn init_app(tx: mpsc::Sender<sync::SyncData>) -> Router {
             .layer(HandleErrorLayer::new(handle_timeout_error))
             .timeout(Duration::from_secs(30)),
     );
-    
+
     info!("app created");
     app
 }

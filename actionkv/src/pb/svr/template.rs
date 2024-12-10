@@ -10,10 +10,11 @@ pub struct TemplateReq {
 
 // 使用默认的default实现
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Validate, Serialize, Deserialize)]
 #[serde(default)]
 pub struct TemplateResp {
     pub id: String,
+    #[validate(length(min = 3, message = "name长度至少大于3"))]
     pub name: String,
     pub body: String,
     pub created_at: String,

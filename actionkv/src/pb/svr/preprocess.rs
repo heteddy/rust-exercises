@@ -4,6 +4,7 @@ use validator::Validate;
 #[derive(Debug, Clone, Default, Validate, Deserialize, Serialize)]
 #[serde(default)]
 pub struct PreprocessReq {
+    #[validate(length(min = 3, message = "name长度至少大于3"))]
     pub name: String,
     pub url: String,
 }

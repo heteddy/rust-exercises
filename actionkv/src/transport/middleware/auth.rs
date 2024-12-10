@@ -6,7 +6,7 @@ use axum::{
     response::Response,
 };
 use std::sync::{Arc, RwLock};
-use tracing::{info, warn};
+use tracing::{info, warn, instrument};
 /// 通过router
 /**
 MethodRouter::layer：除了只能绑定在一个特定的method_router，其他与 Router::layer 效果一致
@@ -202,7 +202,7 @@ let app = Router::new()
 /// 基于 from_fn_with_state 实现app_id和app_secret的校验
 ///
 ///
-
+#[instrument(skip_all)]
 pub async fn auth_middleware(
     State(svc): State<Arc<RwLock<repo::IndexConfigRepo>>>,
     Path(name): Path<String>,

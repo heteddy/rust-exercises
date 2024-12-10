@@ -11,6 +11,7 @@ use crate::transport::middleware::auth::auth_middleware;
 use axum::extract::{Json, Path, Query, State};
 use axum::handler::Handler;
 use axum::http::header::HeaderMap;
+use validator::Validate;
 use axum::middleware::from_fn_with_state;
 use axum::{
     routing::{delete, get, post, put},

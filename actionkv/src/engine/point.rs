@@ -27,6 +27,7 @@ impl PointSvc {
     pub fn new() -> Self {
         PointSvc {}
     }
+    #[instrument(skip_all)]
     pub async fn upsert_points(
         &self,
         name: String, // 直接move进来，免得多次构造
@@ -48,7 +49,7 @@ impl PointSvc {
         };
         upsert_points(host.unwrap(), active.unwrap(), _points).await
     }
-
+    #[instrument(skip_all)]
     pub async fn delete_points(
         &self,
         name: String,
@@ -65,7 +66,7 @@ impl PointSvc {
         }
         delete_points(host.unwrap(), active.unwrap(), req).await
     }
-
+    #[instrument(skip_all)]
     pub async fn get_points(
         &self,
         name: String,
@@ -82,6 +83,7 @@ impl PointSvc {
         }
         get_points(host.unwrap(), active.unwrap(), req).await
     }
+    #[instrument(skip_all)]
     pub async fn count_points(&self, name: String) -> anyhow::Result<CountResponse> {
         let r = repo::IndexConfigRepo::get_instance();
         let host = r.read().unwrap().get_index_svr_http_address(&name);

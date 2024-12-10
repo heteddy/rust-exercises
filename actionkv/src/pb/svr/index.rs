@@ -1,9 +1,10 @@
+use crate::pb::engine::qdrant::points;
 use mongodb::bson;
 use serde::{Deserialize, Serialize};
-// use validator::Validate;
-use crate::pb::engine::qdrant::points;
-#[derive(Clone, Debug, Serialize, Deserialize)]
+use validator::Validate;
+#[derive(Clone, Debug, Validate, Serialize, Deserialize)]
 pub struct MappingField {
+    #[validate(length(min = 3, message = "name长度至少大于3"))]
     pub name: String,
     // pub field_type: String, //支持的类型
     #[serde(flatten)]
@@ -18,7 +19,7 @@ impl Into<bson::Bson> for MappingField {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Validate, Serialize, Deserialize)]
 pub struct Setting {
     pub replicas: u32,
     pub shards: u32,
@@ -52,9 +53,10 @@ impl Into<bson::Bson> for Configure {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Validate, Serialize, Deserialize)]
 pub struct IndexReq {
     pub app_id: String,
+    #[validate(length(min = 3, message = "name长度至少大于3"))]
     pub name: String, // 索引名称; 也是alias
     pub active: Option<String>,
     pub inactive: Option<String>,

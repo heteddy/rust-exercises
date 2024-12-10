@@ -7,6 +7,7 @@ use validator::Validate;
 #[derive(Debug, Clone, Default, Validate, Deserialize, Serialize)]
 #[serde(default)]
 pub struct InboundDataReq {
+    #[validate(length(equal = 32, message = "数据id必须是32位"))]
     pub id: String,
     pub payload: HashMap<String, Value>,
     pub vector: Vec<f32>,
@@ -27,6 +28,7 @@ impl InboundDataReq {}
 
 #[derive(Debug, Clone, Default, Validate, Deserialize, Serialize)]
 pub struct SearchReq {
+    #[validate(length(min = 5, message = "request id必须至少5位"))]
     pub request_id: String,
     pub params: HashMap<String, Value>,
     pub template: String,
@@ -41,6 +43,7 @@ pub struct SearchRet {
 // 创建一个collection
 #[derive(Debug, Clone, Default, Validate, Deserialize, Serialize)]
 pub struct CollectionReq {
+    #[validate(length(min = 5, message = "request id必须至少5位"))]
     pub request_id: String,
     pub name: String,
 }
@@ -48,12 +51,14 @@ pub struct CollectionReq {
 // 列出所有的collection
 #[derive(Debug, Clone, Default, Validate, Deserialize, Serialize)]
 pub struct ListCollectionReq {
+    #[validate(length(min = 5, message = "request id必须至少5位"))]
     pub request_id: String,
     pub server: String, // 服务器名称
 }
 
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Validate, Deserialize, Serialize)]
 pub struct CollectionInfoReq {
+    #[validate(length(min = 5, message = "request id必须至少5位"))]
     pub request_id: String,
     pub server: String, // 服务器名称
 }
